@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Timers;
@@ -16,7 +16,6 @@ namespace TwitchChat
     public static class Main
     {
         private static TwitchClient client = new TwitchClient();
-        private static GameObject? notification;
         private static string? logFilePath;
         private static string? messageFilePath;
         private static bool Load(UnityModManager.ModEntry modEntry)
