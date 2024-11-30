@@ -1,0 +1,9 @@
+{
+	"Id": "TwitchChat",
+	"Version": "1.1.0",
+	"DisplayName": "TwitchChat",
+	"Author": "Nightiwind416",
+	"EntryMethod": "TwitchChat.Main.Load",
+	"ManagerVersion": "0.27.3",
+	"Repository": "https://github.com/Nightwind416/Derail-Valley-Twitch-Chat"
+}
