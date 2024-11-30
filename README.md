@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <h1 align="center">Derail Valley Twitch Chat</h1>
 
 <p align="center">
@@ -90,3 +91,7 @@ Any new Twitch messages that come in while holding or looking at a Job will only
 ### 1.0.0 29 Nov 2024
 
 - Initial Release
+=======
+# Derail-Valley-Twitch-Chat-Mod
+This mod allows streamers to interact with their chat in real-time through notifications directly in the game.
+>>>>>>> origin/main
