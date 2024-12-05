@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Settings xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Settings>
+    <MessageDuration>20</MessageDuration>
+    <CommandsActive>false</CommandsActive>
+    <WelcomeMessage>Hello, welcome to the stream!</WelcomeMessage>
+    <InfoMessage>This is a test message!</InfoMessage>
+    <CommandMessage>!help !commands</CommandMessage>
+  </Settings>
+  <Dispatcher>
+    <DispatcherActive>false</DispatcherActive>
+    <DispatcherMessage>Hello, welcome to the stream!</DispatcherMessage>
+  </Dispatcher>
+  <TimedMessages>
+    <!-- Timed Message timers are in seconds, set to 0 to skip that specific message -->
+    <TimedMessage1>Timed Message 1</TimedMessage1>
+    <TimedMessage1Timer>0</TimedMessage1Timer>
+    <TimedMessage2>Timed Message 2</TimedMessage2>
+    <TimedMessage2Timer>0</TimedMessage2Timer>
+    <TimedMessage3>Timed Message 3</TimedMessage3>
+    <TimedMessage3Timer>0</TimedMessage3Timer>
+    <TimedMessage4>Timed Message 4</TimedMessage4>
+    <TimedMessage4Timer>0</TimedMessage4Timer>
+    <TimedMessage5>Timed Message 5</TimedMessage5>
+    <TimedMessage5Timer>0</TimedMessage5Timer>
+    <TimedMessage6>Timed Message 6</TimedMessage6>
+    <TimedMessage6Timer>0</TimedMessage6Timer>
+    <TimedMessage7>Timed Message 7</TimedMessage7>
+    <TimedMessage7Timer>0</TimedMessage7Timer>
+    <TimedMessage8>Timed Message 8</TimedMessage8>
+    <TimedMessage8Timer>0</TimedMessage8Timer>
+    <TimedMessage9>Timed Message 9</TimedMessage9>
+    <TimedMessage9Timer>0</TimedMessage9Timer>
+    <TimedMessage10>Timed Message 10</TimedMessage10>
+    <TimedMessage10Timer>0</TimedMessage10Timer>
+  </TimedMessages>
+</Settings>
