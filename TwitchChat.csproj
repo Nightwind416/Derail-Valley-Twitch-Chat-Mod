@@ -59,6 +59,22 @@
 	  </Reference>
 	</ItemGroup>
 
+	<!-- TwitchLib API-->
+	<ItemGroup>
+	  <Reference Include="TwitchLib.Api">
+	  	  	<HintPath>libs\TwitchLib.Api.dll</HintPath>
+	  </Reference>
+	  <Reference Include="TwitchLib.Api.Helix">
+	  	  	<HintPath>libs\TwitchLib.Api.Helix.dll</HintPath>
+	  </Reference>
+	  <Reference Include="TwitchLib.Api.Helix.Models">
+	  	  	<HintPath>libs\TwitchLib.Api.Helix.Models.dll</HintPath>
+	  </Reference>
+	  <Reference Include="TwitchLib.Api.Core.Interfaces">
+	  	  	<HintPath>libs\TwitchLib.Api.Core.Interfaces.dll</HintPath>
+	  </Reference>		
+	</ItemGroup>
+
 	<!-- JSON -->
 	<ItemGroup>
 		<Reference Include="Newtonsoft.Json">

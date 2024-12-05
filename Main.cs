@@ -10,6 +10,9 @@ using TwitchLib.Client.Events;
 using UnityEngine;
 using DV.UIFramework;
 using Newtonsoft.Json.Linq;
+using TwitchLib.Api;
+using TwitchLib.Api.Services;
+using TwitchLib.Api.Services.Events.FollowerService;
 
 namespace TwitchChat
 {
@@ -18,6 +21,15 @@ namespace TwitchChat
         private static TwitchClient client = new TwitchClient();
         private static string? logFilePath;
         private static string? messageFilePath;
+        private static FollowerService followerService = null!;
+        private static string twitchUsername = "No Username Set";
+        private static string twitchToken = "No Token Set";
+        private static string twitchChannel = "No Channel Set";
+        private static string welcomeMessage = "Welcome to the channel!";
+        private static string infoMessage = "Welcome to the channel! Use !help for a list of commands.";
+        private static string commandMessage = "!help";
+        private static string credentialsFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mods", "TwitchChatMod", "twitch_credentials.json");
+        private static string messagesFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mods", "TwitchChatMod", "twitch_messages.json");
         private static bool Load(UnityModManager.ModEntry modEntry)
         {
             modEntry.Logger.Log("[TwitchChat] Load method started.");
@@ -49,11 +61,11 @@ namespace TwitchChat
         {
             if (value)
             {
-                string displayed_text = "TwitchChatMod Notifications Enabled.";
-                string object_name = "null";
-                AttachNotification(displayed_text, object_name);
-                ConnectToTwitch();
+                LoadCredentials();
+                LoadMessages();
                 InitializeLogFile();
+                ConnectToTwitch();
+                AttachNotification("TwitchChatMod Notifications Enabled.", "null");
                 UnityModManager.Logger.Log("[TwitchChat] Mod Enabled!");
             }
             else
@@ -62,6 +74,86 @@ namespace TwitchChat
             }
 
             return true;
+        }
+
+        private static bool LoadCredentials()
+        {
+            // // Define the path to the credentials file
+            // string credentialsFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mods", "TwitchChatMod", "twitch_credentials.json");
+
+            // Check if the file exists
+            if (!File.Exists(credentialsFilePath))
+            {
+                UnityModManager.Logger.Log($"[TwitchChat] Credentials file not found: {credentialsFilePath}");
+                return false;
+            }
+
+            // Read credentials from the JSON file
+            var credentialsJson = File.ReadAllText(credentialsFilePath);
+            var credentialsData = JObject.Parse(credentialsJson);
+
+            // Log the contents of the credentialsData object               
+            twitchUsername = credentialsData["username"]?.ToString() ?? string.Empty;
+            twitchToken = credentialsData["token"]?.ToString() ?? string.Empty;
+            twitchChannel = credentialsData["channel"]?.ToString() ?? string.Empty;
+
+            UnityModManager.Logger.Log($"[TwitchChat] Username: {twitchUsername}");
+            UnityModManager.Logger.Log($"[TwitchChat] Token: {twitchToken}");
+            UnityModManager.Logger.Log($"[TwitchChat] Channel: {twitchChannel}");
+
+            return !string.IsNullOrEmpty(twitchUsername) && !string.IsNullOrEmpty(twitchToken);
+        }
+
+        private static bool LoadMessages()
+        {
+            // Check if the file exists
+            if (!File.Exists(messagesFilePath))
+            {
+                UnityModManager.Logger.Log($"[TwitchChat] Messages file not found: {messagesFilePath}");
+                return false;
+            }
+
+            // Read messages from the JSON file
+            var messagesJson = File.ReadAllText(messagesFilePath);
+            var messagesData = JObject.Parse(messagesJson);
+
+            // Log the contents of the messages object               
+            welcomeMessage = messagesData["welcomeMessage"]?.ToString() ?? string.Empty;
+            infoMessage = messagesData["infoMessage"]?.ToString() ?? string.Empty;
+            commandMessage = messagesData["commandMessage"]?.ToString() ?? string.Empty;
+
+            UnityModManager.Logger.Log($"[TwitchChat] Welcome Message: {welcomeMessage}");
+            UnityModManager.Logger.Log($"[TwitchChat] Info Message: {infoMessage}");
+            UnityModManager.Logger.Log($"[TwitchChat] Command Message: {commandMessage}");
+
+            return !string.IsNullOrEmpty(twitchUsername) && !string.IsNullOrEmpty(twitchToken);
+        }
+
+        private static void InitializeLogFile()
+        {
+            string logDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mods", "TwitchChatMod", "ChatLogs");
+            string date = DateTime.Now.ToString("yyyy-MM-dd");
+
+            // Create the directory if it does not exist
+            if (!Directory.Exists(logDirectory))
+            {
+                try
+                {
+                    Directory.CreateDirectory(logDirectory);
+                    UnityModManager.Logger.Log($"[TwitchChat] Created directory: {logDirectory}");
+                }
+                catch (Exception ex)
+                {
+                    UnityModManager.Logger.Log($"[TwitchChat] Failed to create directory: {logDirectory}. Exception: {ex.Message}");
+                    return;
+                }
+            }
+
+            logFilePath = Path.Combine(logDirectory, $"Log - {date}.txt");
+            messageFilePath = Path.Combine(logDirectory, $"Messages - {date}.txt");
+
+            UnityModManager.Logger.Log($"[TwitchChat] Initialized log file: {logFilePath}");
+            UnityModManager.Logger.Log($"[TwitchChat] Initialized message file: {messageFilePath}");
         }
 
         private static void ConnectToTwitch()
@@ -74,44 +166,22 @@ namespace TwitchChat
         
             UnityModManager.Logger.Log("[TwitchChat] Initializing Twitch connection...");
         
-            // Define the path to the credentials file
-            string credentialsFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mods", "TwitchChatMod", "twitch_credentials.json");
-        
             try
             {
-                // Check if the file exists
-                if (!File.Exists(credentialsFilePath))
-                {
-                    UnityModManager.Logger.Log($"[TwitchChat] Credentials file not found: {credentialsFilePath}");
-                    return;
-                }
-        
-                // Read credentials from the JSON file
-                var credentialsJson = File.ReadAllText(credentialsFilePath);
-                var credentialsData = JObject.Parse(credentialsJson);
-                
-                // Log the contents of the credentialsData object               
-                string username = credentialsData["username"]?.ToString() ?? string.Empty;
-                string token = credentialsData["token"]?.ToString() ?? string.Empty;
-                string channel = credentialsData["channel"]?.ToString() ?? string.Empty;
-
-                UnityModManager.Logger.Log($"[TwitchChat] Username: {username}");
-                UnityModManager.Logger.Log($"[TwitchChat] Token: {token}");
-                UnityModManager.Logger.Log($"[TwitchChat] Channel: {channel}");
-        
-                if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(token))
+                if (!LoadCredentials())
                 {
                     UnityModManager.Logger.Log("[TwitchChat] Invalid credentials.");
                     return;
                 }
         
-                ConnectionCredentials credentials = new ConnectionCredentials(username, token);
-                client.Initialize(credentials, channel);
+                ConnectionCredentials credentials = new ConnectionCredentials(twitchUsername, twitchToken);
+                client.Initialize(credentials, twitchChannel);
                 
                 client.OnLog += Client_OnLog;
                 client.OnJoinedChannel += Client_OnJoinedChannel;
                 client.OnMessageReceived += Client_OnMessageReceived;
                 client.OnNewSubscriber += Client_OnNewSubscriber;
+                client.OnUserJoined += Client_OnUserJoined;
                 client.OnConnected += Client_OnConnected;
                 client.OnConnectionError += Client_OnConnectionError;
                 client.OnIncorrectLogin += Client_OnIncorrectLogin;
@@ -140,6 +210,17 @@ namespace TwitchChat
             string display_message = $"{e.ChatMessage.Username}: {e.ChatMessage.Message}";
             TwitchChatMessages($"{e.ChatMessage.Username}: {e.ChatMessage.Message}");
             UnityMainThreadDispatcher.Instance().Enqueue(() => AttachNotification(display_message, "null"));
+
+            string message = e.ChatMessage.Message.ToLower();
+
+            if (message.StartsWith("!command") || message.StartsWith("?command") || message.StartsWith("!commands") || message.StartsWith("?commands"))
+            {
+            client.SendMessage(twitchChannel, commandMessage);
+            }
+            else if (message.StartsWith("!help") || message.StartsWith("?help") || message.StartsWith("!info") || message.StartsWith("?info"))
+            {
+            client.SendMessage(twitchChannel, infoMessage);
+            }
         }
 
         private static void Client_OnNewSubscriber(object sender, OnNewSubscriberArgs e)
@@ -147,6 +228,13 @@ namespace TwitchChat
             TwitchChatMessages($"New subscriber: {e.Subscriber.DisplayName}");
             string display_message = $"{e.Subscriber.DisplayName} is a new subscriber!";
             UnityMainThreadDispatcher.Instance().Enqueue(() => AttachNotification(display_message, "null"));
+            SendMessageToTwitch($"Awesome! Thanks for subscribing, {e.Subscriber.DisplayName}!");
+        }
+
+        private static void Client_OnUserJoined(object sender, OnUserJoinedArgs e)
+        {
+            TwitchChatMessages($"User joined: {e.Username}");
+            UnityMainThreadDispatcher.Instance().Enqueue(() => AttachNotification($"{e.Username} joined the channel", "null"));
         }
 
         private static void Client_OnConnected(object sender, OnConnectedArgs e)
@@ -282,16 +370,24 @@ namespace TwitchChat
                     }
                 }
                 
-                AddMessage(settingsData["timedMessage1"]?.ToString(), settingsData["timedMessage1Timer"]);
-                AddMessage(settingsData["timedMessage2"]?.ToString(), settingsData["timedMessage2Timer"]);
-                AddMessage(settingsData["timedMessage3"]?.ToString(), settingsData["timedMessage3Timer"]);
-                AddMessage(settingsData["timedMessage4"]?.ToString(), settingsData["timedMessage4Timer"]);
-                AddMessage(settingsData["timedMessage5"]?.ToString(), settingsData["timedMessage5Timer"]);
-                AddMessage(settingsData["timedMessage6"]?.ToString(), settingsData["timedMessage6Timer"]);
-                AddMessage(settingsData["timedMessage7"]?.ToString(), settingsData["timedMessage7Timer"]);
-                AddMessage(settingsData["timedMessage8"]?.ToString(), settingsData["timedMessage8Timer"]);
-                AddMessage(settingsData["timedMessage9"]?.ToString(), settingsData["timedMessage9Timer"]);
-                AddMessage(settingsData["timedMessage10"]?.ToString(), settingsData["timedMessage10Timer"]);
+                for (int i = 1; i <= 10; i++)
+                {
+                    string messageKey = $"timedMessage{i}";
+                    string timerKey = $"{messageKey}Timer";
+                    if (settingsData[messageKey] != null && settingsData[timerKey] != null)
+                    {
+                        var message = settingsData[messageKey]?.ToString();
+                        var timer = settingsData[timerKey];
+                        if (message != null && timer != null)
+                        {
+                            AddMessage(message, timer);
+                        }
+                    }
+                    else
+                    {
+                        UnityModManager.Logger.Log($"[TwitchChat] Skipped adding message: {messageKey} with timer: {timerKey}");
+                    }
+                }
                 
                 // Create and start timers for each message
                 foreach (var message in messages)
@@ -318,59 +414,15 @@ namespace TwitchChat
 
         private static void SendMessageToTwitch(string message)
         {
-
-            // Define the path to the credentials file
-            string credentialsFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mods", "TwitchChatMod", "twitch_credentials.json");
-
-            // Check if the file exists
-            if (!File.Exists(credentialsFilePath))
-            {
-                UnityModManager.Logger.Log($"[TwitchChat] Credentials file not found: {credentialsFilePath}");
-                return;
-            }
-    
-            // Read credentials from the JSON file
-            var credentialsJson = File.ReadAllText(credentialsFilePath);
-            var credentialsData = JObject.Parse(credentialsJson);
-            
-            // Log the contents of the credentialsData object               
-            string username = credentialsData["username"]?.ToString() ?? string.Empty;
-
             if (client.IsConnected)
             {
-                client.SendMessage(username, message);
+                client.SendMessage(twitchUsername, message);
                 TwitchChatMessages($"[Timed Message] {message}");
             }
             else
             {
                 UnityModManager.Logger.Log("[TwitchChat] Unable to send message, Twitch client is not connected.");
             }
-        }
-        private static void InitializeLogFile()
-        {
-            string logDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mods", "TwitchChatMod", "ChatLogs");
-            string date = DateTime.Now.ToString("yyyy-MM-dd");
-
-            // Create the directory if it does not exist
-            if (!Directory.Exists(logDirectory))
-            {
-                try
-                {
-                    Directory.CreateDirectory(logDirectory);
-                    UnityModManager.Logger.Log($"[TwitchChat] Created directory: {logDirectory}");
-                }
-                catch (Exception ex)
-                {
-                    UnityModManager.Logger.Log($"[TwitchChat] Failed to create directory: {logDirectory}. Exception: {ex.Message}");
-                    return;
-                }
-            }
-
-            logFilePath = Path.Combine(logDirectory, $"Log - {date}.txt");
-            messageFilePath = Path.Combine(logDirectory, $"Messages - {date}.txt");
-
-            UnityModManager.Logger.Log($"[TwitchChat] Initialized log file: {logFilePath}");
-            UnityModManager.Logger.Log($"[TwitchChat] Initialized message file: {messageFilePath}");
         }
 
         private static void TwitchChatLog(string message)
@@ -425,6 +477,27 @@ namespace TwitchChat
                     UnityModManager.Logger.Log($"[TwitchChat] Failed to write to message file: {messageFilePath}. Exception: {ex.Message}");
                     return;
                 }
+            }
+        }
+
+        public static void InitializeFollowerService()
+        {
+            var api = new TwitchAPI();
+            api.Settings.ClientId = twitchUsername;
+            api.Settings.AccessToken = twitchToken;
+
+            followerService = new FollowerService(api, 30); // Check every 30 seconds
+            followerService.OnNewFollowersDetected += OnNewFollowersDetected;
+            followerService.Start();
+        }
+
+        private static void OnNewFollowersDetected(object sender, OnNewFollowersDetectedArgs e)
+        {
+            foreach (var follower in e.NewFollowers)
+            {
+                TwitchChatMessages($"New follower: {follower.UserName}");
+                string display_message = $"{follower.UserName} is a new follower!";
+                UnityMainThreadDispatcher.Instance().Enqueue(() => AttachNotification(display_message, "null"));
             }
         }
     }

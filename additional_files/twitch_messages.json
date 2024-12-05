@@ -1,6 +1,8 @@
 {
   "note": "Timers are in seconds, 300 seconds is 5 minutes, set to 0 to disable",
   "welcomeMessage": "Welcome Message",
+  "infoMessage": "Info Message",
+  "commandMessage": "!help !commands",
   "timedMessage1": "Twitch chat messages only pop up while inside or directly beside a train cab.",
   "timedMessage1Timer": 300,
   "timedMessage2": "Messages sent while out and about away from the cab might be missed.",
