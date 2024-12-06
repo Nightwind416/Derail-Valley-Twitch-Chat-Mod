@@ -1,75 +1,83 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Timers;
-// using System.Reflection;
-using UnityModManagerNet;
-using TwitchLib.Client;
-using TwitchLib.Client.Models;
-using TwitchLib.Client.Events;
-using UnityEngine;
-using DV.UIFramework;
 using System.Xml;
+using DV.UIFramework;
 using TwitchLib.Api;
 using TwitchLib.Api.Services;
 using TwitchLib.Api.Services.Events.FollowerService;
+using TwitchLib.Client;
+using TwitchLib.Client.Events;
+using TwitchLib.Client.Models;
+using UnityEngine;
+using UnityModManagerNet;
 
 namespace TwitchChat
 {
     public static class Main
     {
         private static bool _isEnabled;
-        public static UnityModManager.ModEntry ModEntry { get; private set; }
-        public static Settings Settings { get; private set; }
-        private static TwitchClient client = new TwitchClient();
-        private static string? logFilePath;
-        private static string? messageFilePath;
+        public static bool _dispatcherModDetected;
+        public static UnityModManager.ModEntry ModEntry { get; private set; } = null!;
+        public static XmlSettings Settings { get; private set; } = null!;
+        private static TwitchClient client = new();
+        private static string logFilePath = string.Empty;
+        private static string messageFilePath = string.Empty;
         private static FollowerService followerService = null!;
-        private static string twitchUsername = "No Username Set";
-        private static string twitchToken = "No Token Set";
-        private static string twitchChannel = "No Channel Set";
-        private static string welcomeMessage = "Welcome to the channel!";
-        private static string infoMessage = "Welcome to the channel! Use !help for a list of commands.";
-        private static string commandMessage = "!help";
-        private static string credentialsFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mods", "TwitchChatMod", "Credentials.xml");
+        private static string twitchUsername = string.Empty;
+        private static string twitchToken = string.Empty;
+        private static string twitchChannel = string.Empty;
+        private static float messageDuration = 20;
+        private static string welcomeMessage = string.Empty;
+        private static string infoMessage = string.Empty;
+        private static string commandMessage = string.Empty;
+        private static string newFollowerMessage = string.Empty;
+        private static string newSubscriberMessage = string.Empty;
         private static string settingsFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mods", "TwitchChatMod", "Settings.xml");
-        // private static bool Load(UnityModManager.ModEntry modEntry)
-        // {
-        //     modEntry.Logger.Log("[TwitchChat] Load method started.");
-            
-        //     // Initialize UnityMainThreadDispatcher
-        //     GameObject dispatcherObject = new GameObject("UnityMainThreadDispatcher");
-        //     dispatcherObject.AddComponent<UnityMainThreadDispatcher>();
-        //     UnityEngine.Object.DontDestroyOnLoad(dispatcherObject);
-        //     modEntry.Logger.Log("[TwitchChat] UnityMainThreadDispatcher initialized.");
-
-        //     try
-        //     {
-
-        //         // Other plugin startup logic
-        //         modEntry.OnToggle = OnToggle;
-        //         modEntry.Logger.Log("[TwitchChat] OnToggle method assigned.");
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         modEntry.Logger.LogException($"[TwitchChat] Failed to load {modEntry.Info.DisplayName}:", ex);
-        //         return false;
-        //     }
-
-        //     modEntry.Logger.Log("[TwitchChat] Load method completed successfully.");
-        //     return true;
-        // }
         private static bool Load(UnityModManager.ModEntry modEntry)
         {
             ModEntry = modEntry;
+
+            modEntry.Logger.Log("[TwitchChat] Load method started.");
+
+            // Initialize UnityMainThreadDispatcher
+            GameObject dispatcherObject = new("UnityMainThreadDispatcher");
+            dispatcherObject.AddComponent<UnityMainThreadDispatcher>();
+            UnityEngine.Object.DontDestroyOnLoad(dispatcherObject);
+            modEntry.Logger.Log("[TwitchChat] UnityMainThreadDispatcher initialized.");
+
+            // Check for RemoteDispatch Mod
+            var remoteDispatchMod = UnityModManager.modEntries.FirstOrDefault(mod => mod.Info.Id == "RemoteDispatch");
+            if (remoteDispatchMod != null)
+            {
+                modEntry.Logger.Log("[TwitchChat] RemoteDispatch Mod detected.");
+                _dispatcherModDetected = true;
+            }
+            else
+            {
+                modEntry.Logger.Log("[TwitchChat] RemoteDispatch Mod not detected.");
+            }
+
+            // Register the mod's toggle and update methods
             ModEntry.OnToggle = OnToggle;
             ModEntry.OnUpdate = OnUpdate;
-            Settings = UnityModManager.ModSettings.Load<Settings>(modEntry);
+            
+            // Load the mod's settings
+            Settings = UnityModManager.ModSettings.Load<XmlSettings>(modEntry);
+            
+            // Register the mod's GUI methods
             modEntry.OnGUI = OnGUI;
             modEntry.OnSaveGUI = OnSaveGUI;
-            LoadCredentials();
-            // LoadMessages();
-            InitializeLogFile();
+
+            // Initialize the log files
+            InitializeLogFiles();
+            
+            // Load the settings
+            LoadSettings();
+
+            modEntry.Logger.Log("[TwitchChat] Load method completed successfully.");
             return true;
         }
 
@@ -82,33 +90,29 @@ namespace TwitchChat
         {
             Settings.Save(modEntry);
         }
-        // static bool OnToggle(UnityModManager.ModEntry modEntry, bool value)
-        // {
-        //     if (value)
-        //     {
-        //         LoadCredentials();
-        //         LoadMessages();
-        //         InitializeLogFile();
-        //         ConnectToTwitch();
-        //         AttachNotification("TwitchChatMod Notifications Enabled.", "null");
-        //         UnityModManager.Logger.Log("[TwitchChat] Mod Enabled!");
-        //     }
-        //     else
-        //     {
-        //         UnityModManager.Logger.Log("[TwitchChat] Mod Disabled!");
-        //     }
 
-        //     return true;
-        // }
         private static bool OnToggle(UnityModManager.ModEntry _, bool isEnabled)
         {
-            _isEnabled = isEnabled;
-            
-            ConnectToTwitch();
-            AttachNotification("TwitchChatMod Notifications Enabled.", "null");
-            UnityModManager.Logger.Log("[TwitchChat] Mod Enabled!");
-
-            ModEntry.Logger.Log($"isEnabled toggled to {isEnabled}.");
+            if (isEnabled)
+            {
+                _isEnabled = true;
+                ConnectToTwitch();
+                TimedMessages();
+                AttachNotification("TwitchChatMod Notifications Enabled.", "null");
+                UnityModManager.Logger.Log("[TwitchChat] Mod Enabled!");
+                ModEntry.Enabled = true;
+            }
+            else
+            {
+                _isEnabled = false;
+                if (client != null && client.IsInitialized)
+                {
+                    client.Disconnect();
+                }
+                AttachNotification("TwitchChatMod Notifications Disabled.", "null");
+                UnityModManager.Logger.Log("[TwitchChat] Mod Disabled!");
+                ModEntry.Enabled = false;
+            }
 
             return true;
         }
@@ -118,7 +122,7 @@ namespace TwitchChat
             {
                 if (IsModEnabledAndWorldReadyForInteraction())
                 {
-
+                    AttachNotification("TwitchChatMod is enabled and ready for interaction.", "null");
                 }
             } catch (Exception e) {
                 ModEntry.Logger.Log(e.ToString());
@@ -129,66 +133,65 @@ namespace TwitchChat
             if (!_isEnabled) {
                 return false;
             }
-            if (LoadingScreenManager.IsLoading) {
-                return false;
-            }
-            if (!WorldStreamingInit.IsLoaded) {
+            if (UnityEngine.Object.FindObjectOfType<NotificationManager>() == null)
+            {
                 return false;
             }
             return true;
         }
 
-        private static bool LoadCredentials()
+        private static bool LoadSettings()
         {
-            // Check if the file exists
-            if (!File.Exists(credentialsFilePath))
-            {
-                UnityModManager.Logger.Log($"[TwitchChat] Credentials file not found: {credentialsFilePath}");
-                return false;
-            }
+            UnityModManager.Logger.Log("[TwitchChat] Attempting to load settings.");
 
-            // Load the XML document
-            var xmlDoc = new XmlDocument();
-            xmlDoc.Load(credentialsFilePath);
+            // Load the settings
+            XmlSettings settings = new();
+            CredentialsSettings credentials = new();
+            CredentialsTokenSettings credentialsToken = new();
+            StandardMessagesSettings messages = new();
 
-            // Log the contents of the credentialsData object
-            twitchUsername = xmlDoc.SelectSingleNode("//Credentials/Username")?.InnerText ?? string.Empty;
-            twitchToken = xmlDoc.SelectSingleNode("//Credentials/Token")?.InnerText ?? string.Empty;
-            twitchChannel = xmlDoc.SelectSingleNode("//Credentials/Channel")?.InnerText ?? string.Empty;
+            // Add debug logs to check if settings are loaded correctly
+            UnityModManager.Logger.Log($"[TwitchChat] Loaded Settings: {settings}");
+            UnityModManager.Logger.Log($"[TwitchChat] Loaded CredentialsSettings: {credentials}");
+            UnityModManager.Logger.Log($"[TwitchChat] Loaded StandardMessagesSettings: {messages}");
 
+            // Log detailed settings values
+            UnityModManager.Logger.Log($"[TwitchChat] Settings - Message Duration: {settings.messageDuration}");
+            UnityModManager.Logger.Log($"[TwitchChat] CredentialsSettings - Username: {credentials.twitchUsername}");
+            UnityModManager.Logger.Log($"[TwitchChat] CredentialsSettings - Token: {credentialsToken.twitchToken}");
+            UnityModManager.Logger.Log($"[TwitchChat] CredentialsSettings - Channel: {credentials.twitchChannel}");
+            UnityModManager.Logger.Log($"[TwitchChat] StandardMessagesSettings - Welcome Message: {messages.welcomeMessage}");
+            UnityModManager.Logger.Log($"[TwitchChat] StandardMessagesSettings - Info Message: {messages.infoMessage}");
+            UnityModManager.Logger.Log($"[TwitchChat] StandardMessagesSettings - Command Message: {messages.commandMessage}");
+            UnityModManager.Logger.Log($"[TwitchChat] StandardMessagesSettings - New Follower Message: {messages.newFollowerMessage}");
+            UnityModManager.Logger.Log($"[TwitchChat] StandardMessagesSettings - New Subscriber Message: {messages.newSubscriberMessage}");
+        
+            messageDuration = settings.messageDuration;
+            twitchUsername = credentials.twitchUsername;
+            twitchToken = credentialsToken.twitchToken;
+            twitchChannel = credentials.twitchChannel;
+            welcomeMessage = messages.welcomeMessage;
+            infoMessage = messages.infoMessage;
+            commandMessage = messages.commandMessage;
+            newFollowerMessage = messages.newFollowerMessage;
+            newSubscriberMessage = messages.newSubscriberMessage;
+        
             UnityModManager.Logger.Log($"[TwitchChat] Username: {twitchUsername}");
             UnityModManager.Logger.Log($"[TwitchChat] Token: {twitchToken}");
             UnityModManager.Logger.Log($"[TwitchChat] Channel: {twitchChannel}");
-
-            return !string.IsNullOrEmpty(twitchUsername) && !string.IsNullOrEmpty(twitchToken);
-        }
-
-        private static bool LoadSettings()
-        {
-            // Check if the file exists
-            if (!File.Exists(settingsFilePath))
-            {
-                UnityModManager.Logger.Log($"[TwitchChat] Messages file not found: {settingsFilePath}");
-                return false;
-            }
-
-            // Load the XML document
-            var xmlDoc = new XmlDocument();
-            xmlDoc.Load(settingsFilePath);
-
-            // Log the contents of the messages object
-            welcomeMessage = xmlDoc.SelectSingleNode("//Messages/WelcomeMessage")?.InnerText ?? string.Empty;
-            infoMessage = xmlDoc.SelectSingleNode("//Messages/InfoMessage")?.InnerText ?? string.Empty;
-            commandMessage = xmlDoc.SelectSingleNode("//Messages/CommandMessage")?.InnerText ?? string.Empty;
-
+            UnityModManager.Logger.Log($"[TwitchChat] Message Duration: {messageDuration}");
             UnityModManager.Logger.Log($"[TwitchChat] Welcome Message: {welcomeMessage}");
             UnityModManager.Logger.Log($"[TwitchChat] Info Message: {infoMessage}");
             UnityModManager.Logger.Log($"[TwitchChat] Command Message: {commandMessage}");
+            UnityModManager.Logger.Log($"[TwitchChat] New Follower Message: {newFollowerMessage}");
+            UnityModManager.Logger.Log($"[TwitchChat] New Subscriber Message: {newSubscriberMessage}");
 
-            return !string.IsNullOrEmpty(twitchUsername) && !string.IsNullOrEmpty(twitchToken);
+            UnityModManager.Logger.Log("[TwitchChat] Settings loaded successfully.");
+        
+            return true;
         }
 
-        private static void InitializeLogFile()
+        private static void InitializeLogFiles()
         {
             string logDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mods", "TwitchChatMod", "ChatLogs");
             string date = DateTime.Now.ToString("yyyy-MM-dd");
@@ -224,16 +227,11 @@ namespace TwitchChat
             }
         
             UnityModManager.Logger.Log("[TwitchChat] Initializing Twitch connection...");
+
         
             try
             {
-                if (!LoadCredentials())
-                {
-                    UnityModManager.Logger.Log("[TwitchChat] Invalid credentials.");
-                    return;
-                }
-        
-                ConnectionCredentials credentials = new ConnectionCredentials(twitchUsername, twitchToken);
+                ConnectionCredentials credentials = new(twitchUsername, twitchToken);
                 client.Initialize(credentials, twitchChannel);
                 
                 client.OnLog += Client_OnLog;
@@ -299,44 +297,7 @@ namespace TwitchChat
         private static void Client_OnConnected(object sender, OnConnectedArgs e)
         {
             TwitchChatLog("Connected to Twitch!");
-            
-            // Define the path to the settings file
-            string settingsFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mods", "TwitchChatMod", "Settings.xml");
-        
-            try
-            {
-            // Check if the file exists
-            if (!File.Exists(settingsFilePath))
-            {
-                UnityModManager.Logger.Log($"[TwitchChat] Settings file not found: {settingsFilePath}");
-                return;
-            }
-        
-            // Load the XML document
-            var xmlDoc = new XmlDocument();
-            xmlDoc.Load(settingsFilePath);
-            
-            // Log the contents of the welcomeMessage element
-            var welcomeMessageNode = xmlDoc.SelectSingleNode("//Settings/welcomeMessage");
-            string welcomeMessage = welcomeMessageNode?.InnerText ?? string.Empty;
-
-            UnityModManager.Logger.Log($"[TwitchChat] Welcome Message: {welcomeMessage}");
-        
-            if (string.IsNullOrEmpty(welcomeMessage))
-            {
-                UnityModManager.Logger.Log("[TwitchChat] No welcome message defined.");
-                return;
-            }
-            else
-            {
-                SendMessageToTwitch(welcomeMessage);
-            }
-            }
-            catch (Exception ex)
-            {
-            UnityModManager.Logger.Log($"[TwitchChat] Error reading settings file: {ex.Message}");
-            }
-            TimedMessages();
+            SendMessageToTwitch(welcomeMessage);
         }
 
         private static void Client_OnConnectionError(object sender, OnConnectionErrorArgs e)
@@ -350,11 +311,6 @@ namespace TwitchChat
         }
         private static void AttachNotification(string displayed_text, string object_name)
         {
-            
-            // Retrieve the message duration from the settings
-            float message_duration = Settings.messageDuration;
-            UnityModManager.Logger.Log($"[TwitchChat] Message duration: {message_duration}");
-            
             // Find the object_name GameObject in the scene
             GameObject found_object = GameObject.Find(object_name);
         
@@ -373,7 +329,7 @@ namespace TwitchChat
                 var notification = notificationManager.ShowNotification(
                     displayed_text,             // Text?
                     null,                       // Localization parameters?
-                    message_duration,           // Duration?
+                    messageDuration,           // Duration?
                     false,                      // Clear existing notifications?
                     found_object?.transform,    // Attach to GameObject if not null
                     false,                      // Localize?
@@ -405,27 +361,31 @@ namespace TwitchChat
 
             for (int i = 1; i <= 10; i++)
             {
+                string activeKey = $"timedMessage{i}Toggle";
                 string messageKey = $"timedMessage{i}";
                 string timerKey = $"{messageKey}Timer";
-
+            
+                var activeNode = xmlDoc.SelectSingleNode($"//Settings/{activeKey}");
                 var messageNode = xmlDoc.SelectSingleNode($"//Settings/{messageKey}");
                 var timerNode = xmlDoc.SelectSingleNode($"//Settings/{timerKey}");
-
-                if (messageNode != null && timerNode != null && int.TryParse(timerNode.InnerText, out int timerValue) && timerValue > 0)
+            
+                bool isActive = activeNode != null && bool.TryParse(activeNode.InnerText, out bool active) && active;
+            
+                if (isActive && messageNode != null && timerNode != null && int.TryParse(timerNode.InnerText, out int timerValue) && timerValue > 0)
                 {
-                messages.Add(messageNode.InnerText, timerValue);
-                UnityModManager.Logger.Log($"[TwitchChat] Added message: {messageNode.InnerText} with timer: {timerValue}");
+                    messages.Add(messageNode.InnerText, timerValue);
+                    UnityModManager.Logger.Log($"[TwitchChat] Added message: {messageNode.InnerText} with timer: {timerValue}");
                 }
                 else
                 {
-                UnityModManager.Logger.Log($"[TwitchChat] Skipped adding message: {messageKey} with timer: {timerKey}");
+                    UnityModManager.Logger.Log($"[TwitchChat] Skipped adding message: {messageKey} with timer: {timerKey}");
                 }
             }
 
             // Create and start timers for each message
             foreach (var message in messages)
             {
-                Timer timer = new Timer(message.Value * 1000); // Convert seconds to milliseconds
+                Timer timer = new(message.Value * 1000); // Convert seconds to milliseconds
                 timer.Elapsed += (source, e) => SendMessageToTwitch(message.Key);
                 timer.AutoReset = true;
                 timer.Enabled = true;
@@ -461,7 +421,7 @@ namespace TwitchChat
 
             try
             {
-                using (StreamWriter writer = new StreamWriter(logFilePath, true))
+                using (StreamWriter writer = new(logFilePath, true))
                 {
                     writer.WriteLine($"{DateTime.Now:HH:mm}: {message}");
                 }
@@ -487,7 +447,7 @@ namespace TwitchChat
             {
                 try
                 {
-                    using (StreamWriter writer = new StreamWriter(messageFilePath, true))
+                    using (StreamWriter writer = new(messageFilePath, true))
                     {
                         writer.WriteLine($"{DateTime.Now:HH:mm}: {message}");
                     }

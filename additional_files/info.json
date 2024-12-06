@@ -1,9 +1,11 @@
 {
 	"Id": "TwitchChat",
-	"Version": "1.1.0",
+	"Version": "1.1.8",
 	"DisplayName": "TwitchChat",
 	"Author": "Nightiwind416",
+	"GameVersion": "build 99",
 	"EntryMethod": "TwitchChat.Main.Load",
 	"ManagerVersion": "0.27.3",
-	"Repository": "https://github.com/Nightwind416/Derail-Valley-Twitch-Chat-Mods"
+	"Homepage": "https://www.nexusmods.com/derailvalley/mods/1069",
+	"Repository": "https://github.com/Nightwind416/Derail-Valley-Twitch-Chat-Mod"
 }

@@ -21,7 +21,7 @@ A way to view Twitch chat messages from in game (especially useful for VR users)
 
 ## About The Mod
 
-This mod allows streamers to receive chat in real-time through notifications and popups directly in the game. After downloading and unzipping to the Derail Valley Mods folder, edit the credentials.json, twitchchat_settings.json, and twitch_messages.json as appropriate for your session.
+This mod allows streamers to receive chat in real-time through notifications and popups directly in the game. After downloading and unzipping to the Derail Valley Mods folder, begin a game and open the Unity Mod Manager window (default is Ctrl + F10).
 TODO: Instructions on how to configure for mod users.
 
 ## Dependencies
@@ -33,41 +33,35 @@ TODO: Instructions on how to configure for mod users.
 
 ## Features
 
-- Real-Time Twitch Chat Integration: Display messages from your Twitch chat directly in the game.
-- Subscriber Alerts: Get notified when someone subscribes.
+- Seamless Twitch Integration: Automatic login and virtually hands free operation, once a token is aquired and saved.
+- Real-Time Chat Display: Incoming chat messages are displayed directly in the game.
+  - Top left corner for 'flat screen' players and hovering a few feet out around eye level for VR players.
+- Standard Messages: Welcome, Info, and Commands messages can be individually toggled and edited.
+- Timed Messages: Edit and automatically send up to 10 unique announcements tat pre-determined intervals.
+- Follower & Subscriber Alerts: Get notified when someone follows or subscribes.
 - Message Logging: Keeps a detailed log of all chat interactions for post-stream review.
-- Automatic Chat Notifications: Display important announcements to chat periodically to keep your audience informed.
-Seamless Twitch Connection: Easy setup using a credentials file for secure access.
 
 ## Twitch Credentials
 
-Open and edit the credentials.json file:
+Aquire a token:
 
-- username - replace with your Twitch username
-- token - replace with your Twitch token
-- channel - replace with the Twitch channel name you want to join (typically the same as your username, but lowercase)
+- To be completed...
 
 ## Settings
 
-Open and edit the settings.json file:
-
-- message_duration - how long you want messages to display on screen (in seconds)
+- Display Duration: 
 
 ## Messages
 
-Open and edit the twitch_messages.json file:
-
-- The welcome message will display once the client logs into the channel
-- You can save up to 10 pre typed messages to send at pre-determined intervals
-- Each message can have a separate timer
+- Welcome Message: Will be sent to the channel
+- Info Message: You can save up to 10 pre typed messages to send at pre-determined intervals
+- Command Message: Each message can have a separate timer
 - Set a timer to 0 to disable that specific message
 
 ## Conflicts
 
-- Minor non-breaking conflict if you are also using [Dispatcher (Continued)](https://www.nexusmods.com/derailvalley/mods/743)
-- If you hold or look at a Job, any current Twitch messages will be removed.
-Any new Twitch messages that come in while holding or looking at a Job will only show for about 1-2 seconds.
-- Twitch messages received while not looking at or holding a Job are unaffected.
+- Note if you are also using [Dispatcher (Continued)](https://www.nexusmods.com/derailvalley/mods/743)
+- The popup ....
 
 ## VR Note
 
@@ -76,11 +70,14 @@ Any new Twitch messages that come in while holding or looking at a Job will only
 
 ## Future Plans
 
-- Leverage Unity Mod Manager in-game settings window
 - Add throttling and/or combining when many messages are coming in at once (mostly for VR disruption)
 - Add ability to add usernames to a local 'ignore' list
 
 ## Version History
+
+## 1.2.0 6 Dec 2024 (internal only)
+
+- Major refactor and expansion of settings and credentials info
 
 ### 1.1.0 29 Nov 2024
 
