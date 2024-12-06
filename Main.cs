@@ -218,37 +218,52 @@ namespace TwitchChat
             UnityModManager.Logger.Log($"[TwitchChat] Initialized message file: {messageFilePath}");
         }
 
-        private static void ConnectToTwitch()
+        public static void ConnectToTwitch()
         {
             if (client.IsConnected)
             {
                 UnityModManager.Logger.Log("[TwitchChat] Already connected to Twitch.");
                 return;
             }
-        
-            UnityModManager.Logger.Log("[TwitchChat] Initializing Twitch connection...");
-
-        
-            try
+            else
             {
-                ConnectionCredentials credentials = new(twitchUsername, twitchToken);
-                client.Initialize(credentials, twitchChannel);
-                
-                client.OnLog += Client_OnLog;
-                client.OnJoinedChannel += Client_OnJoinedChannel;
-                client.OnMessageReceived += Client_OnMessageReceived;
-                client.OnNewSubscriber += Client_OnNewSubscriber;
-                client.OnUserJoined += Client_OnUserJoined;
-                client.OnConnected += Client_OnConnected;
-                client.OnConnectionError += Client_OnConnectionError;
-                client.OnIncorrectLogin += Client_OnIncorrectLogin;
         
-                UnityModManager.Logger.Log("[TwitchChat] Connecting to Twitch...");
-                client.Connect();
+                UnityModManager.Logger.Log("[TwitchChat] Initializing Twitch connection...");
+            
+                try
+                {
+                    ConnectionCredentials credentials = new(twitchUsername, twitchToken);
+                    client.Initialize(credentials, twitchChannel);
+                    
+                    client.OnLog += Client_OnLog;
+                    client.OnJoinedChannel += Client_OnJoinedChannel;
+                    client.OnMessageReceived += Client_OnMessageReceived;
+                    client.OnNewSubscriber += Client_OnNewSubscriber;
+                    client.OnUserJoined += Client_OnUserJoined;
+                    client.OnConnected += Client_OnConnected;
+                    client.OnConnectionError += Client_OnConnectionError;
+                    client.OnIncorrectLogin += Client_OnIncorrectLogin;
+            
+                    UnityModManager.Logger.Log("[TwitchChat] Connecting to Twitch...");
+                    client.Connect();
+                }
+                catch (Exception ex)
+                {
+                    UnityModManager.Logger.Log($"[TwitchChat] Failed to connect to Twitch: {ex.Message}");
+                }
             }
-            catch (Exception ex)
+        }
+
+        public static void DisconnectFromTwitch()
+        {
+            if (client.IsConnected)
             {
-                UnityModManager.Logger.Log($"[TwitchChat] Failed to connect to Twitch: {ex.Message}");
+                client.Disconnect();
+            }
+            else
+            {
+                UnityModManager.Logger.Log("[TwitchChat] Already disconnected from Twitch.");
+                return;
             }
         }
 

@@ -1,11 +1,22 @@
 using UnityModManagerNet;
 using System.IO;
+using UnityEngine;
 
 namespace TwitchChat
 {
     [DrawFields(DrawFieldMask.Public)]
     public class XmlSettings : UnityModManager.ModSettings, IDrawable
     {
+        public static void DrawButtons()
+        {
+            if (GUILayout.Button("Connect to Twitch", GUILayout.Width(200))) {
+                Main.ConnectToTwitch();
+            }
+            if (GUILayout.Button("Disconnect from Twitch", GUILayout.Width(200))) {
+                Main.DisconnectFromTwitch();
+            }
+        }
+        
         [Draw("Twitch Credentials", Collapsible = true)]
         public CredentialsSettings Credentials = new();
         
