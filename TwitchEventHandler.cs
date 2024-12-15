@@ -3,48 +3,51 @@ using System;
 using System.Text.Json;
 using System.Net;
 using System.Threading.Tasks;
+using System.Reflection;
 
 namespace TwitchChat
 {
     public class TwitchEventHandler
     {
         private static readonly HttpClient httpClient = new();
-        public static string channelContent = string.Empty;
+        // public static string channelContent = string.Empty;
 
         public static async Task<string> GetUserID()
         {
-            Main.ModEntry.Logger.Log("[GetUserID] Adding Authorization and Client-Id headers.");
+            string methodName = MethodBase.GetCurrentMethod().Name;
+            Main.LogEntry(methodName, "Adding Authorization and Client-Id headers.");
             httpClient.DefaultRequestHeaders.Clear();
-            httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {Main.Settings.twitch_oauth_token}");
-            httpClient.DefaultRequestHeaders.Add("Client-Id", Main.Settings.client_id);
+            httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {Settings.Instance.twitch_oauth_token}");
+            _ = new WebSocketClient();
+            httpClient.DefaultRequestHeaders.Add("Client-Id", WebSocketClient.client_id);
         
-            Main.ModEntry.Logger.Log("[GetUserID] Sending GET request to https://api.twitch.tv/helix/users.");
-            var response = await httpClient.GetAsync($"https://api.twitch.tv/helix/users?login={Main.Settings.twitchUsername}");
-            Main.ModEntry.Logger.Log($"[GetUserID] Response status code: {response.StatusCode}");
+            Main.LogEntry(methodName, "Sending GET request to https://api.twitch.tv/helix/users.");
+            var response = await httpClient.GetAsync($"https://api.twitch.tv/helix/users?login={Settings.Instance.twitchUsername}");
+            Main.LogEntry(methodName, $"Response status code: {response.StatusCode}");
             
             if (response.StatusCode == HttpStatusCode.BadRequest)
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
-                Main.ModEntry.Logger.Log($"[GetUserID] Response error content: {errorContent}");
+                Main.LogEntry(methodName, $"Response error content: {errorContent}");
             }
         
             response.EnsureSuccessStatusCode();
         
             var content = await response.Content.ReadAsStringAsync();
-            Main.ModEntry.Logger.Log($"[GetUserID] Response content: {content}");
+            Main.LogEntry(methodName, $"Response content: {content}");
             var jsonDocument = JsonDocument.Parse(content);
             var id = jsonDocument.RootElement.GetProperty("data")[0].GetProperty("id").GetString();
         
             if (id == null)
             {
-                Main.ModEntry.Logger.Log("[GetUserID] User ID is null.");
+                Main.LogEntry(methodName, "User ID is null.");
                 throw new InvalidOperationException("User ID is null");
             }
         
-            Main.Settings.userID = id;
-            Main.ModEntry.Logger.Log($"[GetUserID] User ID: {Main.Settings.userID}");
+            WebSocketClient.userID = id;
+            Main.ModEntry.Logger.Log($"[GetUserID] User ID: {WebSocketClient.userID}");
         
-            return Main.Settings.userID;
+            return WebSocketClient.userID;
         }
 
         
@@ -54,17 +57,17 @@ namespace TwitchChat
             {
                 Main.ModEntry.Logger.Log("[ConnectionStatus] Adding Authorization and Client-Id headers.");
                 httpClient.DefaultRequestHeaders.Clear();
-                httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {Main.Settings.twitch_oauth_token}");
-                httpClient.DefaultRequestHeaders.Add("Client-Id", Main.Settings.client_id);
+                httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {Settings.Instance.twitch_oauth_token}");
+                httpClient.DefaultRequestHeaders.Add("Client-Id", WebSocketClient.client_id);
 
                 Main.ModEntry.Logger.Log("[ConnectionStatus] Sending GET request to https://api.twitch.tv/helix/users.");
-                var userResponse = await httpClient.GetAsync($"https://api.twitch.tv/helix/users?login={Main.Settings.twitchUsername}");
+                var userResponse = await httpClient.GetAsync($"https://api.twitch.tv/helix/users?login={Settings.Instance.twitchUsername}");
                 Main.ModEntry.Logger.Log($"[ConnectionStatus] User response status code: {userResponse.StatusCode}");
 
                 if (userResponse.StatusCode == HttpStatusCode.Unauthorized)
                 {
                     Main.ModEntry.Logger.Log("[ConnectionStatus] Unauthorized. Token might be expired.");
-                    await Main.ConnectToTwitch();
+                    // await Main.ConnectToTwitch();
                     return;
                 }
 
@@ -89,7 +92,7 @@ namespace TwitchChat
                 if (channelResponse.StatusCode == HttpStatusCode.Unauthorized)
                 {
                     Main.ModEntry.Logger.Log("[ConnectionStatus] Unauthorized. Token might be expired.");
-                    await Main.ConnectToTwitch();
+                    // await Main.ConnectToTwitch();
                     return;
                 }
 
@@ -114,69 +117,69 @@ namespace TwitchChat
             }
         }
 
-        public static async Task JoinChannel()
-        {
-            if (string.IsNullOrEmpty(Main.Settings.userID))
-            {
-                Main.ModEntry.Logger.Log("[JoinChannel] User ID is not set. Fetching User ID...");
-                await GetUserID();
-            }
-            try
-            {
-                Main.ModEntry.Logger.Log("[JoinChannel] Preparing request body.");
-                var requestBody = new
-                {
-                    type = "channel.chat.message",
-                    version = "1",
-                    condition = new
-                    {
-                        broadcaster_user_id = Main.Settings.userID,
-                        user_id = Main.Settings.userID
-                    },
-                    transport = new
-                    {
-                        method = "webhook",
-                        callback = Main.Settings.callbackUrl,
-                        secret = Main.Settings.client_secret
-                    }
-                };
+        // public static async Task JoinChannel()
+        // {
+        //     if (string.IsNullOrEmpty(WebSocketClient.userID))
+        //     {
+        //         Main.ModEntry.Logger.Log("[JoinChannel] User ID is not set. Fetching User ID...");
+        //         await GetUserID();
+        //     }
+        //     try
+        //     {
+        //         Main.ModEntry.Logger.Log("[JoinChannel] Preparing request body.");
+        //         var requestBody = new
+        //         {
+        //             type = "channel.chat.message",
+        //             version = "1",
+        //             condition = new
+        //             {
+        //                 broadcaster_user_id = WebSocketClient.userID,
+        //                 user_id = WebSocketClient.userID
+        //             },
+        //             transport = new
+        //             {
+        //                 method = "webhook",
+        //                 callback = WebSocketClient.callbackUrl,
+        //                 secret = WebSocketClient.client_secret
+        //             }
+        //         };
 
-                var jsonRequestBody = JsonSerializer.Serialize(requestBody);
-                Main.ModEntry.Logger.Log($"[JoinChannel] Request body prepared: {jsonRequestBody}");
+        //         var jsonRequestBody = JsonSerializer.Serialize(requestBody);
+        //         Main.ModEntry.Logger.Log($"[JoinChannel] Request body prepared: {jsonRequestBody}");
 
-                var content = new StringContent(jsonRequestBody, System.Text.Encoding.UTF8, "application/json");
-                Main.ModEntry.Logger.Log("[JoinChannel] Headers set: Client-Id and Authorization");
-                httpClient.DefaultRequestHeaders.Clear();
-                httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {Main.Settings.twitch_oauth_token}");
-                httpClient.DefaultRequestHeaders.Add("Client-Id", Main.Settings.client_id);
+        //         var content = new StringContent(jsonRequestBody, System.Text.Encoding.UTF8, "application/json");
+        //         Main.ModEntry.Logger.Log("[JoinChannel] Headers set: Client-Id and Authorization");
+        //         httpClient.DefaultRequestHeaders.Clear();
+        //         httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {WebSocketClient.twitch_oauth_token}");
+        //         httpClient.DefaultRequestHeaders.Add("Client-Id", WebSocketClient.client_id);
 
-                Main.ModEntry.Logger.Log("[JoinChannel] Sending POST request to https://api.twitch.tv/helix/eventsub/subscriptions");
-                var response = await httpClient.PostAsync("https://api.twitch.tv/helix/eventsub/subscriptions", content);
-                Main.ModEntry.Logger.Log($"[JoinChannel] Response status code: {response.StatusCode}");
+        //         Main.ModEntry.Logger.Log("[JoinChannel] Sending POST request to https://api.twitch.tv/helix/eventsub/subscriptions");
+        //         var response = await httpClient.PostAsync("https://api.twitch.tv/helix/eventsub/subscriptions", content);
+        //         Main.ModEntry.Logger.Log($"[JoinChannel] Response status code: {response.StatusCode}");
 
-                var responseContent = await response.Content.ReadAsStringAsync();
-                Main.ModEntry.Logger.Log($"[JoinChannel] Response content: {responseContent}");
+        //         var responseContent = await response.Content.ReadAsStringAsync();
+        //         Main.ModEntry.Logger.Log($"[JoinChannel] Response content: {responseContent}");
 
-                if (response.StatusCode == HttpStatusCode.Forbidden)
-                {
-                    Main.ModEntry.Logger.Log("[JoinChannel] Forbidden. Check if the token has the required scopes.");
-                }
+        //         if (response.StatusCode == HttpStatusCode.Forbidden)
+        //         {
+        //             Main.ModEntry.Logger.Log("[JoinChannel] Forbidden. Check if the token has the required scopes.");
+        //         }
 
-                response.EnsureSuccessStatusCode();
-            }
-            catch (HttpRequestException httpEx)
-            {
-                Main.ModEntry.Logger.Log($"[JoinChannel] HTTP request error: {httpEx.Message}");
-            }
-            catch (Exception ex)
-            {
-                Main.ModEntry.Logger.Log($"[JoinChannel] General error: {ex.Message}");
-            }
-        }
+        //         response.EnsureSuccessStatusCode();
+        //     }
+        //     catch (HttpRequestException httpEx)
+        //     {
+        //         Main.ModEntry.Logger.Log($"[JoinChannel] HTTP request error: {httpEx.Message}");
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         Main.ModEntry.Logger.Log($"[JoinChannel] General error: {ex.Message}");
+        //     }
+        // }
 
         public static async Task SendMessage(string message)
         {
-            if (string.IsNullOrEmpty(Main.Settings.userID))
+            if (string.IsNullOrEmpty(WebSocketClient.userID))
             {
                 Main.ModEntry.Logger.Log("[SendMessage] User ID is not set. Fetching User ID...");
                 await GetUserID();
@@ -186,8 +189,8 @@ namespace TwitchChat
                 Main.ModEntry.Logger.Log("[SendMessage] Preparing request body.");
                 var requestBody = new
                 {
-                    broadcaster_id = Main.Settings.userID,
-                    sender_id = Main.Settings.userID,
+                    broadcaster_id = WebSocketClient.userID,
+                    sender_id = WebSocketClient.userID,
                     message
                 };
 
@@ -198,8 +201,8 @@ namespace TwitchChat
 
                 Main.ModEntry.Logger.Log("[SendMessage] Headers set: Client-Id and Authorization");
                 httpClient.DefaultRequestHeaders.Clear();
-                httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {Main.Settings.twitch_oauth_token}");
-                httpClient.DefaultRequestHeaders.Add("Client-Id", Main.Settings.client_id);
+                httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {Settings.Instance.twitch_oauth_token}");
+                httpClient.DefaultRequestHeaders.Add("Client-Id", WebSocketClient.client_id);
 
                 Main.ModEntry.Logger.Log("[SendMessage] Sending POST request to https://api.twitch.tv/helix/chat/messages");
                 var response = await httpClient.PostAsync("https://api.twitch.tv/helix/chat/messages", content);
@@ -211,7 +214,7 @@ namespace TwitchChat
                 if (response.StatusCode == HttpStatusCode.Unauthorized)
                 {
                     Main.ModEntry.Logger.Log("[SendMessage] Unauthorized. Token might be expired.");
-                    await Main.ConnectToTwitch();
+                    // await Main.ConnectToTwitch();
                     return;
                 }
 
