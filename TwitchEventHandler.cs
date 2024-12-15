@@ -4,6 +4,8 @@ using System.Text.Json;
 using System.Net;
 using System.Threading.Tasks;
 using System.Reflection;
+using Newtonsoft.Json;
+using System.Text;
 
 namespace TwitchChat
 {
@@ -191,7 +193,7 @@ namespace TwitchChat
                     message
                 };
 
-                var jsonRequestBody = JsonSerializer.Serialize(requestBody);
+                var jsonRequestBody = System.Text.Json.JsonSerializer.Serialize(requestBody);
                 Main.ModEntry.Logger.Log($"[SendMessage] Request body prepared: {jsonRequestBody}");
 
                 var content = new StringContent(jsonRequestBody, System.Text.Encoding.UTF8, "application/json");
@@ -223,6 +225,40 @@ namespace TwitchChat
             catch (Exception ex)
             {
                 Main.ModEntry.Logger.Log($"[SendMessage] General error: {ex.Message}");
+            }
+        }
+        public static async Task SendChatMessageHTTP(string chatMessage)
+        {
+            string methodName = MethodBase.GetCurrentMethod().Name;
+            Main.LogEntry(methodName, $"Preparing to send chat message: {chatMessage}");
+        
+            var content = new StringContent(JsonConvert.SerializeObject(new
+            {
+                broadcaster_id = Settings.Instance.userID,
+                sender_id = Settings.Instance.userID,
+                message = chatMessage
+            }), Encoding.UTF8, "application/json");
+        
+            Main.LogEntry(methodName, $"Created content: {content}");
+        
+            try
+            {
+                var response = await httpClient.PostAsync("https://api.twitch.tv/helix/chat/messages", content);
+                Main.LogEntry(methodName, $"Received response: {response.StatusCode}");
+        
+                if (response.StatusCode != System.Net.HttpStatusCode.OK)
+                {
+                    Main.LogEntry(methodName, "Failed to send chat message.");
+                }
+                else
+                {
+                    Main.LogEntry(methodName, $"Sent chat message: {chatMessage}");
+                    Main.LogEntry("SentMessage", $"Sent Message: {chatMessage}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Main.LogEntry(methodName, $"Exception occurred: {ex.Message}");
             }
         }
     }

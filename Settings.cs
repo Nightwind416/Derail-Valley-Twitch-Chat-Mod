@@ -19,8 +19,10 @@ namespace TwitchChat
         public string client_id = "qjklmbrascxsqow5gsvl6la72txnes";
         private bool getOathTokenFlag = false;
         private bool connectToWebSocketFlag = false;
+        private bool disconnectFromWebSocketFlag = false;
         private bool connectionStatusFlag = false;
-        private bool sendSocketMessageFlag = false;
+        private bool sendChatMessageHttpFlag = false;
+        private bool sendChatMessageSocketFlag = false;
         private bool getUserIDAPIFlag = false;
         private bool getUserIDSocketFlag = false;
         private bool readSettingsFlag = false;
@@ -28,41 +30,52 @@ namespace TwitchChat
         private bool printCurrentSettingsFlag = false;
         public void DrawButtons()
         {
-            GUILayout.BeginHorizontal();
             if (GUILayout.Button("Get Oath Token", GUILayout.Width(200))) {
-                getOathTokenFlag = true;
+            getOathTokenFlag = true;
             }
+
+            GUILayout.Label("WebSocket Actions");
+            GUILayout.BeginHorizontal();
             if (GUILayout.Button("Connect to WebSocket", GUILayout.Width(200))) {
-                connectToWebSocketFlag = true;
+            connectToWebSocketFlag = true;
+            }
+            if (GUILayout.Button("Disconnect from WebSocket", GUILayout.Width(200))) {
+            disconnectFromWebSocketFlag = true;
             }
             GUILayout.EndHorizontal();
         
+            GUILayout.Label("User ID Actions");
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Get User ID API", GUILayout.Width(200))) {
-                getUserIDAPIFlag = true;
+            getUserIDAPIFlag = true;
             }
             if (GUILayout.Button("Get User ID Socket", GUILayout.Width(200))) {
-                getUserIDSocketFlag = true;
+            getUserIDSocketFlag = true;
             }
             GUILayout.EndHorizontal();
         
+            GUILayout.Label("Send Test Messages");
             GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Send test HTTP message", GUILayout.Width(200))) {
+            sendChatMessageHttpFlag = true;
+            }
             if (GUILayout.Button("Send test Socket message", GUILayout.Width(200))) {
-                sendSocketMessageFlag = true;
+            sendChatMessageSocketFlag = true;
             }
             GUILayout.EndHorizontal();
         
+            GUILayout.Label("Settings Actions");
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Read Settings From File", GUILayout.Width(200))) {
-                readSettingsFlag = true;
+            readSettingsFlag = true;
             }
             if (GUILayout.Button("Apply Settings From File", GUILayout.Width(200))) {
-                applySettingsFlag = true;
+            applySettingsFlag = true;
             }
             GUILayout.EndHorizontal();
         
             if (GUILayout.Button("Print current variable data", GUILayout.Width(200))) {
-                printCurrentSettingsFlag = true;
+            printCurrentSettingsFlag = true;
             }
         }
 
@@ -100,6 +113,11 @@ namespace TwitchChat
                 connectToWebSocketFlag = false;
                 _ = WebSocketClient.ConnectToWebSocket();
             }
+            if (disconnectFromWebSocketFlag)
+            {
+                disconnectFromWebSocketFlag = false;
+                _ = WebSocketClient.DisconnectFromoWebSocket();
+            }
             if (connectionStatusFlag)
             {
                 connectionStatusFlag = false;
@@ -115,10 +133,15 @@ namespace TwitchChat
                 getUserIDSocketFlag = false;
                 _ = WebSocketClient.GetUserIdAsync();
             }
-            if (sendSocketMessageFlag)
+            if (sendChatMessageHttpFlag)
             {
-                sendSocketMessageFlag = false;
-                _ = WebSocketClient.SendChatMessage("Test Socket message from Derail Valley");
+                sendChatMessageHttpFlag = false;
+                _ = TwitchEventHandler.SendChatMessageHTTP("Test HTTP message from Derail Valley");
+            }
+            if (sendChatMessageSocketFlag)
+            {
+                sendChatMessageSocketFlag = false;
+                _ = WebSocketClient.SendChatMessageWebSocket("Test Socket message from Derail Valley");
             }
             if (readSettingsFlag)
             {
