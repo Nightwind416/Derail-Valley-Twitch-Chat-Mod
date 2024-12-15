@@ -1,5 +1,4 @@
 using System;
-// using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -7,11 +6,9 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
-// using System.Xml;
 using DV.UIFramework;
 using UnityEngine;
 using UnityModManagerNet;
-// using System.Xml.Serialization;
 using System.Reflection;
 
 namespace TwitchChat
@@ -21,7 +18,6 @@ namespace TwitchChat
         private static bool _isEnabled;
         public static bool _dispatcherModDetected;
         public static UnityModManager.ModEntry ModEntry { get; private set; } = null!;
-        // public static Settings Settings { get; set; } = null!;
         public static HttpClient httpClient = new();
         public static string settingsFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mods", "TwitchChatMod", "Settings.xml");
         private static string debugLog = string.Empty;
@@ -307,21 +303,6 @@ namespace TwitchChat
                 LogEntry(methodName, $"Failed to connect to Twitch: {ex.Message}");
             }
         }
-
-        // public static void DisconnectFromTwitch()
-        // {
-        //     string methodName = MethodBase.GetCurrentMethod().Name;
-        //     if (httpClient.DefaultRequestHeaders.Contains("Authorization"))
-        //     {
-        //         httpClient.DefaultRequestHeaders.Remove("Authorization");
-        //         LogEntry(methodName, "Disconnected from Twitch.");
-        //     }
-        //     else
-        //     {
-        //         LogEntry(methodName, "Already disconnected from Twitch.");
-        //         return;
-        //     }
-        // }
 
         private static void AttachNotification(string displayed_text, string object_name)
         {

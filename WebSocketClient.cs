@@ -17,15 +17,8 @@ namespace TwitchChat
         private static ClientWebSocket _webSocket = new();
         private static readonly Uri _serverUri = new("wss://eventsub.wss.twitch.tv/ws");
         public static string _sessionId = string.Empty;
-        public static string userID = string.Empty;
-        // public static string twitch_oauth_token = string.Empty;
         public static string client_id = "qjklmbrascxsqow5gsvl6la72txnes";
-        // public string client_secret = string.Empty;
-        // public string manual_token = string.Empty;
         private static string refresh_token = string.Empty;
-        // private static readonly HttpClient httpClient = new();
-
-        // private static readonly HttpClient httpClient = new()
         private static readonly HttpClient httpClient = new(new LoggingHttpClientHandler())
         {
             Timeout = TimeSpan.FromSeconds(60) // Set the timeout to 60 seconds
@@ -168,6 +161,7 @@ namespace TwitchChat
         public static async Task<bool> GetUserIdAsync()
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
+
             var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.twitch.tv/helix/users?login={Settings.Instance.twitchUsername}");
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", Settings.Instance.twitch_oauth_token);
             request.Headers.Add("Client-Id", client_id);
@@ -180,8 +174,16 @@ namespace TwitchChat
                 var user_id = json["data"]?[0]?["id"]?.ToString();
                 if (!string.IsNullOrEmpty(user_id))
                 {
-                    Main.LogEntry(methodName, $"User ID for {Settings.Instance.twitchUsername}: {user_id}");
-                    return true;
+                    if (user_id != null)
+                    {
+                        Settings.Instance.userID = user_id;
+                        Main.LogEntry(methodName, $"User ID for {Settings.Instance.twitchUsername}: {user_id}");
+                        return true;
+                    }
+                    else
+                    {
+                        Main.LogEntry(methodName, "User ID is null.");
+                    }
                 }
             }
             else
@@ -292,8 +294,8 @@ namespace TwitchChat
         
             var content = new StringContent(JsonConvert.SerializeObject(new
             {
-                broadcaster_id = userID,
-                sender_id = userID,
+                broadcaster_id = Settings.Instance.userID,
+                sender_id = Settings.Instance.userID,
                 message = chatMessage
             }), Encoding.UTF8, "application/json");
         
@@ -335,8 +337,8 @@ namespace TwitchChat
                 version = "1",
                 condition = new
                 {
-                    broadcaster_user_id = userID,
-                    user_id = userID
+                    broadcaster_user_id = Settings.Instance.userID,
+                    user_id = Settings.Instance.userID
                 },
                 transport = new
                 {

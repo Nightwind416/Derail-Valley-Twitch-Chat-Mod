@@ -10,7 +10,6 @@ namespace TwitchChat
     public class TwitchEventHandler
     {
         private static readonly HttpClient httpClient = new();
-        // public static string channelContent = string.Empty;
 
         public static async Task<string> GetUserID()
         {
@@ -44,10 +43,10 @@ namespace TwitchChat
                 throw new InvalidOperationException("User ID is null");
             }
         
-            WebSocketClient.userID = id;
-            Main.ModEntry.Logger.Log($"[GetUserID] User ID: {WebSocketClient.userID}");
+            Settings.Instance.userID = id;
+            Main.ModEntry.Logger.Log($"[GetUserID] User ID: {Settings.Instance.userID}");
         
-            return WebSocketClient.userID;
+            return Settings.Instance.userID;
         }
 
         
@@ -67,7 +66,6 @@ namespace TwitchChat
                 if (userResponse.StatusCode == HttpStatusCode.Unauthorized)
                 {
                     Main.ModEntry.Logger.Log("[ConnectionStatus] Unauthorized. Token might be expired.");
-                    // await Main.ConnectToTwitch();
                     return;
                 }
 
@@ -92,7 +90,6 @@ namespace TwitchChat
                 if (channelResponse.StatusCode == HttpStatusCode.Unauthorized)
                 {
                     Main.ModEntry.Logger.Log("[ConnectionStatus] Unauthorized. Token might be expired.");
-                    // await Main.ConnectToTwitch();
                     return;
                 }
 
@@ -179,7 +176,7 @@ namespace TwitchChat
 
         public static async Task SendMessage(string message)
         {
-            if (string.IsNullOrEmpty(WebSocketClient.userID))
+            if (string.IsNullOrEmpty(Settings.Instance.userID))
             {
                 Main.ModEntry.Logger.Log("[SendMessage] User ID is not set. Fetching User ID...");
                 await GetUserID();
@@ -189,8 +186,8 @@ namespace TwitchChat
                 Main.ModEntry.Logger.Log("[SendMessage] Preparing request body.");
                 var requestBody = new
                 {
-                    broadcaster_id = WebSocketClient.userID,
-                    sender_id = WebSocketClient.userID,
+                    broadcaster_id = Settings.Instance.userID,
+                    sender_id = Settings.Instance.userID,
                     message
                 };
 
@@ -214,7 +211,6 @@ namespace TwitchChat
                 if (response.StatusCode == HttpStatusCode.Unauthorized)
                 {
                     Main.ModEntry.Logger.Log("[SendMessage] Unauthorized. Token might be expired.");
-                    // await Main.ConnectToTwitch();
                     return;
                 }
 

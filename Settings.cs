@@ -4,9 +4,6 @@ using UnityEngine;
 using System;
 using System.Reflection;
 using System.Xml.Serialization;
-using System.Security.Principal;
-using JetBrains.Annotations;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace TwitchChat
 {
@@ -17,17 +14,12 @@ namespace TwitchChat
         public static Settings Instance { get; set; } = null!;
         public string twitchUsername = string.Empty;
         public string twitchChannel = string.Empty;
+        public string twitch_oauth_token = string.Empty;
+        public string userID = string.Empty;
         public string client_id = "qjklmbrascxsqow5gsvl6la72txnes";
-        // public string client_secret = string.Empty;
-        // public string manual_token = string.Empty;
-        // public string callbackUrl = "https://localhost:3000/";
-        // public string refresh_token = string.Empty;
-        // public string twitch_oauth_token = string.Empty;
-        // public string userID = string.Empty;
         private bool getOathTokenFlag = false;
         private bool connectToWebSocketFlag = false;
         private bool connectionStatusFlag = false;
-        // private bool sendAPIMessageFlag = false;
         private bool sendSocketMessageFlag = false;
         private bool getUserIDAPIFlag = false;
         private bool getUserIDSocketFlag = false;
@@ -73,7 +65,6 @@ namespace TwitchChat
                 printCurrentSettingsFlag = true;
             }
         }
-        public string twitch_oauth_token = string.Empty;
 
         public string tempToken = string.Empty;
         public int messageDuration = 20;
