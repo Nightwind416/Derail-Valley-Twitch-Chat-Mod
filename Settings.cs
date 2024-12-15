@@ -1,35 +1,64 @@
 using UnityModManagerNet;
 using System.IO;
 using UnityEngine;
+using System;
 
 namespace TwitchChat
 {
     [DrawFields(DrawFieldMask.Public)]
+    [Serializable]
     public class Settings : UnityModManager.ModSettings, IDrawable
     {
-        public static async void DrawButtons()
+        public string twitchUsername = "Nightwind416";
+        public string twitchChannel = "nightwind416";
+        public string client_id = "qjklmbrascxsqow5gsvl6la72txnes";
+        public string client_secret = "7fmru5kdzx6c5mzpjisk2u9l7d8u9i";
+        public string manual_token = "oath";
+        public string callbackUrl = "https://localhost:3000/";
+        public string logFilePath = string.Empty;
+        public string messageFilePath = string.Empty;
+        public string twitch_oauth_token = string.Empty;
+        public string settingsFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mods", "TwitchChatMod", "Settings.xml");
+        public string userID = string.Empty;
+        private bool connectToTwitchFlag = false;
+        private bool connectToWebSocketFlag = false;
+        private bool connectionStatusFlag = false;
+        private bool getUserIDFlag = false;
+        private bool joinChannelFlag = false;
+        private bool sendMessageFlag = false;
+        private bool readSettingsFlag = false;
+        private bool applySettingsFlag = false;
+        private bool printCurrentSettingsFlag = false;
+        public void DrawButtons()
         {
             if (GUILayout.Button("Connect to Twitch", GUILayout.Width(200))) {
-                Main.ConnectToTwitch();
+                connectToTwitchFlag = true;
+            }
+            if (GUILayout.Button("Connect to WebSocket", GUILayout.Width(200))) {
+                connectToWebSocketFlag = true;
             }
             if (GUILayout.Button("Connection Status", GUILayout.Width(200))) {
-                await TwitchEventHandler.ConnectionStatus();
+                connectionStatusFlag = true;
             }
             if (GUILayout.Button("Get User ID", GUILayout.Width(200))) {
-                await TwitchEventHandler.GetUserID();
+                getUserIDFlag = true;
             }
             if (GUILayout.Button("Join Channel", GUILayout.Width(200))) {
-                await TwitchEventHandler.JoinChannel();
+                joinChannelFlag = true;
             }
             if (GUILayout.Button("Send test message", GUILayout.Width(200))) {
-                await TwitchEventHandler.SendMessage(message: "Test message from Derail Valley");
+                sendMessageFlag = true;
+            }
+            if (GUILayout.Button("Read Settings From File", GUILayout.Width(200))) {
+                readSettingsFlag = true;
+            }
+            if (GUILayout.Button("Apply Settings From File", GUILayout.Width(200))) {
+                applySettingsFlag = true;
+            }
+            if (GUILayout.Button("Print current variable data", GUILayout.Width(200))) {
+                printCurrentSettingsFlag = true;
             }
         }
-
-        public static string twitchUsername = "TwitchUsernameNotSet";
-        public static string twitchChannel = "TwitchChannelNotSet";
-        public static readonly string client_id = "ClientIDNotSet";
-        public static readonly string client_secret = "ClientSecretNotSet";
         
         // public int messageDuration = 20;
         // public bool welcomeMessageActive = true;
@@ -50,42 +79,58 @@ namespace TwitchChat
         // public string TimedMessage1 = "MessageNotSet";
         // public float TimedMessage1Timer = 0;
     
-        // public bool TimedMessage2Toggle = false;
-        // public string TimedMessage2 = "MessageNotSet";
-        // public float TimedMessage2Timer = 0;
-    
-        // public bool TimedMessage3Toggle = false;
-        // public string TimedMessage3 = "MessageNotSet";
-        // public float TimedMessage3Timer = 0;
-    
-        // public bool TimedMessage4Toggle = false;
-        // public string TimedMessage4 = "MessageNotSet";
-        // public float TimedMessage4Timer = 0;
-    
-        // public bool TimedMessage5Toggle = false;
-        // public string TimedMessage5 = "MessageNotSet";
-        // public float TimedMessage5Timer = 0;
-    
-        // public bool TimedMessage6Toggle = false;
-        // public string TimedMessage6 = "MessageNotSet";
-        // public float TimedMessage6Timer = 0;
-    
-        // public bool TimedMessage7Toggle = false;
-        // public string TimedMessage7 = "MessageNotSet";
-        // public float TimedMessage7Timer = 0;
-    
-        // public bool TimedMessage8Toggle = false;
-        // public string TimedMessage8 = "MessageNotSet";
-        // public float TimedMessage8Timer = 0;
-    
-        // public bool TimedMessage9Toggle = false;
-        // public string TimedMessage9 = "MessageNotSet";
-        // public float TimedMessage9Timer = 0;
-    
-        // public bool TimedMessage10Toggle = false;
-        // public string TimedMessage10 = "MessageNotSet";
-        // public float TimedMessage10Timer = 0;
 
+        public void Update()
+        {
+            _ = this;
+
+            if (connectToTwitchFlag)
+            {
+                connectToTwitchFlag = false;
+                _ = Main.ConnectToTwitch();
+            }
+            if (connectToWebSocketFlag)
+            {
+                connectToWebSocketFlag = false;
+                _ = WebSocketClient.ConnectToWebSocket();
+            }
+            if (connectionStatusFlag)
+            {
+                connectionStatusFlag = false;
+                _ = TwitchEventHandler.ConnectionStatus();
+            }
+            if (getUserIDFlag)
+            {
+                getUserIDFlag = false;
+                _ = TwitchEventHandler.GetUserID();
+            }
+            if (joinChannelFlag)
+            {
+                joinChannelFlag = false;
+                _ = TwitchEventHandler.JoinChannel();
+            }
+            if (sendMessageFlag)
+            {
+                sendMessageFlag = false;
+                _ = TwitchEventHandler.SendMessage(message: "Test message from Derail Valley");
+            }
+            if (readSettingsFlag)
+            {
+                readSettingsFlag = false;
+                Main.ReadSettingsFromFile();
+            }
+            if (applySettingsFlag)
+            {
+                applySettingsFlag = false;
+                Main.ApplySettingsFromFile();
+            }
+            if (printCurrentSettingsFlag)
+            {
+                printCurrentSettingsFlag = false;
+                Main.PrintCurrentSettings();
+            }
+        }
+        public Settings() { }
         public override void Save(UnityModManager.ModEntry entry) {
             Save(this, entry);
         }

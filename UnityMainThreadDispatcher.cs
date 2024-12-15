@@ -31,6 +31,7 @@ public class UnityMainThreadDispatcher : MonoBehaviour
         }
     }
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "<Pending>")]
     private void Update()
     {
         lock (_executionQueue)
