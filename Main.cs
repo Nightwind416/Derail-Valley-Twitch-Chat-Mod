@@ -152,40 +152,60 @@ namespace TwitchChat
             
         }
 
-        private static void AttachNotification(string displayed_text, string object_name)
+        public static void AttachNotification(string displayed_text, string object_name)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
+            LogEntry(methodName, $"Begining attahch notification attempt...");
+
             // Find the object_name GameObject in the scene
             GameObject found_object = GameObject.Find(object_name);
-        
+            if (found_object == null)
+            {
+                LogEntry(methodName, $"GameObject with name {object_name} not found in the scene.");
+            }
+            else
+            {
+                LogEntry(methodName, $"GameObject with name {object_name} found.");
+            }
+
             // Find NotificationManager in the scene
             NotificationManager notificationManager = UnityEngine.Object.FindObjectOfType<NotificationManager>();
-        
             if (notificationManager == null)
             {
                 LogEntry(methodName, "NotificationManager not found in the scene.");
                 return;
             }
-        
+
+            LogEntry(methodName, $"NotificationManager found in the scene, continuing...");
+
             try
             {
                 // Set default duration to 15 if no value is set
                 int duration = 15;
 
                 // Display a notification, attached to the found_object if it's not null
+                LogEntry(methodName, $"Duration: {duration} seconds.");
+                LogEntry(methodName, $"Object: {object_name}");
+                LogEntry(methodName, $"Text: {displayed_text}");
                 var notification = notificationManager.ShowNotification(
                     displayed_text,             // Text?
                     null,                       // Localization parameters?
                     duration,                   // Duration?
                     false,                      // Clear existing notifications?
-                    found_object?.transform,    // Attach to GameObject if not null
+                    // found_object?.transform,    // Attach to GameObject if not null
+                    null,                       // Temp skip attaching to GameObject...ie 'anything'
                     false,                      // Localize?
                     false                       // Target UI?
                 );
+
+                LogEntry(methodName, "Notification displayed successfully.");
             }
             catch (Exception ex)
             {
-                LogEntry(methodName, $"Error showing notification and text: {displayed_text}\nException: {ex.Message}\nStack Trace: {ex.StackTrace}");
+                LogEntry(methodName, $"Error showing notification with text: {displayed_text}");
+                LogEntry(methodName, $"Exception: {ex.Message}");
+                LogEntry(methodName, $"Stack Trace: {ex.StackTrace}");
+                LogEntry(methodName, $"Inner Exception: {ex.InnerException?.Message}");
             }
         }
 

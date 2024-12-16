@@ -17,7 +17,7 @@ namespace TwitchChat
 
         public static async Task GetOathToken()
         {
-            string methodName = MethodBase.GetCurrentMethod().Name;
+            string methodName = "GetOathToken";
             Main.LogEntry(methodName, "Sending oath Token request to Twitch...");
         
             try
@@ -92,6 +92,7 @@ namespace TwitchChat
                         Main.LogEntry(methodName, $"Access token: {accessToken}");
                         WebSocketClient.oath_access_token = accessToken;
                         await GetUserID();
+                        await WebSocketClient.ConnectToWebSocket();
                     }
                     else
                     {

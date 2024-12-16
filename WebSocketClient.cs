@@ -116,7 +116,7 @@ namespace TwitchChat
 
         private static async Task ReceiveMessages()
         {
-            string methodName = MethodBase.GetCurrentMethod().Name;
+            string methodName = "ReceiveMessages";
             var buffer = new byte[1024 * 4];
             while (webSocketClient.State == WebSocketState.Open)
             {
@@ -133,6 +133,7 @@ namespace TwitchChat
                         Main.LogEntry(methodName, $"Session ID: {session_id}");
         
                         await RegisterEventSubListeners();
+                        await TwitchEventHandler.SendChatMessageHTTP("TwitchChat connected to WebSocket and listening for messages.");
                     }
                     else if (jsonMessage?.metadata?.message_type == "subscription_success")
                     {
@@ -183,6 +184,7 @@ namespace TwitchChat
         
                 Main.LogEntry(methodName, $"Message: #{chatter}: {text}");
                 Main.LogEntry("ReceivedMessage", $"{chatter}: {text}");
+                Main.AttachNotification($"{chatter}: {text}", "null");
 
                 text = jsonMessage.payload.@event.message.text.ToString();
         
