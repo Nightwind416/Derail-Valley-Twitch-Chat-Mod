@@ -2,9 +2,6 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 using System.Threading;
 using DV.UIFramework;
 using UnityEngine;
@@ -22,8 +19,8 @@ namespace TwitchChat
         public static string settingsFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mods", "TwitchChatMod", "Settings.xml");
         private static string debugLog = string.Empty;
         private static string messageLog = string.Empty;
+        private static readonly string encodedClientId = "cWprbG1icmFzY3hzcW93NWdzdmw2bGE3MnR4bmVz"; // Base64 encoded client_id
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "<Pending>")]
         private static bool Load(UnityModManager.ModEntry modEntry)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
@@ -63,9 +60,6 @@ namespace TwitchChat
             // Initialize the log files
             InitializeLogFiles();
 
-            // Connect to WebSocket
-            // _ = TwitchEventHandler.ConnectToWebSocket();    
-
             ModEntry.Logger.Log("[Load] Load method completed successfully.");
             LogEntry(methodName, "Load method completed successfullyy.");
             return true;
@@ -75,7 +69,8 @@ namespace TwitchChat
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
             Settings.Instance.DrawButtons();
-            Settings.Instance.Draw(modEntry);
+            // Settings.Instance.Draw(modEntry);
+
         }
 
         private static void OnSaveGUI(UnityModManager.ModEntry modEntry)
@@ -90,7 +85,6 @@ namespace TwitchChat
             if (isEnabled)
             {
                 _isEnabled = true;
-                // TimedMessages();
                 AttachNotification("TwitchChatMod Notifications Enabled.", "null");
                 LogEntry(methodName, "Mod Enabled!");
                 ModEntry.Enabled = true;
@@ -121,92 +115,6 @@ namespace TwitchChat
                 LogEntry(methodName, $"Exception: {e}");
             }
         }
-
-        // public static bool ApplySettingsFromFile()
-        // {
-        //     string methodName = MethodBase.GetCurrentMethod().Name;
-        //     LogEntry(methodName, "Attempting to apply settings from file.");
-        
-        //     // Check if the settings file exists
-        //     if (!File.Exists(settingsFile))
-        //     {
-        //         LogEntry(methodName, "Settings file not found.");
-        //         return false;
-        //     }
-        
-        //     try
-        //     {
-        //         // Deserialize the settings from the XML file
-        //         var serializer = new XmlSerializer(typeof(Settings));
-        //         Settings applySettings;
-        //         using (var fs = new FileStream(settingsFile, FileMode.Open))
-        //         {
-        //             applySettings = (Settings)serializer.Deserialize(fs);
-        //         }
-        
-        //         // Access static members using the class name
-        //         Settings.twitchUsername = applySettings.twitchUsername;
-        //         Settings.twitchChannel = applySettings.twitchChannel;
-        //         Settings.client_id = applySettings.client_id;
-        //         Settings.client_secret = applySettings.client_secret;
-        //         Settings.manual_token = applySettings.manual_token;
-        
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         LogEntry(methodName, $"Error applying settings from file: {ex.Message}");
-        //         return false;
-        //     }
-        
-        //     return true;
-        // }
-
-        // public static void ReadSettingsFromFile()
-        // {
-        //     string methodName = MethodBase.GetCurrentMethod().Name;
-        //     LogEntry(methodName, "Attempting to read settings from file.");
-        
-        //     // Check if the settings file exists
-        //     if (!File.Exists(settingsFile))
-        //     {
-        //         LogEntry(methodName, "Settings file not found.");
-        //         return;
-        //     }
-        
-        //     try
-        //     {
-        //         // Deserialize the settings from the XML file
-        //         XmlSerializer settingsSerializer = new(typeof(Settings));
-        //         Settings readSettings;
-        //         using (FileStream settingsFileStream = new(settingsFile, FileMode.Open))
-        //         {
-        //             readSettings = (Settings)settingsSerializer.Deserialize(settingsFileStream);
-        //         }
-        
-        //         // Log the settings from the file
-        //         LogEntry(methodName, $"Settings File read successfully:");
-        //         LogEntry(methodName, $"Twitch Username: {readSettings.twitchUsername}");
-        //         LogEntry(methodName, $"Twitch Channel: {readSettings.twitchChannel}");
-        //         LogEntry(methodName, $"Client ID: {readSettings.client_id}");
-        //         LogEntry(methodName, $"Client Secret: {readSettings.client_secret}");
-        //         LogEntry(methodName, $"Manual Token: {readSettings.manual_token}");
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         LogEntry(methodName, $"Error reading settings file: {ex.Message}");
-        //     }
-        // }
-
-        // public static void PrintCurrentSettings()
-        // {
-        //     string methodName = MethodBase.GetCurrentMethod().Name;
-        //     LogEntry(methodName, $"Current settings:");
-        //     LogEntry(methodName, $"Twitch Username: {Settings.twitchUsername}");
-        //     LogEntry(methodName, $"Twitch Channel: {Settings.twitchChannel}");
-        //     LogEntry(methodName, $"Client ID: {Settings.client_id}");
-        //     LogEntry(methodName, $"Client Secret: {Settings.client_secret}");
-        //     LogEntry(methodName, $"Manual Token: {Settings.manual_token}");
-        // }
 
         private static void InitializeLogFiles()
         {
@@ -242,66 +150,6 @@ namespace TwitchChat
 
             ModEntry.Logger.Log("Log files initialized.");
             
-        }
-        
-        public static async Task GetOathToken()
-        {
-            string methodName = MethodBase.GetCurrentMethod().Name;
-            LogEntry(methodName, "Initializing Twitch connection...");
-        
-            try
-            {
-                string clientId = WebSocketClient.client_id;
-                string redirectUri = "https://localhost:3000/";
-                string scope = "chat:edit chat:read channel:bot channel:manage:broadcast channel:moderate channel:read:subscriptions user:read:chat user:read:subscriptions user:write:chat user:read:email";
-                string state = Guid.NewGuid().ToString();
-        
-                string authorizationUrl = $"https://id.twitch.tv/oauth2/authorize?response_type=token&client_id={clientId}&redirect_uri={redirectUri}&scope={Uri.EscapeDataString(scope)}&state={state}";
-                LogEntry(methodName, $"Authorization URL: {authorizationUrl}");
-        
-                // Open the authorization URL in the default web browser
-                await Task.Run(() => System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = authorizationUrl,
-                    UseShellExecute = true
-                }));
-        
-                LogEntry(methodName, "Opened Twitch authorization URL in the default web browser.");
-        
-                // Start a local HTTP listener to capture the response
-                HttpListener listener = new();
-                listener.Prefixes.Add(redirectUri);
-                listener.Start();
-                LogEntry(methodName, "Waiting for Twitch authorization response...");
-
-                CancellationTokenSource cts = new();
-                cts.CancelAfter(TimeSpan.FromSeconds(60));
-        
-                try
-                {
-                    HttpListenerContext context = await listener.GetContextAsync().WithCancellation(cts.Token);
-                    string responseString = "<html><body>You can close this window now.</body></html>";
-                    byte[] buffer = Encoding.UTF8.GetBytes(responseString);
-                    context.Response.ContentLength64 = buffer.Length;
-                    context.Response.OutputStream.Write(buffer, 0, buffer.Length);
-                    context.Response.OutputStream.Close();
-
-                    string responseUrl = context.Request.Url.ToString();
-                    LogEntry(methodName, $"Received response: {responseUrl}");
-                }
-                catch (OperationCanceledException)
-                {
-                    LogEntry(methodName, "Authorization response timed out.");
-                }
-                finally
-                {
-                    listener.Stop();
-                }
-            }
-            catch (Exception ex)
-            {
-                LogEntry(methodName, $"Failed to connect to Twitch: {ex.Message}");
-            }
         }
 
         private static void AttachNotification(string displayed_text, string object_name)
@@ -341,88 +189,6 @@ namespace TwitchChat
             }
         }
 
-        // private static void TimedMessages()
-        // {
-        //     string methodName = MethodBase.GetCurrentMethod().Name;
-        //     try
-        //     {
-        //         // Check if the file exists
-        //         if (!File.Exists(settingsFile))
-        //         {
-        //             LogEntry(methodName, $"Settings file not found: {settingsFile}");
-        //             return;
-        //         }
-
-        //         // Load the XML document
-        //         var xmlDoc = new XmlDocument();
-        //         xmlDoc.Load(settingsFile);
-
-        //         // Extract messages and their timers
-        //         var messages = new Dictionary<string, int>();
-
-        //         for (int i = 1; i <= 10; i++)
-        //         {
-        //             string activeKey = $"timedMessage{i}Toggle";
-        //             string messageKey = $"timedMessage{i}";
-        //             string timerKey = $"{messageKey}Timer";
-                
-        //             var activeNode = xmlDoc.SelectSingleNode($"//Settings/{activeKey}");
-        //             var messageNode = xmlDoc.SelectSingleNode($"//Settings/{messageKey}");
-        //             var timerNode = xmlDoc.SelectSingleNode($"//Settings/{timerKey}");
-                
-        //             bool isActive = activeNode != null && bool.TryParse(activeNode.InnerText, out bool active) && active;
-                
-        //             if (isActive && messageNode != null && timerNode != null && int.TryParse(timerNode.InnerText, out int timerValue) && timerValue > 0)
-        //             {
-        //                 messages.Add(messageNode.InnerText, timerValue);
-        //                 LogEntry(methodName, $"Added message: {messageNode.InnerText} with timer: {timerValue}");
-        //             }
-        //             else
-        //             {
-        //                 LogEntry(methodName, $"Skipped adding message: {messageKey} with timer: +{timerKey}");
-        //             }
-        //         }
-
-        //         // Create and start timers for each message
-        //         foreach (var message in messages)
-        //         {
-        //             System.Timers.Timer message_timer = new(message.Value * 1000); // Convert seconds to milliseconds
-        //             message_timer.Elapsed += (source, e) => SendMessageToTwitch(message.Key);
-        //             message_timer.AutoReset = true;
-        //             message_timer.Enabled = true;
-        //             LogEntry(methodName, $"Timer set for message: {message.Key} with interval: {message.Value * 1000} ms");
-        //         }
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         LogEntry(methodName, $"An error occurred: {ex.Message}");
-        //     }
-        // }
-
-        // private static async void SendMessageToTwitch(string message)
-        // {
-        //     string methodName = MethodBase.GetCurrentMethod().Name;
-
-        //     if (httpClient.DefaultRequestHeaders.Contains("Authorization"))
-        //     {
-        //         var content = new StringContent(System.Text.Json.JsonSerializer.Serialize(new { content = message }), Encoding.UTF8, "application/json");
-        //         var response = await httpClient.PostAsync($"https://api.twitch.tv/helix/chat/messages?broadcaster_id={Settings.twitchChannel}", content);
-
-        //         if (response.IsSuccessStatusCode)
-        //         {
-        //             LogEntry(methodName, $"{message}");
-        //         }
-        //         else
-        //         {
-        //             LogEntry(methodName, $"Failed to send message: {response.ReasonPhrase}");
-        //         }
-        //     }
-        //     else
-        //     {
-        //         LogEntry(methodName, "Unable to send message.");
-        //     }
-        // }
-
         public static void LogEntry(string source, string message)
         {
             string selected_log = (source == "ReceivedMessage" || source == "SentMessage") ? messageLog : debugLog;
@@ -457,21 +223,10 @@ namespace TwitchChat
                 }
             }
         }
-    }
-}
-
-public static class TaskExtensions
-{
-    public static async Task<T> WithCancellation<T>(this Task<T> task, CancellationToken cancellationToken)
-    {
-        var tcs = new TaskCompletionSource<bool>();
-        using (cancellationToken.Register(s => ((TaskCompletionSource<bool>)s).TrySetResult(true), tcs))
+        public static string GetClientId()
         {
-            if (task != await Task.WhenAny(task, tcs.Task))
-            {
-                throw new OperationCanceledException(cancellationToken);
-            }
+            byte[] data = Convert.FromBase64String(encodedClientId);
+            return System.Text.Encoding.UTF8.GetString(data);
         }
-        return await task;
     }
 }

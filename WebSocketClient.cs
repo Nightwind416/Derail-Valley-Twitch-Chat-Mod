@@ -14,28 +14,25 @@ namespace TwitchChat
 {
     public class WebSocketClient
     {
-        private static ClientWebSocket _webSocket = new();
-        private static readonly Uri _serverUri = new("wss://eventsub.wss.twitch.tv/ws");
-        public static string _sessionId = string.Empty;
-        public static string client_id = "qjklmbrascxsqow5gsvl6la72txnes";
+        private static ClientWebSocket webSocketClient = new();
+        private static readonly Uri serverUri = new("wss://eventsub.wss.twitch.tv/ws");
+        public static string session_id = string.Empty;
+        public static string user_id = string.Empty;
         private static string refresh_token = string.Empty;
-        private static readonly HttpClient httpClient = new(new LoggingHttpClientHandler())
-        {
-            Timeout = TimeSpan.FromSeconds(60) // Set the timeout to 60 seconds
-        };
+        public static string oath_access_token = string.Empty;
+        private static readonly HttpClient httpClient = new(new LoggingHttpClientHandler());
+        public static bool isWebSocketConnected = false;
+
         public static async Task ConnectToWebSocket()
         {
-            string methodName = MethodBase.GetCurrentMethod().Name;
+            string methodName = "ConnectToWebSocket";
             try
             {
-                await ValidateAuthToken();
+                await TwitchEventHandler.ValidateAuthToken();
 
-                if (_webSocket != null)
-                {
-                    _webSocket.Dispose();
-                }
-                _webSocket = new ClientWebSocket();
-                await _webSocket.ConnectAsync(_serverUri, CancellationToken.None);
+                webSocketClient?.Dispose();
+                webSocketClient = new ClientWebSocket();
+                await webSocketClient.ConnectAsync(serverUri, CancellationToken.None);
                 Main.LogEntry(methodName, "Connected to WebSocket server.");
 
                 // Start receiving messages
@@ -48,94 +45,13 @@ namespace TwitchChat
             }
         }
 
-        private static async Task ValidateAuthToken()
-        {
-            string methodName = MethodBase.GetCurrentMethod().Name;
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Settings.Instance.twitch_oauth_token);
-            Main.LogEntry(methodName, $"Validating token: {Settings.Instance.twitch_oauth_token}");
-
-            // Log the headers
-            foreach (var header in httpClient.DefaultRequestHeaders)
-            {
-                Main.LogEntry(methodName, $"Header: {header.Key} = {string.Join(", ", header.Value)}");
-            }
-        
-            int retryCount = 3;
-            for (int i = 0; i < retryCount; i++)
-            {
-                try
-                {
-                    var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-                    Main.LogEntry(methodName, "Sending request to Twitch API...");
-                    var response = await httpClient.GetAsync("https://id.twitch.tv/oauth2/validate");
-                    stopwatch.Stop();
-                    Main.LogEntry(methodName, $"Response status code: {response.StatusCode}, Time taken: {stopwatch.ElapsedMilliseconds} ms");
-
-                    if (response.StatusCode != System.Net.HttpStatusCode.OK)
-                    {
-                        Main.LogEntry(methodName, "Token is not valid. Refreshing token...");
-                        await RefreshAuthToken();
-                    }
-                    else
-                    {
-                        Main.LogEntry(methodName, "Validated token.");
-                    }
-
-                    // Fetch your user ID
-                    if (await GetUserIdAsync())
-                    {
-                        Main.LogEntry(methodName, "User ID automatically fetched successfully.");
-                    }
-                    else
-                    {
-                        Main.LogEntry(methodName, "Failed to automatically fetch user ID.");
-                    }
-                    break; // Exit the retry loop if successful
-                }
-                catch (HttpRequestException ex)
-                {
-                    Main.LogEntry(methodName, $"HTTP request error: {ex.Message}");
-                    if (ex.InnerException != null)
-                    {
-                        Main.LogEntry(methodName, $"Inner exception: {ex.InnerException.Message}");
-                    }
-                }
-                catch (TaskCanceledException ex)
-                {
-                    Main.LogEntry(methodName, $"Request timed out: {ex.Message}");
-                    if (ex.InnerException != null)
-                    {
-                        Main.LogEntry(methodName, $"Inner exception: {ex.InnerException.Message}");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Main.LogEntry(methodName, $"Unexpected error: {ex.Message}");
-                    if (ex.InnerException != null)
-                    {
-                        Main.LogEntry(methodName, $"Inner exception: {ex.InnerException.Message}");
-                    }
-                    Main.LogEntry(methodName, $"Stack trace: {ex.StackTrace}");
-                }
-
-                if (i < retryCount - 1)
-                {
-                    Main.LogEntry(methodName, "Retrying...");
-                    await Task.Delay(4000); // Wait for 4 seconds before retrying
-                }
-                else
-                {
-                    Main.LogEntry(methodName, "Max retry attempts reached. Giving up.");
-                }
-            }
-        }
-        private static async Task RefreshAuthToken()
+        public static async Task RefreshAuthToken()
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
             var request = new HttpRequestMessage(HttpMethod.Post, "https://id.twitch.tv/oauth2/token");
             var content = new FormUrlEncodedContent(new[]
             {
-                new KeyValuePair<string, string>("client_id", client_id),
+                new KeyValuePair<string, string>("client_id", Main.GetClientId()),
                 new KeyValuePair<string, string>("grant_type", "refresh_token"),
                 new KeyValuePair<string, string>("refresh_token", refresh_token)
             });
@@ -146,7 +62,7 @@ namespace TwitchChat
             {
                 var responseContent = await response.Content.ReadAsStringAsync();
                 var json = JObject.Parse(responseContent);
-                Settings.Instance.twitch_oauth_token = json["access_token"]?.ToString() ?? throw new Exception("Access token is null");
+                oath_access_token = json["access_token"]?.ToString() ?? throw new Exception("Access token is null");
                 refresh_token = json["refresh_token"]?.ToString() ?? throw new Exception("Refresh token is null");
                 Main.LogEntry(methodName, "Token refreshed successfully.");
             }
@@ -160,23 +76,23 @@ namespace TwitchChat
 
         public static async Task<bool> GetUserIdAsync()
         {
-            string methodName = MethodBase.GetCurrentMethod().Name;
+            string methodName = "GetUserIdAsync";
 
             var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.twitch.tv/helix/users?login={Settings.Instance.twitchUsername}");
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", Settings.Instance.twitch_oauth_token);
-            request.Headers.Add("Client-Id", client_id);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", oath_access_token);
+            request.Headers.Add("Client-Id", Main.GetClientId());
 
             var response = await httpClient.SendAsync(request);
             if (response.StatusCode == System.Net.HttpStatusCode.OK)
             {
                 var content = await response.Content.ReadAsStringAsync();
                 var json = JObject.Parse(content);
-                var user_id = json["data"]?[0]?["id"]?.ToString();
-                if (!string.IsNullOrEmpty(user_id))
+                var extracted_id = json["data"]?[0]?["id"]?.ToString();
+                if (!string.IsNullOrEmpty(extracted_id))
                 {
-                    if (user_id != null)
+                    if (extracted_id != null)
                     {
-                        Settings.Instance.userID = user_id;
+                        user_id = extracted_id;
                         Main.LogEntry(methodName, $"User ID for {Settings.Instance.twitchUsername}: {user_id}");
                         return true;
                     }
@@ -202,34 +118,40 @@ namespace TwitchChat
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
             var buffer = new byte[1024 * 4];
-            while (_webSocket.State == WebSocketState.Open)
+            while (webSocketClient.State == WebSocketState.Open)
             {
                 try
                 {
-                    var result = await _webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+                    var result = await webSocketClient.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
                     var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
                     // Main.LogEntry(methodName, $"Received message: {message}");
         
                     var jsonMessage = JsonConvert.DeserializeObject<dynamic>(message);
                     if (jsonMessage?.metadata?.message_type == "session_welcome")
                     {
-                        _sessionId = jsonMessage.payload.session.id.ToString().Trim();
-                        Main.LogEntry(methodName, $"Session ID: {_sessionId}");
+                        session_id = jsonMessage.payload.session.id.ToString().Trim();
+                        Main.LogEntry(methodName, $"Session ID: {session_id}");
         
                         await RegisterEventSubListeners();
                     }
                     else if (jsonMessage?.metadata?.message_type == "subscription_success")
                     {
+                        isWebSocketConnected = true;
                         Main.LogEntry(methodName, "Successfully subscribed to the channel.");
                     }
                     else if (jsonMessage?.metadata?.message_type == "notification")
                     {
                         HandleNotification(jsonMessage);
                     }
+                    else if (jsonMessage?.metadata?.message_type == "keepalive")
+                    {
+                        Main.LogEntry(methodName, "Received keepalive message.");
+                    }
                 }
                 catch (WebSocketException ex)
                 {
                     Main.LogEntry(methodName, $"WebSocket error: {ex.Message}");
+                    isWebSocketConnected = false;
                     break;
                 }
                 catch (Exception ex)
@@ -238,6 +160,7 @@ namespace TwitchChat
                 }
             }
         
+            isWebSocketConnected = false;
             Main.LogEntry(methodName, "WebSocket connection closed.");
         }
 
@@ -295,8 +218,8 @@ namespace TwitchChat
 
         private static async Task RegisterEventSubListeners()
         {
-            string methodName = MethodBase.GetCurrentMethod().Name;
-            if (_webSocket.State != WebSocketState.Open)
+            string methodName = "RegisterEventSubListeners";
+            if (webSocketClient.State != WebSocketState.Open)
             {
                 Main.LogEntry(methodName, "WebSocket is not open. Cannot send subscription request.");
                 return;
@@ -308,19 +231,19 @@ namespace TwitchChat
                 version = "1",
                 condition = new
                 {
-                    broadcaster_user_id = Settings.Instance.userID,
-                    user_id = Settings.Instance.userID
+                    broadcaster_user_id = user_id,
+                    user_id = user_id
                 },
                 transport = new
                 {
                     method = "websocket",
-                    session_id = _sessionId
+                    session_id = session_id
                 }
             }), Encoding.UTF8, "application/json");
         
             httpClient.DefaultRequestHeaders.Clear();
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Settings.Instance.twitch_oauth_token);
-            httpClient.DefaultRequestHeaders.Add("Client-ID", client_id);
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", oath_access_token);
+            httpClient.DefaultRequestHeaders.Add("Client-ID", Main.GetClientId());
             var response = await httpClient.PostAsync("https://api.twitch.tv/helix/eventsub/subscriptions", content);
             if (response.StatusCode != System.Net.HttpStatusCode.Accepted)
             {
@@ -335,40 +258,38 @@ namespace TwitchChat
         
         public static async Task SendChatMessageWebSocket(string chatMessage)
         {
-            string methodName = MethodBase.GetCurrentMethod().Name;
+            string methodName = "SendChatMessageWebSocket";
             Main.LogEntry(methodName, $"Preparing to send chat message: {chatMessage}");
-        
-            using (ClientWebSocket webSocket = new ClientWebSocket())
+
+            using ClientWebSocket webSocket = new();
+            try
             {
-                try
-                {
-                    await webSocket.ConnectAsync(new Uri("wss://your.websocket.server"), CancellationToken.None);
-                    Main.LogEntry(methodName, "WebSocket connection established.");
-        
-                    var messageBytes = Encoding.UTF8.GetBytes(chatMessage);
-                    var segment = new ArraySegment<byte>(messageBytes);
-        
-                    await webSocket.SendAsync(segment, WebSocketMessageType.Text, true, CancellationToken.None);
-                    Main.LogEntry(methodName, $"Sent chat message: {chatMessage}");
-        
-                    var buffer = new byte[1024];
-                    var result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
-                    var responseMessage = Encoding.UTF8.GetString(buffer, 0, result.Count);
-                    Main.LogEntry(methodName, $"Received response: {responseMessage}");
-                }
-                catch (Exception ex)
-                {
-                    Main.LogEntry(methodName, $"Exception occurred: {ex.Message}");
-                }
+                await webSocket.ConnectAsync(serverUri, CancellationToken.None);
+                Main.LogEntry(methodName, "WebSocket connection established.");
+
+                var messageBytes = Encoding.UTF8.GetBytes(chatMessage);
+                var segment = new ArraySegment<byte>(messageBytes);
+
+                await webSocket.SendAsync(segment, WebSocketMessageType.Text, true, CancellationToken.None);
+                Main.LogEntry(methodName, $"Sent chat message: {chatMessage}");
+
+                var buffer = new byte[1024];
+                var result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+                var responseMessage = Encoding.UTF8.GetString(buffer, 0, result.Count);
+                Main.LogEntry(methodName, $"Received response: {responseMessage}");
+            }
+            catch (Exception ex)
+            {
+                Main.LogEntry(methodName, $"Exception occurred: {ex.Message}");
             }
         }
 
         public static async Task DisconnectFromoWebSocket()
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
-            if (_webSocket.State == WebSocketState.Open)
+            if (webSocketClient.State == WebSocketState.Open)
             {
-                await _webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing", CancellationToken.None);
+                await webSocketClient.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing", CancellationToken.None);
                 Main.LogEntry(methodName, "Disconnected from WebSocket server.");
             }
         }

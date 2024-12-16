@@ -41,6 +41,10 @@
 			<HintPath>libs\UnityEditor.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
+		<Reference Include="UnityEngine.InputLegacyModule">
+			<HintPath>$(DerailValleyBasePath)DerailValley_Data\Managed\UnityEngine.InputLegacyModule.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
 	</ItemGroup>
 
 	<!-- Unity Mod Manager -->
