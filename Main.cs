@@ -144,72 +144,72 @@ namespace TwitchChat
             ModEntry.Logger.Log("Log files initialized.");
             
         }
-        public static void AttachNotification(string displayed_text, string object_name)
-        {
-            string methodName = MethodBase.GetCurrentMethod().Name;
-            LogEntry(methodName, $"Beginning attach notification attempt...");
+        // public static void AttachNotification(string displayed_text, string object_name)
+        // {
+        //     string methodName = MethodBase.GetCurrentMethod().Name;
+        //     LogEntry(methodName, $"Beginning attach notification attempt...");
         
-            // Find the object_name GameObject in the scene
-            GameObject found_object = GameObject.Find(object_name);
-            if (found_object == null)
-            {
-                LogEntry(methodName, $"GameObject with name {object_name} not found in the scene.");
-            }
-            else
-            {
-                LogEntry(methodName, $"GameObject with name {object_name} found.");
-            }
+        //     // Find the object_name GameObject in the scene
+        //     GameObject found_object = GameObject.Find(object_name);
+        //     if (found_object == null)
+        //     {
+        //         LogEntry(methodName, $"GameObject with name {object_name} not found in the scene.");
+        //     }
+        //     else
+        //     {
+        //         LogEntry(methodName, $"GameObject with name {object_name} found.");
+        //     }
         
-            // Find NotificationManager in the scene
-            NotificationManager notificationManager = UnityEngine.Object.FindObjectOfType<NotificationManager>();
-            if (notificationManager == null)
-            {
-                LogEntry(methodName, "NotificationManager not found in the scene.");
-                return;
-            }
+        //     // Find NotificationManager in the scene
+        //     NotificationManager notificationManager = UnityEngine.Object.FindObjectOfType<NotificationManager>();
+        //     if (notificationManager == null)
+        //     {
+        //         LogEntry(methodName, "NotificationManager not found in the scene.");
+        //         return;
+        //     }
         
-            LogEntry(methodName, $"NotificationManager found in the scene, continuing...");
+        //     LogEntry(methodName, $"NotificationManager found in the scene, continuing...");
         
-            try
-            {
-                // Set default duration to 15 if no value is set
-                int duration = 15;
+        //     try
+        //     {
+        //         // Set default duration to 15 if no value is set
+        //         int duration = 15;
         
-                // Display a notification, attached to the found_object if it's not null
-                LogEntry(methodName, $"Duration: {duration} seconds.");
-                LogEntry(methodName, $"Object: {object_name}");
-                LogEntry(methodName, $"Text: {displayed_text}");
+        //         // Display a notification, attached to the found_object if it's not null
+        //         LogEntry(methodName, $"Duration: {duration} seconds.");
+        //         LogEntry(methodName, $"Object: {object_name}");
+        //         LogEntry(methodName, $"Text: {displayed_text}");
         
-                try
-                {
-                    LogEntry(methodName, "Attempting to show notification...");
-                    var notification = notificationManager.ShowNotification(
-                        displayed_text,             // Text?
-                        null,                       // Localization parameters?
-                        duration,                   // Duration?
-                        false,                      // Clear existing notifications?
-                        // found_object?.transform,    // Attach to GameObject if not null
-                        null,                       // Temp skip attaching to GameObject...ie 'anything'
-                        false,                      // Localize?
-                        false                       // Target UI?
-                    );
-                    LogEntry(methodName, "Notification displayed successfully.");
-                }
-                catch (Exception ex)
-                {
-                    LogEntry(methodName, $"Exception during ShowNotification: {ex.Message}");
-                    LogEntry(methodName, $"Stack Trace: {ex.StackTrace}");
-                    LogEntry(methodName, $"Inner Exception: {ex.InnerException?.Message}");
-                }
-            }
-            catch (Exception ex)
-            {
-                LogEntry(methodName, $"Error showing notification with text: {displayed_text}");
-                LogEntry(methodName, $"Exception: {ex.Message}");
-                LogEntry(methodName, $"Stack Trace: {ex.StackTrace}");
-                LogEntry(methodName, $"Inner Exception: {ex.InnerException?.Message}");
-            }
-        }
+        //         try
+        //         {
+        //             LogEntry(methodName, "Attempting to show notification...");
+        //             var notification = notificationManager.ShowNotification(
+        //                 displayed_text,             // Text?
+        //                 null,                       // Localization parameters?
+        //                 duration,                   // Duration?
+        //                 false,                      // Clear existing notifications?
+        //                 // found_object?.transform,    // Attach to GameObject if not null
+        //                 null,                       // Temp skip attaching to GameObject...ie 'anything'
+        //                 false,                      // Localize?
+        //                 false                       // Target UI?
+        //             );
+        //             LogEntry(methodName, "Notification displayed successfully.");
+        //         }
+        //         catch (Exception ex)
+        //         {
+        //             LogEntry(methodName, $"Exception during ShowNotification: {ex.Message}");
+        //             LogEntry(methodName, $"Stack Trace: {ex.StackTrace}");
+        //             LogEntry(methodName, $"Inner Exception: {ex.InnerException?.Message}");
+        //         }
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         LogEntry(methodName, $"Error showing notification with text: {displayed_text}");
+        //         LogEntry(methodName, $"Exception: {ex.Message}");
+        //         LogEntry(methodName, $"Stack Trace: {ex.StackTrace}");
+        //         LogEntry(methodName, $"Inner Exception: {ex.InnerException?.Message}");
+        //     }
+        // }
         public static void LogEntry(string source, string message)
         {
             string selected_log = (source == "ReceivedMessage" || source == "SentMessage") ? messageLog : debugLog;

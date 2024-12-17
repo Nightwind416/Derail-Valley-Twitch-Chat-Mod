@@ -21,7 +21,8 @@ namespace TwitchChat
         private static string refresh_token = string.Empty;
         public static string oath_access_token = string.Empty;
         private static readonly HttpClient httpClient = new(new LoggingHttpClientHandler());
-        public static string lastWebSocketReceived = "None";
+        public static string lastWebSocketTypeReceived = "None";
+        public static string lastWebSocketMessageReceived = "None";
         public static async Task ConnectToWebSocket()
         {
             string methodName = "ConnectToWebSocket";
@@ -127,101 +128,140 @@ namespace TwitchChat
                         session_id = jsonMessage.payload.session.id.ToString().Trim();
                         Main.LogEntry(methodName, $"Session ID: {session_id}");
         
-                        lastWebSocketReceived = "Session Welcome";
+                        lastWebSocketTypeReceived = "Session Welcome";
                         await RegisterEventSubListeners();
                         await TwitchEventHandler.SendChatMessageHTTP("TwitchChat connected to WebSocket and listening for messages.");
                     }
-                    else if (jsonMessage?.metadata?.message_type == "subscription_success")
-                    {
-                        lastWebSocketReceived = "Subscription Success";
-                        Main.LogEntry(methodName, "Successfully subscribed to the channel.");
-                    }
                     else if (jsonMessage?.metadata?.message_type == "notification")
                     {
-                        lastWebSocketReceived = "Notification";
+                        lastWebSocketTypeReceived = "Notification";
                         HandleNotification(jsonMessage);
                     }
-                    else if (jsonMessage?.metadata?.message_type == "keepalive")
+                    else if (jsonMessage?.metadata?.message_type == "session_keepalive")
                     {
-                        lastWebSocketReceived = "Keepalive";
+                        lastWebSocketTypeReceived = "Keepalive";
                         Main.LogEntry(methodName, "Received keepalive message.");
+                    }
+                    else if (jsonMessage?.metadata?.message_type == "session_reconnect")
+                    {
+                        lastWebSocketTypeReceived = "Reconnect";
+                        Main.LogEntry(methodName, "Received reconnect message.");
+                    }
+                    else if (jsonMessage?.metadata?.message_type == "revocation")
+                    {
+                        lastWebSocketTypeReceived = "Revocation";
+                        Main.LogEntry(methodName, "Received revocation message.");
+                    }
+                    else
+                    {
+                        lastWebSocketTypeReceived = "Unknown";
+                        Main.LogEntry(methodName, $"Unknown message type: {jsonMessage?.metadata?.message_type}");
                     }
                 }
                 catch (WebSocketException ex)
                 {
                     Main.LogEntry(methodName, $"WebSocket error: {ex.Message}");
-                    lastWebSocketReceived = "WebSocket Error";
+                    lastWebSocketTypeReceived = "WebSocket Error";
                     break;
                 }
                 catch (Exception ex)
                 {
-                    lastWebSocketReceived = "Receive Message Error";
+                    lastWebSocketTypeReceived = "Receive Message Error";
                     Main.LogEntry(methodName, $"Error receiving message: {ex.Message}");
                 }
             }
-        
-            lastWebSocketReceived = "Connection Closed";
-            Main.LogEntry(methodName, "WebSocket connection closed.");
+            
+            if (webSocketClient.CloseStatus.HasValue)
+            {
+                string closeReason = webSocketClient.CloseStatusDescription;
+                int closeCode = (int)webSocketClient.CloseStatus.Value;
+                Main.LogEntry(methodName, $"WebSocket connection closed with code {closeCode}: {closeReason}");
+                lastWebSocketTypeReceived = $"Connection closed with code {closeCode}: {closeReason}";
+            }
+            else
+            {
+                lastWebSocketTypeReceived = "Connection closed.";
+                Main.LogEntry(methodName, "WebSocket connection closed.");
+            }
         }
         private static void HandleNotification(dynamic jsonMessage)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
-
+        
             // Additional logging, enable if needed
-            // Main.LogEntry(methodName, "HandleNotification called with message: " + jsonMessage.ToString());
+            // Main.LogEntry($"{methodName}_Start", "HandleNotification called with message: " + jsonMessage.ToString());
         
             try
             {
                 if (jsonMessage.metadata.subscription_type == "channel.chat.message")
                 {
-                    Main.LogEntry(methodName, "Message type is channel.chat.message");
-            
+                    Main.LogEntry($"{methodName}_SubscriptionType", "Message type is channel.chat.message");
+        
                     var chatter = jsonMessage.payload.@event.chatter_user_name;
                     var text = jsonMessage.payload.@event.message.text;
-            
-                    Main.LogEntry(methodName, $"Extracted chatter: {chatter}");
-                    Main.LogEntry(methodName, $"Extracted text: {text}");
-            
-                    Main.LogEntry(methodName, $"Message: #{chatter}: {text}");
+        
+                    Main.LogEntry($"{methodName}_ExtractChatter", $"Extracted chatter: {chatter}");
+                    Main.LogEntry($"{methodName}_ExtractText", $"Extracted text: {text}");
+        
+                    Main.LogEntry($"{methodName}_Message", $"Message: #{chatter}: {text}");
                     Main.LogEntry("ReceivedMessage", $"{chatter}: {text}");
-                    Main.AttachNotification($"{chatter}: {text}", "null");
 
+                    lastWebSocketMessageReceived = $"{chatter}: {text}";
+        
                     text = jsonMessage.payload.@event.message.text.ToString();
-            
-                    if (text.Contains("HeyGuys"))
+        
+                    try
                     {
-                        Main.LogEntry(methodName, "Text contains 'HeyGuys', sending 'VoHiYo'");
-                        TwitchEventHandler.SendChatMessageHTTP("[HTTP] VoHiYo").Wait();
-                        SendChatMessageWebSocket("[Socket] VoHiYo").Wait();
+                        Main.LogEntry($"{methodName}_BeforeTextCheck", "Before checking text content");
+
+                        if (text.Contains("HeyGuys"))
+                        {
+                            Main.LogEntry($"{methodName}_HeyGuys", "Text contains 'HeyGuys', sending 'VoHiYo'");
+                            TwitchEventHandler.SendChatMessageHTTP("[HTTP] VoHiYo").Wait();
+                            SendChatMessageWebSocket("[Socket] VoHiYo").Wait();
+                        }
+                        else if (text.ToLower().StartsWith("!info"))
+                        {
+                            Main.LogEntry($"{methodName}_Info", "Text contains '!info', sending 'This is a test message'");
+                            TwitchEventHandler.SendChatMessageHTTP("[HTTP] This is an info message").Wait();
+                            SendChatMessageWebSocket("[Socket] This is an info message").Wait();
+                        }
+                        else if (text.ToLower().StartsWith("!commands"))
+                        {
+                            Main.LogEntry($"{methodName}_Commands", "Text contains '!commands', sending 'Available commands: !info !commands !test'");
+                            TwitchEventHandler.SendChatMessageHTTP("[HTTP] Available commands: !info !commands !test").Wait();
+                            SendChatMessageWebSocket("[Socket] Available commands: !info !commands !test").Wait();
+                        }
+                        else
+                        {
+                            Main.LogEntry($"{methodName}_OtherMessage", "[HTTP] Other message, not responding");
+                            SendChatMessageWebSocket("[Socket] Other message, not responding").Wait();
+                            UnityMainThreadDispatcher.Instance().Enqueue(() =>
+                            {
+                                MessageHandler.SetVariable("webSocketNotification", $"{chatter}: {text}");
+                            });
+                        }
+
+                        Main.LogEntry($"{methodName}_AfterTextCheck", "After checking text content");
                     }
-                    if (text.ToLower().StartsWith("!info"))
+                    catch (Exception ex)
                     {
-                        Main.LogEntry(methodName, "Text contains '!info', sending 'This is a test message'");
-                        TwitchEventHandler.SendChatMessageHTTP("[HTTP] This is an info message").Wait();
-                        SendChatMessageWebSocket("[Socket] This is an info message").Wait();
-                    }
-                    if (text.ToLower().StartsWith("!commands"))
-                    {
-                        Main.LogEntry(methodName, "Text contains '!commands', sending 'Available commands: !info !commands !test'");
-                        TwitchEventHandler.SendChatMessageHTTP("[HTTP] Available commands: !info !commands !test").Wait();
-                        SendChatMessageWebSocket("[Socket] Available commands: !info !commands !test").Wait();
-                    }
-                    else
-                    {
-                        Main.LogEntry(methodName, "[HTTP] Other message, not responding");
-                        SendChatMessageWebSocket("[Socket] Other message, not responding").Wait();
+                        Main.LogEntry($"{methodName}_MessageHandling", $"Exception in message handling: {ex.Message}");
+                        Main.LogEntry($"{methodName}_MessageHandling", $"Stack Trace: {ex.StackTrace}");
+                        Main.LogEntry($"{methodName}_MessageHandling", $"Inner Exception: {ex.InnerException?.Message}");
                     }
                 }
                 else
                 {
-                    Main.LogEntry(methodName, "Message type is not channel.chat.message");
+                    Main.LogEntry($"{methodName}_NonChatMessage", "Message type is not channel.chat.message");
                 }
+                 Main.LogEntry($"{methodName}_AfterSubscriptionTypeCheck", "After checking subscription type");
             }
             catch (Exception ex)
             {
-                Main.LogEntry(methodName, $"Exception in HandleNotification: {ex.Message}");
-                Main.LogEntry(methodName, $"Stack Trace: {ex.StackTrace}");
-                Main.LogEntry(methodName, $"Inner Exception: {ex.InnerException?.Message}");
+                Main.LogEntry($"{methodName}_Exception", $"Exception in HandleNotification: {ex.Message}");
+                Main.LogEntry($"{methodName}_Exception", $"Stack Trace: {ex.StackTrace}");
+                Main.LogEntry($"{methodName}_Exception", $"Inner Exception: {ex.InnerException?.Message}");
             }
         }
         private static async Task RegisterEventSubListeners()
