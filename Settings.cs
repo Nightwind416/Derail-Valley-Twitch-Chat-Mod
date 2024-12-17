@@ -37,7 +37,7 @@ namespace TwitchChat
             if (GUILayout.Button("Disconnect from WebSocket", GUILayout.Width(200))) {
                 disconnectFromWebSocketFlag = true;
             }
-            GUILayout.Label("Current Status: " + WebSocketClient.isWebSocketConnected);
+            GUILayout.Label("Last WebSocket Received: " + WebSocketClient.lastWebSocketReceived);
             GUILayout.EndHorizontal();
         
             GUILayout.Label("Send Test Messages");
@@ -50,7 +50,6 @@ namespace TwitchChat
             }
             GUILayout.EndHorizontal();
         }
-
         public void Update()
         {
             _ = this;
@@ -90,9 +89,7 @@ namespace TwitchChat
         public override void Save(UnityModManager.ModEntry entry) {
             Save(this, entry);
         }
-
         public void OnChange() { }
-
         public override string GetPath(UnityModManager.ModEntry modEntry) {
             return Path.Combine(modEntry.Path, "Settings.xml");
         }

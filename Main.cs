@@ -20,7 +20,6 @@ namespace TwitchChat
         private static string debugLog = string.Empty;
         private static string messageLog = string.Empty;
         private static readonly string encodedClientId = "cWprbG1icmFzY3hzcW93NWdzdmw2bGE3MnR4bmVz"; // Base64 encoded client_id
-
         private static bool Load(UnityModManager.ModEntry modEntry)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
@@ -64,42 +63,37 @@ namespace TwitchChat
             LogEntry(methodName, "Load method completed successfullyy.");
             return true;
         }
-
         private static void OnGUI(UnityModManager.ModEntry modEntry)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
             Settings.Instance.DrawButtons();
-            // Settings.Instance.Draw(modEntry);
 
         }
-
         private static void OnSaveGUI(UnityModManager.ModEntry modEntry)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
             Settings.Instance.Save(modEntry);
         }
-
         private static bool OnToggle(UnityModManager.ModEntry _, bool isEnabled)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
             if (isEnabled)
             {
                 _isEnabled = true;
-                AttachNotification("TwitchChatMod Notifications Enabled.", "null");
+                // AttachNotification("TwitchChatMod Notifications Enabled.", "null");
                 LogEntry(methodName, "Mod Enabled!");
                 ModEntry.Enabled = true;
             }
             else
             {
                 _isEnabled = false;
-                AttachNotification("TwitchChatMod Notifications Disabled.", "null");
+                // AttachNotification("TwitchChatMod Notifications Disabled.", "null");
                 LogEntry(methodName, "Mod Disabled!");
                 ModEntry.Enabled = false;
             }
 
             return true;
         }
-
         private static void OnUpdate(UnityModManager.ModEntry mod, float delta)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
@@ -115,7 +109,6 @@ namespace TwitchChat
                 LogEntry(methodName, $"Exception: {e}");
             }
         }
-
         private static void InitializeLogFiles()
         {
             string logDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mods", "TwitchChatMod", "Logs");
@@ -151,12 +144,11 @@ namespace TwitchChat
             ModEntry.Logger.Log("Log files initialized.");
             
         }
-
         public static void AttachNotification(string displayed_text, string object_name)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
-            LogEntry(methodName, $"Begining attahch notification attempt...");
-
+            LogEntry(methodName, $"Beginning attach notification attempt...");
+        
             // Find the object_name GameObject in the scene
             GameObject found_object = GameObject.Find(object_name);
             if (found_object == null)
@@ -167,7 +159,7 @@ namespace TwitchChat
             {
                 LogEntry(methodName, $"GameObject with name {object_name} found.");
             }
-
+        
             // Find NotificationManager in the scene
             NotificationManager notificationManager = UnityEngine.Object.FindObjectOfType<NotificationManager>();
             if (notificationManager == null)
@@ -175,30 +167,40 @@ namespace TwitchChat
                 LogEntry(methodName, "NotificationManager not found in the scene.");
                 return;
             }
-
+        
             LogEntry(methodName, $"NotificationManager found in the scene, continuing...");
-
+        
             try
             {
                 // Set default duration to 15 if no value is set
                 int duration = 15;
-
+        
                 // Display a notification, attached to the found_object if it's not null
                 LogEntry(methodName, $"Duration: {duration} seconds.");
                 LogEntry(methodName, $"Object: {object_name}");
                 LogEntry(methodName, $"Text: {displayed_text}");
-                var notification = notificationManager.ShowNotification(
-                    displayed_text,             // Text?
-                    null,                       // Localization parameters?
-                    duration,                   // Duration?
-                    false,                      // Clear existing notifications?
-                    // found_object?.transform,    // Attach to GameObject if not null
-                    null,                       // Temp skip attaching to GameObject...ie 'anything'
-                    false,                      // Localize?
-                    false                       // Target UI?
-                );
-
-                LogEntry(methodName, "Notification displayed successfully.");
+        
+                try
+                {
+                    LogEntry(methodName, "Attempting to show notification...");
+                    var notification = notificationManager.ShowNotification(
+                        displayed_text,             // Text?
+                        null,                       // Localization parameters?
+                        duration,                   // Duration?
+                        false,                      // Clear existing notifications?
+                        // found_object?.transform,    // Attach to GameObject if not null
+                        null,                       // Temp skip attaching to GameObject...ie 'anything'
+                        false,                      // Localize?
+                        false                       // Target UI?
+                    );
+                    LogEntry(methodName, "Notification displayed successfully.");
+                }
+                catch (Exception ex)
+                {
+                    LogEntry(methodName, $"Exception during ShowNotification: {ex.Message}");
+                    LogEntry(methodName, $"Stack Trace: {ex.StackTrace}");
+                    LogEntry(methodName, $"Inner Exception: {ex.InnerException?.Message}");
+                }
             }
             catch (Exception ex)
             {
@@ -208,7 +210,6 @@ namespace TwitchChat
                 LogEntry(methodName, $"Inner Exception: {ex.InnerException?.Message}");
             }
         }
-
         public static void LogEntry(string source, string message)
         {
             string selected_log = (source == "ReceivedMessage" || source == "SentMessage") ? messageLog : debugLog;
