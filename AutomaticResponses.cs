@@ -25,7 +25,7 @@ namespace TwitchChat
         public bool TimedMessage1Toggle = false;
         public string TimedMessage1 = "MessageNotSet";
         public float TimedMessage1Timer = 0;
-        private static async void TimedMessages()
+        private static void TimedMessages()
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
             try
@@ -71,7 +71,7 @@ namespace TwitchChat
                 foreach (var message in messages)
                 {
                     Timer message_timer = new(message.Value * 1000); // Convert seconds to milliseconds
-                    message_timer.Elapsed += async (source, e) => await TwitchEventHandler.SendMessage(message.Key);
+                    message_timer.Elapsed += async (source, e) => await HttpManager.SendMessage(message.Key);
                     message_timer.AutoReset = true;
                     message_timer.Enabled = true;
                     Main.LogEntry(methodName, $"Timer set for message: {message.Key} with interval: {message.Value * 1000} ms");

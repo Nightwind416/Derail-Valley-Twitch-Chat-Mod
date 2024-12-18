@@ -96,6 +96,5 @@
 		<!-- Copy additional files -->
 	    <Copy SourceFiles="additional_files\info.json" DestinationFolder="$(OutputPath)" />
 		<Copy SourceFiles="additional_files\LICENSE" DestinationFolder="$(OutputPath)" />
-		<Copy SourceFiles="additional_files\TwitchLib LICENSE" DestinationFolder="$(OutputPath)" />
 	</Target>
 </Project>

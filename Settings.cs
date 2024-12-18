@@ -25,13 +25,13 @@ namespace TwitchChat
         {
             GUILayout.Label("Twitch Username");
             twitchUsername = GUILayout.TextField(twitchUsername, GUILayout.Width(400));
-            GUILayout.Label($"Twitch ID: {WebSocketClient.user_id}");
+            GUILayout.Label($"Twitch ID: {WebSocketManager.user_id}");
 
             if (GUILayout.Button("Get Oath Token", GUILayout.Width(200)))
             {
                 getOathTokenFlag = true;
             }
-            GUILayout.Label($"Current Oath Token: {WebSocketClient.oath_access_token}");
+            GUILayout.Label($"Current Oath Token: {WebSocketManager.oath_access_token}");
             
             GUILayout.Label("WebSocket Actions");
             GUILayout.BeginHorizontal();
@@ -44,8 +44,8 @@ namespace TwitchChat
                 disconnectFromWebSocketFlag = true;
             }
             GUILayout.EndHorizontal();
-            GUILayout.Label("Last WebSocket Type Received: " + WebSocketClient.lastWebSocketTypeReceived);
-            GUILayout.Label("Last WebSocket Message Received: " + WebSocketClient.lastWebSocketMessageReceived);
+            GUILayout.Label("Last WebSocket Type Received: " + WebSocketManager.lastWebSocketTypeReceived);
+            GUILayout.Label("Last WebSocket Message Received: " + WebSocketManager.lastWebSocketMessageReceived);
             GUILayout.Label("Last WebSocket Message Received: " + MessageHandler.NewNotificationQueue["webSocketNotification"]);
         
             GUILayout.Label("Send Test Messages");
@@ -84,32 +84,32 @@ namespace TwitchChat
             if (getOathTokenFlag)
             {
                 getOathTokenFlag = false;
-                _ = TwitchEventHandler.GetOathToken();
+                _ = HttpManager.GetOathToken();
             }
             if (connectToWebSocketFlag)
             {
                 connectToWebSocketFlag = false;
-                _ = WebSocketClient.ConnectToWebSocket();
+                _ = WebSocketManager.ConnectToWebSocket();
             }
             if (disconnectFromWebSocketFlag)
             {
                 disconnectFromWebSocketFlag = false;
-                _ = WebSocketClient.DisconnectFromoWebSocket();
+                _ = WebSocketManager.DisconnectFromoWebSocket();
             }
             if (connectionStatusFlag)
             {
                 connectionStatusFlag = false;
-                _ = TwitchEventHandler.ConnectionStatus();
+                _ = HttpManager.ConnectionStatus();
             }
             if (sendChatMessageHttpFlag)
             {
                 sendChatMessageHttpFlag = false;
-                _ = TwitchEventHandler.SendChatMessageHTTP("HTTP message test 'from' Derail Valley");
+                _ = HttpManager.SendChatMessageHTTP("HTTP message test 'from' Derail Valley");
             }
             if (sendChatMessageSocketFlag)
             {
                 sendChatMessageSocketFlag = false;
-                _ = WebSocketClient.SendChatMessageWebSocket("WebSocket message test 'from' Derail Valley");
+                _ = WebSocketManager.SendChatMessageWebSocket("WebSocket message test 'from' Derail Valley");
             }
             if (directAttachmentMessageTestFlag)
             {

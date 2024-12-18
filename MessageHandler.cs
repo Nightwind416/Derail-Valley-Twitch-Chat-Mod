@@ -14,7 +14,8 @@ namespace TwitchChat
             { "webSocketNotification", "Nothing received yet (webSocketNotification)" },
             { "httpNotification", "Nothing received yet (httpNotification)" },
             { "indirectNotification", "Nothing received yet (indirectNotification)" },
-            { "messageQueuenotification", "Nothing received yet (messageQueuenotification)" }
+            { "messageQueuenotification", "Nothing received yet (messageQueuenotification)" },
+            { "alertMessage", "Nothing received yet (alertMessage)" }
         };
 
         public static void SetVariable(string key, string value)
@@ -43,14 +44,90 @@ namespace TwitchChat
             SetVariable("messageQueuenotification", $"Queued Attachment Test {messageQueueTestCounter}");
             messageQueueTestCounter++;            
         }
+        public static void HandleNotification(dynamic jsonMessage)
+        {
+            string methodName = MethodBase.GetCurrentMethod().Name;
+        
+            // Additional logging, enable if needed
+            // Main.LogEntry($"{methodName}_Start", "HandleNotification called with message: " + jsonMessage.ToString());
+        
+            try
+            {
+                if (jsonMessage.metadata.subscription_type == "channel.chat.message")
+                {
+                    Main.LogEntry($"{methodName}_SubscriptionType", "Message type is channel.chat.message");
+        
+                    var chatter = jsonMessage.payload.@event.chatter_user_name;
+                    var text = jsonMessage.payload.@event.message.text;
+        
+                    Main.LogEntry($"{methodName}_ExtractChatter", $"Extracted chatter: {chatter}");
+                    Main.LogEntry($"{methodName}_ExtractText", $"Extracted text: {text}");
+        
+                    Main.LogEntry($"{methodName}_Message", $"Message: #{chatter}: {text}");
+                    Main.LogEntry("ReceivedMessage", $"{chatter}: {text}");
+
+                    WebSocketManager.lastWebSocketMessageReceived = $"{chatter}: {text}";
+        
+                    text = jsonMessage.payload.@event.message.text.ToString();
+        
+                    try
+                    {
+                        Main.LogEntry($"{methodName}_BeforeTextCheck", "Before checking text content");
+
+                        if (text.Contains("HeyGuys"))
+                        {
+                            Main.LogEntry($"{methodName}_HeyGuys", "Text contains 'HeyGuys', sending 'VoHiYo'");
+                            HttpManager.SendChatMessageHTTP("[HTTP] VoHiYo").Wait();
+                            WebSocketManager.SendChatMessageWebSocket("[Socket] VoHiYo").Wait();
+                        }
+                        else if (text.ToLower().StartsWith("!info"))
+                        {
+                            Main.LogEntry($"{methodName}_Info", "Text contains '!info', sending 'This is a test message'");
+                            HttpManager.SendChatMessageHTTP("[HTTP] This is an info message").Wait();
+                            WebSocketManager.SendChatMessageWebSocket("[Socket] This is an info message").Wait();
+                        }
+                        else if (text.ToLower().StartsWith("!commands"))
+                        {
+                            Main.LogEntry($"{methodName}_Commands", "Text contains '!commands', sending 'Available commands: !info !commands !test'");
+                            HttpManager.SendChatMessageHTTP("[HTTP] Available commands: !info !commands !test").Wait();
+                            WebSocketManager.SendChatMessageWebSocket("[Socket] Available commands: !info !commands !test").Wait();
+                        }
+                        else
+                        {
+                            Main.LogEntry($"{methodName}_OtherMessage", "[HTTP] Other message, not responding");
+                            WebSocketManager.SendChatMessageWebSocket("[Socket] Other message, not responding").Wait();
+                            UnityMainThreadDispatcher.Instance().Enqueue(() =>
+                            {
+                                MessageHandler.SetVariable("webSocketNotification", $"{chatter}: {text}");
+                            });
+                        }
+
+                        Main.LogEntry($"{methodName}_AfterTextCheck", "After checking text content");
+                    }
+                    catch (Exception ex)
+                    {
+                        Main.LogEntry($"{methodName}_MessageHandling", $"Exception in message handling: {ex.Message}");
+                        Main.LogEntry($"{methodName}_MessageHandling", $"Stack Trace: {ex.StackTrace}");
+                        Main.LogEntry($"{methodName}_MessageHandling", $"Inner Exception: {ex.InnerException?.Message}");
+                    }
+                }
+                else
+                {
+                    Main.LogEntry($"{methodName}_NonChatMessage", "Message type is not channel.chat.message");
+                }
+                 Main.LogEntry($"{methodName}_AfterSubscriptionTypeCheck", "After checking subscription type");
+            }
+            catch (Exception ex)
+            {
+                Main.LogEntry($"{methodName}_Exception", $"Exception in HandleNotification: {ex.Message}");
+                Main.LogEntry($"{methodName}_Exception", $"Stack Trace: {ex.StackTrace}");
+                Main.LogEntry($"{methodName}_Exception", $"Inner Exception: {ex.InnerException?.Message}");
+            }
+        }
         public static void AttachNotification(string displayed_text, string object_name)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
             Main.LogEntry(methodName, $"AttachNotification called with displayed_text: {displayed_text}, object_name: {object_name}");
-
-            // Set message to 5 seconds               
-            float message_duration = 5f;
-            Main.LogEntry(methodName, $"Message duration set to: {message_duration}");
 
             // Find the object_name GameObject in the scene
             GameObject found_object = GameObject.Find(object_name);
@@ -85,21 +162,19 @@ namespace TwitchChat
             displayed_text = new string(displayed_text.Where(c => char.IsLetterOrDigit(c) || char.IsPunctuation(c) || char.IsWhiteSpace(c)).ToArray());
             Main.LogEntry(methodName, $"Sanitized displayed_text: {displayed_text}");
 
-            // displayed_text = "Temp replaced text";
-
             try
             {
                 // Display a notification, attached to the found_object if it's not null
                 Main.LogEntry(methodName, "Attempting to show notification");
                 var notification = notificationManager.ShowNotification(
-                    displayed_text,             // Text?
-                    null,                       // Localization parameters?
-                    message_duration,           // Duration?
-                    false,                      // Clear existing notifications?
-                    // found_object?.transform,    // Attach to GameObject if not null
-                    null,                       // Temp force null
-                    false,                      // Localize?
-                    false                       // Target UI?
+                    displayed_text,                     // Text
+                    null,                               // Localization parameters
+                    Settings.Instance.messageDuration,  // Duration
+                    false,                              // Clear existing notifications
+                    // found_object?.transform,         // Attach to GameObject if not null
+                    null,                               // Temp force null for GameObject.transform
+                    false,                              // Localize
+                    false                               // Target UI
                 );
                 Main.LogEntry(methodName, "Notification shown successfully");
             }

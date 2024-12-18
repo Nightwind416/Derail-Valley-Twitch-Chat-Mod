@@ -11,10 +11,9 @@ using System.Net.Http.Headers;
 
 namespace TwitchChat
 {
-    public class TwitchEventHandler
+    public class HttpManager
     {
         private static readonly HttpClient httpClient = new();
-
         public static async Task GetOathToken()
         {
             string methodName = "GetOathToken";
@@ -90,9 +89,9 @@ namespace TwitchChat
                     if (!string.IsNullOrEmpty(accessToken))
                     {
                         Main.LogEntry(methodName, $"Access token: {accessToken}");
-                        WebSocketClient.oath_access_token = accessToken;
+                        WebSocketManager.oath_access_token = accessToken;
                         await GetUserID();
-                        await WebSocketClient.ConnectToWebSocket();
+                        await WebSocketManager.ConnectToWebSocket();
                     }
                     else
                     {
@@ -114,12 +113,11 @@ namespace TwitchChat
                 Main.LogEntry(methodName, $"Failed to get oath Token: {ex.Message}");
             }
         }
-        
         public static async Task ValidateAuthToken()
         {
             string methodName = "ValidateAuthToken";
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", WebSocketClient.oath_access_token);
-            Main.LogEntry(methodName, $"Validating token: {WebSocketClient.oath_access_token}");
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", WebSocketManager.oath_access_token);
+            Main.LogEntry(methodName, $"Validating token: {WebSocketManager.oath_access_token}");
 
             // Log the headers
             foreach (var header in httpClient.DefaultRequestHeaders)
@@ -141,7 +139,7 @@ namespace TwitchChat
                     if (response.StatusCode != HttpStatusCode.OK)
                     {
                         Main.LogEntry(methodName, "Token is not valid. Refreshing token...");
-                        await WebSocketClient.RefreshAuthToken();
+                        await WebSocketManager.RefreshAuthToken();
                     }
                     else
                     {
@@ -196,14 +194,13 @@ namespace TwitchChat
                 }
             }
         }
-        
         public static async Task<bool> GetUserID()
         {
             string methodName = "GetUserID";
             Main.LogEntry(methodName, "Adding Authorization and Client-Id headers.");
             httpClient.DefaultRequestHeaders.Clear();
-            httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {WebSocketClient.oath_access_token}");
-            _ = new WebSocketClient();
+            httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {WebSocketManager.oath_access_token}");
+            _ = new WebSocketManager();
             httpClient.DefaultRequestHeaders.Add("Client-Id", Main.GetClientId());
         
             Main.LogEntry(methodName, "Sending GET request to https://api.twitch.tv/helix/users.");
@@ -230,13 +227,11 @@ namespace TwitchChat
                 return false;
             }
         
-            WebSocketClient.user_id = id;
-            Main.LogEntry(methodName, $"User ID: {WebSocketClient.user_id}");
+            WebSocketManager.user_id = id;
+            Main.LogEntry(methodName, $"User ID: {WebSocketManager.user_id}");
         
             return true;
         }
-
-        
         public static async Task ConnectionStatus()
         {
             string methodName = "ConnectionStatus";
@@ -244,7 +239,7 @@ namespace TwitchChat
             {
                 Main.LogEntry(methodName, "Adding Authorization and Client-Id headers.");
                 httpClient.DefaultRequestHeaders.Clear();
-                httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {WebSocketClient.oath_access_token}");
+                httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {WebSocketManager.oath_access_token}");
                 httpClient.DefaultRequestHeaders.Add("Client-Id", Main.GetClientId());
 
                 Main.LogEntry(methodName, "Sending GET request to https://api.twitch.tv/helix/users.");
@@ -301,7 +296,6 @@ namespace TwitchChat
                 Main.LogEntry(methodName, $"General error: {ex.Message}");
             }
         }
-
         public static async Task SendMessage(string message)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
@@ -310,8 +304,8 @@ namespace TwitchChat
                 Main.LogEntry(methodName, "Preparing request body.");
                 var requestBody = new
                 {
-                    broadcaster_id = WebSocketClient.user_id,
-                    sender_id = WebSocketClient.user_id,
+                    broadcaster_id = WebSocketManager.user_id,
+                    sender_id = WebSocketManager.user_id,
                     message = message
                 };
 
@@ -322,7 +316,7 @@ namespace TwitchChat
 
                 Main.LogEntry(methodName, "Headers set: Client-Id and Authorization");
                 httpClient.DefaultRequestHeaders.Clear();
-                httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {WebSocketClient.oath_access_token}");
+                httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {WebSocketManager.oath_access_token}");
                 httpClient.DefaultRequestHeaders.Add("Client-Id", Main.GetClientId());
 
                 Main.LogEntry(methodName, "Sending POST request to https://api.twitch.tv/helix/chat/messages");
@@ -356,8 +350,8 @@ namespace TwitchChat
         
             var content = new StringContent(JsonConvert.SerializeObject(new
             {
-                broadcaster_id = WebSocketClient.user_id,
-                sender_id = WebSocketClient.user_id,
+                broadcaster_id = WebSocketManager.user_id,
+                sender_id = WebSocketManager.user_id,
                 message = chatMessage
             }), Encoding.UTF8, "application/json");
         
