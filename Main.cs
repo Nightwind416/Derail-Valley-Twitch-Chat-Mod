@@ -110,7 +110,7 @@ namespace TwitchChat
         {
             string logDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mods", "TwitchChatMod", "Logs");
             string date = DateTime.Now.ToString("yyyy-MM-dd");
-
+        
             // Create the directory if it does not exist
             if (!Directory.Exists(logDirectory))
             {
@@ -125,21 +125,31 @@ namespace TwitchChat
                     return;
                 }
             }
-
+        
+            // Get all debug log files and sort by creation time
+            var debugLogFiles = Directory.GetFiles(logDirectory, "Log - *.txt")
+                                         .OrderByDescending(f => File.GetCreationTime(f))
+                                         .ToList();
+        
+            // Keep only the last 3 log files
+            for (int i = 3; i < debugLogFiles.Count; i++)
+            {
+                File.Delete(debugLogFiles[i]);
+            }
+        
             debugLog = Path.Combine(logDirectory, $"Log - {date}.txt");
             messageLog = Path.Combine(logDirectory, $"Messages - {date}.txt");
-
+        
             ModEntry.Logger.Log($"Initialized log file: {debugLog}");
             ModEntry.Logger.Log($"Initialized message file: {messageLog}");
-
+        
             // Open each of the logs and write a new header (not using logEntry because it will write to the log file)
             using StreamWriter logHeader = new(debugLog, true);
             logHeader.WriteLine($"Log file initialized on {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
             using StreamWriter messageHeader = new(messageLog, true);
             messageHeader.WriteLine($"Message file initialized on {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-
+        
             ModEntry.Logger.Log("Log files initialized.");
-            
         }
         public static void LogEntry(string source, string message)
         {

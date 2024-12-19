@@ -11,12 +11,12 @@ namespace TwitchChat
     {
         public static Settings Instance { get; set; } = null!;
         public string twitchUsername = string.Empty;
+        public string EncodedOAuthToken = string.Empty;
         private bool getOathTokenFlag = false;
         private bool connectToWebSocketFlag = false;
         private bool disconnectFromWebSocketFlag = false;
         private bool connectionStatusFlag = false;
         private bool sendChatMessageHttpFlag = false;
-        private bool sendChatMessageSocketFlag = false;
         private bool directAttachmentMessageTestFlag = false;
         private bool messageQueueAttachmentMessageTestFlag = false;
         private bool indirectAttachmentMessageTestFlag = false;
@@ -25,13 +25,14 @@ namespace TwitchChat
         {
             GUILayout.Label("Twitch Username");
             twitchUsername = GUILayout.TextField(twitchUsername, GUILayout.Width(400));
-            GUILayout.Label($"Twitch ID: {WebSocketManager.user_id}");
+            GUILayout.Label($"Twitch ID: {TwitchEventHandler.user_id}");
 
             if (GUILayout.Button("Get Oath Token", GUILayout.Width(200)))
             {
                 getOathTokenFlag = true;
             }
-            GUILayout.Label($"Current Oath Token: {WebSocketManager.oath_access_token}");
+            GUILayout.Label($"Current Oath Token: {TwitchEventHandler.oath_access_token}");
+            GUILayout.Label($"Current Oath Token Expiration: {TwitchEventHandler.oath_token_expiration}");
             
             GUILayout.Label("WebSocket Actions");
             GUILayout.BeginHorizontal();
@@ -53,10 +54,6 @@ namespace TwitchChat
             if (GUILayout.Button("Send test HTTP message", GUILayout.Width(200)))
             {
                 sendChatMessageHttpFlag = true;
-            }
-            if (GUILayout.Button("Send test Socket message", GUILayout.Width(200)))
-            {
-                sendChatMessageSocketFlag = true;
             }
             GUILayout.EndHorizontal();
             GUILayout.Label("Message Attachement Testing: ");
@@ -84,7 +81,7 @@ namespace TwitchChat
             if (getOathTokenFlag)
             {
                 getOathTokenFlag = false;
-                _ = HttpManager.GetOathToken();
+                _ = TwitchEventHandler.GetOathToken();
             }
             if (connectToWebSocketFlag)
             {
@@ -99,17 +96,12 @@ namespace TwitchChat
             if (connectionStatusFlag)
             {
                 connectionStatusFlag = false;
-                _ = HttpManager.ConnectionStatus();
+                _ = TwitchEventHandler.ConnectionStatus();
             }
             if (sendChatMessageHttpFlag)
             {
                 sendChatMessageHttpFlag = false;
-                _ = HttpManager.SendChatMessageHTTP("HTTP message test 'from' Derail Valley");
-            }
-            if (sendChatMessageSocketFlag)
-            {
-                sendChatMessageSocketFlag = false;
-                _ = WebSocketManager.SendChatMessageWebSocket("WebSocket message test 'from' Derail Valley");
+                _ = TwitchEventHandler.SendChatMessageHTTP("HTTP message test 'from' Derail Valley");
             }
             if (directAttachmentMessageTestFlag)
             {

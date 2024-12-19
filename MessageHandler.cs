@@ -77,25 +77,21 @@ namespace TwitchChat
                         if (text.Contains("HeyGuys"))
                         {
                             Main.LogEntry($"{methodName}_HeyGuys", "Text contains 'HeyGuys', sending 'VoHiYo'");
-                            HttpManager.SendChatMessageHTTP("[HTTP] VoHiYo").Wait();
-                            WebSocketManager.SendChatMessageWebSocket("[Socket] VoHiYo").Wait();
+                            TwitchEventHandler.SendChatMessageHTTP("[HTTP] VoHiYo").Wait();
                         }
                         else if (text.ToLower().StartsWith("!info"))
                         {
                             Main.LogEntry($"{methodName}_Info", "Text contains '!info', sending 'This is a test message'");
-                            HttpManager.SendChatMessageHTTP("[HTTP] This is an info message").Wait();
-                            WebSocketManager.SendChatMessageWebSocket("[Socket] This is an info message").Wait();
+                            TwitchEventHandler.SendChatMessageHTTP("[HTTP] This is an info message").Wait();
                         }
                         else if (text.ToLower().StartsWith("!commands"))
                         {
                             Main.LogEntry($"{methodName}_Commands", "Text contains '!commands', sending 'Available commands: !info !commands !test'");
-                            HttpManager.SendChatMessageHTTP("[HTTP] Available commands: !info !commands !test").Wait();
-                            WebSocketManager.SendChatMessageWebSocket("[Socket] Available commands: !info !commands !test").Wait();
+                            TwitchEventHandler.SendChatMessageHTTP("[HTTP] Available commands: !info !commands !test").Wait();
                         }
                         else
                         {
                             Main.LogEntry($"{methodName}_OtherMessage", "[HTTP] Other message, not responding");
-                            WebSocketManager.SendChatMessageWebSocket("[Socket] Other message, not responding").Wait();
                             UnityMainThreadDispatcher.Instance().Enqueue(() =>
                             {
                                 MessageHandler.SetVariable("webSocketNotification", $"{chatter}: {text}");
