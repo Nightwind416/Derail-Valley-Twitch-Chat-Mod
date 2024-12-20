@@ -43,15 +43,13 @@ TODO: Instructions on how to configure for mod users.
 
 ## Twitch Credentials
 
-Aquire a token:
-
-- To be completed...
+Use the "Request 
 
 ## Settings
 
-- Display Duration: 
+- Display Duration: This will set how long each message stays visible, in seconds, before fading out.
 
-## Messages
+## Automatic Messages (Temporarily disabled)
 
 - Welcome Message: Will be sent to the channel
 - Info Message: You can save up to 10 pre typed messages to send at pre-determined intervals
@@ -61,7 +59,6 @@ Aquire a token:
 ## Conflicts
 
 - Note if you are also using [Dispatcher (Continued)](https://www.nexusmods.com/derailvalley/mods/743)
-- The popup ....
 
 ## VR Note
 
@@ -72,8 +69,19 @@ Aquire a token:
 
 - Add throttling and/or combining when many messages are coming in at once (mostly for VR disruption)
 - Add ability to add usernames to a local 'ignore' list
+- Re-add automated replies and timed messages
+- Add various command responses and triggers
+- See if the career manager can be utilized for deeper Twitch channel settings acces from 'in-game'
+- See about creating own menu/ui, leveraging off the DerailValley UI
 
 ## Version History
+
+## 2.0.0 20 Dec 2024
+
+- Complete code refactor
+-- Removed and replaced TwitchLib with direct coded WebSocket and HTTP clients
+-- Added automatic OAuth Token request/validating
+-- Temporarily disabled automated and timed messages during base code refactoring
 
 ## 1.2.0 6 Dec 2024 (internal only)
 

@@ -1,9 +1,9 @@
 {
 	"Id": "TwitchChat",
-	"Version": "1.1.8",
+	"Version": "2.0.0",
 	"DisplayName": "TwitchChat",
 	"Author": "Nightiwind416",
-	"GameVersion": "build 99",
+	"GameVersion": "build 99.3",
 	"EntryMethod": "TwitchChat.Main.Load",
 	"ManagerVersion": "0.27.3",
 	"Homepage": "https://www.nexusmods.com/derailvalley/mods/1069",

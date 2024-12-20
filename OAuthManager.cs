@@ -31,7 +31,7 @@ namespace TwitchChat
                 Main.LogEntry(methodName, $"Using Twitch username: {Settings.Instance.twitchUsername}");
                 
                 string clientId = TwitchEventHandler.GetClientId();
-                string scope = "chat:edit chat:read channel:bot channel:manage:broadcast channel:moderate channel:read:subscriptions user:read:chat user:read:subscriptions user:write:chat user:read:email user:edit:follows user:edit:broadcast";
+                string scope = "channel:bot user:read:chat user:bot user:read:email user:write:chat chat:edit chat:read";
                 string state = Guid.NewGuid().ToString();
         
                 string authorizationUrl = $"https://id.twitch.tv/oauth2/authorize?response_type=token&client_id={clientId}&redirect_uri=http://localhost/&scope={Uri.EscapeDataString(scope)}&state={state}";
