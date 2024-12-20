@@ -1,10 +1,18 @@
-using UnityModManagerNet;
+using System;
 using System.IO;
 using UnityEngine;
-using System;
+using UnityModManagerNet;
 
 namespace TwitchChat
 {
+    public enum DebugLevel
+    {
+        Off,
+        Minimal,
+        Reduced,
+        Full
+    }
+
     [DrawFields(DrawFieldMask.Public)]
     [Serializable]
     public class Settings : UnityModManager.ModSettings, IDrawable
@@ -14,62 +22,116 @@ namespace TwitchChat
         public int messageDuration = 20;
         public string EncodedOAuthToken = string.Empty;
         private bool getOathTokenFlag = false;
-        private bool connectToWebSocketFlag = false;
-        private bool disconnectFromWebSocketFlag = false;
+        private bool toggleWebSocketFlag = false;
         private bool connectionStatusFlag = false;
         private bool sendChatMessageHttpFlag = false;
         private bool directAttachmentMessageTestFlag = false;
         private bool messageQueueAttachmentMessageTestFlag = false;
-        private bool indirectAttachmentMessageTestFlag = false;
+        private bool MessageQueueAttachmentTestFlag = false;
+        public DebugLevel debugLevel = DebugLevel.Minimal;
         public void DrawButtons()
         {
-            GUILayout.Label("Twitch Username");
-            twitchUsername = GUILayout.TextField(twitchUsername, GUILayout.Width(400));
-            GUILayout.Label($"Twitch ID: {TwitchEventHandler.user_id}");
-
-            if (GUILayout.Button("Get Oath Token", GUILayout.Width(200)))
-            {
-                getOathTokenFlag = true;
-            }
-            GUILayout.Label($"Current Oath Token: {TwitchEventHandler.oath_access_token}");
-            
-            GUILayout.Label("WebSocket Actions");
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Connect to WebSocket", GUILayout.Width(200)))
+            GUILayout.Label("Twitch Username: ", GUILayout.Width(150));
+            twitchUsername = GUILayout.TextField(twitchUsername, GUILayout.Width(200));
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Message Duration (seconds): ", GUILayout.Width(150));
+            messageDuration = int.Parse(GUILayout.TextField(messageDuration.ToString(), GUILayout.Width(50)));
+            GUILayout.EndHorizontal();
+
+            GUILayout.Space(10);
+            GUILayout.Box("", GUILayout.ExpandWidth(true), GUILayout.Height(1));
+            GUILayout.Space(10);
+
+            GUILayout.Label("Twitch Authorization");
+            string authButtonText = string.IsNullOrEmpty(EncodedOAuthToken) 
+                ? "Request Authorization Token" 
+                : "Validate Token";
+            if (GUILayout.Button(authButtonText, GUILayout.Width(200)))
             {
-                connectToWebSocketFlag = true;
+                if (string.IsNullOrEmpty(EncodedOAuthToken))
+                    getOathTokenFlag = true;
+                else
+                    _ = TwitchEventHandler.ValidateAuthToken();
             }
-            if (GUILayout.Button("Disconnect from WebSocket", GUILayout.Width(200)))
+            GUILayout.Label($"Encoded Authorization Token: {EncodedOAuthToken}");
+            GUILayout.Label($"Last Authorization Status: {TwitchEventHandler.oath_status}");
+
+            GUILayout.Space(10);
+            GUILayout.Box("", GUILayout.ExpandWidth(true), GUILayout.Height(1));
+            GUILayout.Space(10);
+            
+            GUILayout.Label("Channel Connection Status");
+            GUI.color = WebSocketManager.IsConnectionHealthy ? Color.green : Color.red;
+            GUILayout.Label("■", GUILayout.Width(20));
+            GUI.color = Color.white;
+            GUILayout.Label("Connection Status: " + (WebSocketManager.IsConnectionHealthy ? "Connected" : "Disconnected"));
+            GUILayout.BeginHorizontal();
+            string buttonText = WebSocketManager.IsConnectionHealthy
+                ? "Disconnect Channel"
+                : "Connect Channel";
+            if (GUILayout.Button(buttonText, GUILayout.Width(150)))
             {
-                disconnectFromWebSocketFlag = true;
+                toggleWebSocketFlag = true;
             }
             GUILayout.EndHorizontal();
-            GUILayout.Label("Last WebSocket Message Received: " + MessageHandler.NewNotificationQueue["webSocketNotification"]);
         
-            GUILayout.Label("Send Test Messages");
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Send test HTTP message", GUILayout.Width(200)))
+            if (GUILayout.Button("Click here...", GUILayout.Width(400)))
             {
                 sendChatMessageHttpFlag = true;
             }
+            GUILayout.Label("... to send a test message to your Twitch channel");
             GUILayout.EndHorizontal();
-            GUILayout.Label("Message Attachement Testing: ");
+
+            GUILayout.Space(10);
+            GUILayout.Box("", GUILayout.ExpandWidth(true), GUILayout.Height(1));
+            GUILayout.Space(10);
+            
+            GUILayout.Label("Test Message Display While In-Game: ");
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Direct Test", GUILayout.Width(200)))
+            if (GUILayout.Button("Direct Attachment", GUILayout.Width(200)))
             {
                 directAttachmentMessageTestFlag = true;
             }
-            if (GUILayout.Button("Indirect Test", GUILayout.Width(200)))
-            {
-                indirectAttachmentMessageTestFlag = true;
-            }
-            if (GUILayout.Button("MessageQueue Attachment Message Test", GUILayout.Width(200)))
-            {
-                messageQueueAttachmentMessageTestFlag = true;
-            }
+            GUILayout.Label("Typically used by script/mod alerts and non-Twitch messages");
             GUILayout.EndHorizontal();
-            GUILayout.Label("Indirect Message: " + MessageHandler.NewNotificationQueue["indirectNotification"]);
-            GUILayout.Label("Queued Message: " + MessageHandler.NewNotificationQueue["messageQueuenotification"]);
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Message Queue", GUILayout.Width(200)))
+            {
+                MessageQueueAttachmentTestFlag = true;
+            }
+            GUILayout.Label("Uses same 'queuing' system as received Twitch messages");
+            GUILayout.EndHorizontal();
+
+            GUILayout.Space(10);
+            GUILayout.Box("", GUILayout.ExpandWidth(true), GUILayout.Height(1));
+            GUILayout.Space(10);
+
+            GUI.color = Color.cyan;
+            GUILayout.Label("Debug Settings");
+            GUI.color = Color.white;  // Reset color for subsequent elements
+            
+            // Store current selection before grid
+            int currentSelection = (int)debugLevel;
+            
+            // Create string array for debug levels
+            string[] options = ["Off", "Minimal", "Reduced", "Full"];
+            
+            // Color each button based on selection
+            GUILayout.BeginHorizontal();
+            for (int i = 0; i < options.Length; i++)
+            {
+                GUI.color = (i == currentSelection) ? Color.cyan : Color.white;
+                if (GUILayout.Button(options[i], GUILayout.Width(75)))
+                {
+                    debugLevel = (DebugLevel)i;
+                }
+            }
+            GUI.color = Color.white;  // Reset color
+            GUILayout.EndHorizontal();
         }
         public void Update()
         {
@@ -80,15 +142,13 @@ namespace TwitchChat
                 getOathTokenFlag = false;
                 _ = TwitchEventHandler.GetOathToken();
             }
-            if (connectToWebSocketFlag)
+            if (toggleWebSocketFlag)
             {
-                connectToWebSocketFlag = false;
-                _ = WebSocketManager.ConnectToWebSocket();
-            }
-            if (disconnectFromWebSocketFlag)
-            {
-                disconnectFromWebSocketFlag = false;
-                _ = WebSocketManager.DisconnectFromoWebSocket();
+                toggleWebSocketFlag = false;
+                if (WebSocketManager.IsConnectionHealthy)
+                    _ = WebSocketManager.DisconnectFromoWebSocket();
+                else
+                    _ = WebSocketManager.ConnectToWebSocket();
             }
             if (connectionStatusFlag)
             {
@@ -105,15 +165,15 @@ namespace TwitchChat
                 directAttachmentMessageTestFlag = false;
                 MessageHandler.AttachNotification("Direct Attachment Notification Test", "null");
             }
-            if (indirectAttachmentMessageTestFlag)
+            if (MessageQueueAttachmentTestFlag)
             {
-                indirectAttachmentMessageTestFlag = false;
+                MessageQueueAttachmentTestFlag = false;
                 MessageHandler.SetVariable("indirectNotification", "Indirect Attachment Test Message Sent");
             }
             if (messageQueueAttachmentMessageTestFlag)
             {
                 messageQueueAttachmentMessageTestFlag = false;
-                MessageHandler.MessageQueueAttachmentMessageTest();
+                MessageHandler.WebSocketNotificationTest();
             }
         }
         public Settings() { }

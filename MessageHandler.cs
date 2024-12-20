@@ -4,6 +4,7 @@ using DV.UIFramework;
 using System.Reflection;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 
 namespace TwitchChat
 {
@@ -12,11 +13,9 @@ namespace TwitchChat
         private static int messageQueueTestCounter = 1;
         public static Dictionary<string, string> NewNotificationQueue = new()
         {
-            { "webSocketNotification", "Nothing received yet (webSocketNotification)" },
-            { "httpNotification", "Nothing received yet (httpNotification)" },
-            { "indirectNotification", "Nothing received yet (indirectNotification)" },
-            { "messageQueuenotification", "Nothing received yet (messageQueuenotification)" },
-            { "alertMessage", "Nothing received yet (alertMessage)" }
+            { "webSocketNotification", "" },
+            { "httpNotification", "" },
+            { "alertNotification", "" }
         };
         public static void SetVariable(string key, string value)
         {
@@ -38,77 +37,116 @@ namespace TwitchChat
         {
             return NewNotificationQueue.ContainsKey(key) ? NewNotificationQueue[key] : null;
         }
-        public static void MessageQueueAttachmentMessageTest()
+        public static void WebSocketNotificationTest()
         {
-            SetVariable("messageQueuenotification", $"Queued Attachment Test {messageQueueTestCounter}");
+            SetVariable("webSocketNotification", $"Received Twitch message attachment test #{messageQueueTestCounter}");
             messageQueueTestCounter++;            
         }
+
+        private class TwitchMessage
+        {
+            public Metadata? metadata { get; set; }
+            public Payload? payload { get; set; }
+        }
+
+        private class Metadata
+        {
+            public string? subscription_type { get; set; }
+        }
+
+        private class Payload
+        {
+            public Event? @event { get; set; }
+        }
+
+        private class Event
+        {
+            public string? chatter_user_name { get; set; }
+            public string? chatter_user_id { get; set; }
+            public Message? message { get; set; }
+        }
+
+        private class Message
+        {
+            public string? text { get; set; }
+        }
+
         public static void HandleNotification(dynamic jsonMessage)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
         
-            // Additional logging, enable if needed
-            // Main.LogEntry($"{methodName}_Start", "HandleNotification called with message: " + jsonMessage.ToString());
-        
             try
             {
-                if (jsonMessage.metadata.subscription_type == "channel.chat.message")
+                // Convert the dynamic message to string and then deserialize
+                string jsonString = jsonMessage.ToString();
+                var message = JsonSerializer.Deserialize<TwitchMessage>(jsonString);
+        
+                if (message?.metadata?.subscription_type == "channel.chat.message")
                 {
                     Main.LogEntry($"{methodName}_SubscriptionType", "Message type is channel.chat.message");
         
-                    var chatter = jsonMessage.payload.@event.chatter_user_name;
-                    var text = jsonMessage.payload.@event.message.text;
+                    var chatter = message.payload?.@event?.chatter_user_name;
+                    var chatterId = message.payload?.@event?.chatter_user_id;
+                    var text = message.payload?.@event?.message?.text;
         
-                    Main.LogEntry($"{methodName}_ExtractChatter", $"Extracted chatter: {chatter}");
-                    Main.LogEntry($"{methodName}_ExtractText", $"Extracted text: {text}");
-        
-                    Main.LogEntry($"{methodName}_Message", $"Message: #{chatter}: {text}");
-                    Main.LogEntry("ReceivedMessage", $"{chatter}: {text}");
-        
-                    text = jsonMessage.payload.@event.message.text.ToString();
-        
-                    try
+                    // Skip processing if message is from ourselves
+                    if (chatterId == TwitchEventHandler.user_id)
                     {
-                        Main.LogEntry($"{methodName}_BeforeTextCheck", "Before checking text content");
+                        Main.LogEntry($"{methodName}_SkipSelf", $"Skipping message from self (ID: {chatterId})");
+                        return;
+                    }
 
-                        if (text.Contains("HeyGuys"))
+                    if (chatter != null && text != null)
+                    {
+                        Main.LogEntry($"{methodName}_ExtractChatter", $"Extracted chatter: {chatter}");
+                        Main.LogEntry($"{methodName}_ExtractText", $"Extracted text: {text}");
+        
+                        Main.LogEntry($"{methodName}_Message", $"Message: #{chatter}: {text}");
+                        Main.LogEntry("ReceivedMessage", $"{chatter}: {text}");
+        
+                        try
                         {
-                            Main.LogEntry($"{methodName}_HeyGuys", "Text contains 'HeyGuys', sending 'VoHiYo'");
-                            TwitchEventHandler.SendChatMessageHTTP("[HTTP] VoHiYo").Wait();
-                        }
-                        else if (text.ToLower().StartsWith("!info"))
-                        {
-                            Main.LogEntry($"{methodName}_Info", "Text contains '!info', sending 'This is a test message'");
-                            TwitchEventHandler.SendChatMessageHTTP("[HTTP] This is an info message").Wait();
-                        }
-                        else if (text.ToLower().StartsWith("!commands"))
-                        {
-                            Main.LogEntry($"{methodName}_Commands", "Text contains '!commands', sending 'Available commands: !info !commands !test'");
-                            TwitchEventHandler.SendChatMessageHTTP("[HTTP] Available commands: !info !commands !test").Wait();
-                        }
-                        else
-                        {
-                            Main.LogEntry($"{methodName}_OtherMessage", "[HTTP] Other message, not responding");
-                            UnityMainThreadDispatcher.Instance().Enqueue(() =>
+                            Main.LogEntry($"{methodName}_BeforeTextCheck", "Before checking text content");
+        
+                            if (text.Contains("HeyGuys"))
                             {
-                                SetVariable("webSocketNotification", $"{chatter}: {text}");
-                            });
+                                Main.LogEntry($"{methodName}_HeyGuys", "Text contains 'HeyGuys', sending 'VoHiYo'");
+                                TwitchEventHandler.SendChatMessageHTTP("[HTTP] VoHiYo").Wait();
+                            }
+                            else if (text.ToLower().StartsWith("!info"))
+                            {
+                                Main.LogEntry($"{methodName}_Info", "Text contains '!info', sending 'This is a test message'");
+                                TwitchEventHandler.SendChatMessageHTTP("[HTTP] This is an info message").Wait();
+                            }
+                            else if (text.ToLower().StartsWith("!commands"))
+                            {
+                                Main.LogEntry($"{methodName}_Commands", "Text contains '!commands', sending 'Available commands: !info !commands !test'");
+                                TwitchEventHandler.SendChatMessageHTTP("[HTTP] Available commands: !info !commands !test").Wait();
+                            }
+                            else
+                            {
+                                Main.LogEntry($"{methodName}_OtherMessage", "[HTTP] Other message, not responding");
+                                UnityMainThreadDispatcher.Instance().Enqueue(() =>
+                                {
+                                    SetVariable("webSocketNotification", $"{chatter}: {text}");
+                                });
+                            }
+        
+                            Main.LogEntry($"{methodName}_AfterTextCheck", "After checking text content");
                         }
-
-                        Main.LogEntry($"{methodName}_AfterTextCheck", "After checking text content");
-                    }
-                    catch (Exception ex)
-                    {
-                        Main.LogEntry($"{methodName}_MessageHandling", $"Exception in message handling: {ex.Message}");
-                        Main.LogEntry($"{methodName}_MessageHandling", $"Stack Trace: {ex.StackTrace}");
-                        Main.LogEntry($"{methodName}_MessageHandling", $"Inner Exception: {ex.InnerException?.Message}");
-                    }
+                        catch (Exception ex)
+                        {
+                            Main.LogEntry($"{methodName}_MessageHandling", $"Exception in message handling: {ex.Message}");
+                            Main.LogEntry($"{methodName}_MessageHandling", $"Stack Trace: {ex.StackTrace}");
+                            Main.LogEntry($"{methodName}_MessageHandling", $"Inner Exception: {ex.InnerException?.Message}");
+                        }
+                    } // Added missing closing brace for if (chatter != null && text != null)
                 }
                 else
                 {
                     Main.LogEntry($"{methodName}_NonChatMessage", "Message type is not channel.chat.message");
                 }
-                 Main.LogEntry($"{methodName}_AfterSubscriptionTypeCheck", "After checking subscription type");
+                Main.LogEntry($"{methodName}_AfterSubscriptionTypeCheck", "After checking subscription type");
             }
             catch (Exception ex)
             {

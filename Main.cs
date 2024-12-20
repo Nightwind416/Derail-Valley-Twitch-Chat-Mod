@@ -5,6 +5,8 @@ using System.Threading;
 using UnityEngine;
 using UnityModManagerNet;
 using System.Reflection;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace TwitchChat
 {
@@ -16,7 +18,6 @@ namespace TwitchChat
         public static string settingsFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mods", "TwitchChatMod", "Settings.xml");
         private static string debugLog = string.Empty;
         private static string messageLog = string.Empty;
-        private static readonly string encodedClientId = "cWprbG1icmFzY3hzcW93NWdzdmw2bGE3MnR4bmVz"; // Base64 encoded client_id
         private static bool Load(UnityModManager.ModEntry modEntry)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
@@ -62,13 +63,13 @@ namespace TwitchChat
         }
         private static void OnGUI(UnityModManager.ModEntry modEntry)
         {
-            string methodName = MethodBase.GetCurrentMethod().Name;
+            _ = MethodBase.GetCurrentMethod().Name;
             Settings.Instance.DrawButtons();
 
         }
         private static void OnSaveGUI(UnityModManager.ModEntry modEntry)
         {
-            string methodName = MethodBase.GetCurrentMethod().Name;
+            _ = MethodBase.GetCurrentMethod().Name;
             Settings.Instance.Save(modEntry);
         }
         private static bool OnToggle(UnityModManager.ModEntry _, bool isEnabled)
@@ -77,14 +78,16 @@ namespace TwitchChat
             if (isEnabled)
             {
                 _isEnabled = true;
-                MessageHandler.AttachNotification("TwitchChatMod Notifications Enabled.", "null");
+                TwitchEventHandler.ValidateAuthToken().Wait();
+                MessageHandler.AttachNotification("TwitchChatMod is now receiving message notifications from your channel.", "null");
                 LogEntry(methodName, "Mod Enabled!");
                 ModEntry.Enabled = true;
             }
             else
             {
                 _isEnabled = false;
-                MessageHandler.AttachNotification("TwitchChatMod Notifications Disabled.", "null");
+                WebSocketManager.DisconnectFromoWebSocket().Wait();
+                MessageHandler.AttachNotification("TwitchChatMod is no longer receiving message notifications from your Channel.", "null");
                 LogEntry(methodName, "Mod Disabled!");
                 ModEntry.Enabled = false;
             }
@@ -154,16 +157,29 @@ namespace TwitchChat
         public static void LogEntry(string source, string message)
         {
             string selected_log = (source == "ReceivedMessage" || source == "SentMessage") ? messageLog : debugLog;
-        
+
+            // Early return if this is a debug message and debug logging is off
+            if (selected_log == debugLog)
+            {
+                if (Settings.Instance.debugLevel == DebugLevel.Off)
+                    return;
+                if (Settings.Instance.debugLevel == DebugLevel.Minimal && 
+                    !MinimalDebug.Contains(source))
+                    return;
+                if (Settings.Instance.debugLevel == DebugLevel.Reduced &&
+                    ReducedDebug.Contains(source))
+                    return;
+            }
+
             if (string.IsNullOrEmpty(selected_log))
             {
                 ModEntry.Logger.Log($"[{source}] Log file path is not initialized.");
                 return;
             }
-        
+
             int retryCount = 3;
             int delay = 1000; // 1 second
-        
+
             for (int i = 0; i < retryCount; i++)
             {
                 try
@@ -185,10 +201,17 @@ namespace TwitchChat
                 }
             }
         }
-        public static string GetClientId()
-        {
-            byte[] data = Convert.FromBase64String(encodedClientId);
-            return System.Text.Encoding.UTF8.GetString(data);
-        }
+        private static readonly HashSet<string> MinimalDebug =
+        [
+            "Load",
+            "OnToggle",
+            "OnUpdate",
+            "RegisterWebbSocketChatEvent"
+        ];
+        private static readonly HashSet<string> ReducedDebug =
+        [
+            "ReceiveMessages",
+            "AttachNotification"
+        ];
     }
 }

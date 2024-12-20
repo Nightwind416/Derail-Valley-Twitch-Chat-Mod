@@ -3,10 +3,10 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.WebSockets;
 using System.Reflection;
+using System.Text.Json;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 
 namespace TwitchChat
 {
@@ -15,6 +15,13 @@ namespace TwitchChat
         private static ClientWebSocket webSocketClient = new();
         private static readonly Uri serverUri = new("wss://eventsub.wss.twitch.tv/ws?keepalive_timeout_seconds=30");
         private static string session_id = string.Empty;
+        private static DateTime lastKeepaliveTime = DateTime.UtcNow;
+        private static bool isConnectionHealthy = false;
+        private static Timer? connectionMonitorTimer;
+        private static readonly TimeSpan keepaliveTimeout = TimeSpan.FromSeconds(45); // Twitch timeout is 30s, we add buffer
+
+        public static bool IsConnectionHealthy => isConnectionHealthy;
+
         public static async Task ConnectToWebSocket()
         {
             string methodName = "ConnectToWebSocket";
@@ -26,7 +33,7 @@ namespace TwitchChat
                 return;
             }
 
-            if (string .IsNullOrEmpty(TwitchEventHandler.oath_access_token))
+            if (string .IsNullOrEmpty(Settings.Instance.EncodedOAuthToken))
             {
                 Main.LogEntry(methodName, "Access token is empty. Cannot attempt connection to WebSocket.");
                 MessageHandler.SetVariable("alertMessage", "Access token is empty. Cannot attempt connection to WebSocket.");
@@ -47,15 +54,41 @@ namespace TwitchChat
                 await webSocketClient.ConnectAsync(serverUri, CancellationToken.None);
                 Main.LogEntry(methodName, "Connected to WebSocket server.");
 
+                // Initialize connection monitoring
+                lastKeepaliveTime = DateTime.UtcNow;
+                isConnectionHealthy = true;
+                connectionMonitorTimer = new Timer(CheckConnectionHealth, null, TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(15));
+
                 // Start receiving messages
                 _ = Task.Run(ReceiveMessages);
 
             }
             catch (Exception ex)
             {
+                isConnectionHealthy = false;
                 Main.LogEntry(methodName, $"Connection error: {ex.Message}");
             }
         }
+
+        private static void CheckConnectionHealth(object state)
+        {
+            var timeSinceLastKeepalive = DateTime.UtcNow - lastKeepaliveTime;
+            bool wasHealthy = isConnectionHealthy;
+            isConnectionHealthy = timeSinceLastKeepalive <= keepaliveTimeout;
+
+            if (wasHealthy && !isConnectionHealthy)
+            {
+                Main.LogEntry("CheckConnectionHealth", "Connection appears to be dead (no recent keepalive)");
+                _ = ReconnectAsync();
+            }
+        }
+
+        private static async Task ReconnectAsync()
+        {
+            await DisconnectFromoWebSocket();
+            await ConnectToWebSocket();
+        }
+
         private static async Task ReceiveMessages()
         {
             string methodName = "ReceiveMessages";
@@ -66,7 +99,7 @@ namespace TwitchChat
                 {
                     var result = await webSocketClient.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
                     var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
-
+        
                     // Skip empty messages
                     if (string.IsNullOrWhiteSpace(message))
                     {
@@ -78,40 +111,59 @@ namespace TwitchChat
         
                     try
                     {
-                        var jsonMessage = JsonConvert.DeserializeObject<dynamic>(message);
-                        if (jsonMessage == null)
+                        var jsonMessage = JsonSerializer.Deserialize<JsonElement>(message);
+                        if (jsonMessage.ValueKind == JsonValueKind.Undefined)
                         {
                             Main.LogEntry(methodName, "Failed to parse JSON message");
                             continue;
                         }
-                        if (jsonMessage?.metadata?.message_type == "session_welcome")
+                        if (jsonMessage.TryGetProperty("metadata", out JsonElement metadata) && metadata.TryGetProperty("message_type", out JsonElement messageType))
                         {
-                            session_id = jsonMessage.payload.session.id.ToString().Trim();
-                            
-                            Main.LogEntry(methodName, $"Session ID: {session_id}");
-                            Main.LogEntry(methodName, "TwitchChat connected to WebSocket");
-                            
-                            await RegisterWebbSocketChatEvent();
-                        }
-                        else if (jsonMessage?.metadata?.message_type == "notification")
-                        {
-                            MessageHandler.HandleNotification(jsonMessage);
-                        }
-                        else if (jsonMessage?.metadata?.message_type == "session_keepalive")
-                        {
-                            Main.LogEntry(methodName, "Received keepalive message.");
-                        }
-                        else if (jsonMessage?.metadata?.message_type == "session_reconnect")
-                        {
-                            Main.LogEntry(methodName, "Received reconnect message.");
-                        }
-                        else if (jsonMessage?.metadata?.message_type == "revocation")
-                        {
-                            Main.LogEntry(methodName, "Received revocation message.");
+                            string messageTypeString = messageType.GetString() ?? string.Empty;
+                            if (messageTypeString == null)
+                            {
+                                Main.LogEntry(methodName, "Received message with null message type, skipping...");
+                                continue;
+                            }
+                            if (messageTypeString == "session_welcome")
+                            {
+                                var sessionId = jsonMessage.GetProperty("payload").GetProperty("session").GetProperty("id").GetString()?.Trim();
+                                if (!string.IsNullOrEmpty(sessionId))
+                                {
+                                    session_id = sessionId!;
+                                }
+                                
+                                Main.LogEntry(methodName, $"Session ID: {session_id}");
+                                Main.LogEntry(methodName, "TwitchChat connected to WebSocket");
+                                
+                                await RegisterWebbSocketChatEvent();
+                            }
+                            else if (messageTypeString == "notification")
+                            {
+                                MessageHandler.HandleNotification(jsonMessage);
+                            }
+                            else if (messageTypeString == "session_keepalive")
+                            {
+                                lastKeepaliveTime = DateTime.UtcNow;
+                                isConnectionHealthy = true;
+                                Main.LogEntry(methodName, "Received keepalive message.");
+                            }
+                            else if (messageTypeString == "session_reconnect")
+                            {
+                                Main.LogEntry(methodName, "Received reconnect message.");
+                            }
+                            else if (messageTypeString == "revocation")
+                            {
+                                Main.LogEntry(methodName, "Received revocation message.");
+                            }
+                            else
+                            {
+                                Main.LogEntry(methodName, $"Unknown message type: {messageTypeString}");
+                            }
                         }
                         else
                         {
-                            Main.LogEntry(methodName, $"Unknown message type: {jsonMessage?.metadata?.message_type}");
+                            Main.LogEntry(methodName, "Failed to parse JSON message");
                         }
                     }
                     catch (JsonException ex)
@@ -150,7 +202,7 @@ namespace TwitchChat
                 return;
             }
 
-            var content = new StringContent(JsonConvert.SerializeObject(new
+            var content = new StringContent(JsonSerializer.Serialize(new
             {
                 type = "channel.chat.message",
                 version = "1",
@@ -166,9 +218,13 @@ namespace TwitchChat
                 }
             }), Encoding.UTF8, "application/json");
         
+            byte[] tokenBytes = Convert.FromBase64String(Settings.Instance.EncodedOAuthToken);
+            _ = Encoding.UTF8.GetString(tokenBytes);
+            string access_token = Encoding.UTF8.GetString(tokenBytes);
+
             TwitchEventHandler.httpClient.DefaultRequestHeaders.Clear();
-            TwitchEventHandler.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TwitchEventHandler.oath_access_token);
-            TwitchEventHandler.httpClient.DefaultRequestHeaders.Add("Client-ID", Main.GetClientId());
+            TwitchEventHandler.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", access_token);
+            TwitchEventHandler.httpClient.DefaultRequestHeaders.Add("Client-ID", TwitchEventHandler.GetClientId());
             var response = await TwitchEventHandler.httpClient.PostAsync("https://api.twitch.tv/helix/eventsub/subscriptions", content);
             if (response.StatusCode != System.Net.HttpStatusCode.Accepted)
             {
@@ -183,6 +239,9 @@ namespace TwitchChat
         public static async Task DisconnectFromoWebSocket()
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
+            connectionMonitorTimer?.Dispose();
+            isConnectionHealthy = false;
+            
             if (webSocketClient.State == WebSocketState.Open)
             {
                 await webSocketClient.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing", CancellationToken.None);

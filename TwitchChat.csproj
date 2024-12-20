@@ -11,6 +11,9 @@
 		<DebugType>none</DebugType>
 	</PropertyGroup>
 
+	<!-- Import TextTemplate targets -->
+    <Import Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TextTemplating\Microsoft.TextTemplating.targets" Condition="EXISTS('$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TextTemplating\Microsoft.TextTemplating.targets')" />
+
 	<!-- Derail Valley Managed -->
 	<ItemGroup>
 		<Reference Include="DV.UIFramework">
@@ -66,8 +69,7 @@
 	<!-- Microsoft Extensions -->
 	<ItemGroup>
 	  <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
-	  <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.3.0" />
-	  <PackageReference Include="System.Text.Json" Version="9.0.0" />
+	  <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.2.0" />
 	  <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
 	</ItemGroup>
 
@@ -75,19 +77,6 @@
 	<ItemGroup>
 	  <PackageReference Include="System.Net.WebSockets.Client" Version="4.3.2" />
 	</ItemGroup>
-
-	<!-- Exclude unnecessary files -->
-    <ItemGroup>
-        <Reference Include="System.Runtime.CompilerServices.Unsafe">
-			<HintPath>$(DerailValleyBasePath)DerailValley_Data\Managed\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
-			<Private>false</Private>
-        </Reference>
-        <Reference Include="Newtonsoft.Json">
-			<HintPath>$(DerailValleyBasePath)DerailValley_Data\Managed\Newtonsoft.Json.dll</HintPath>
-			<Private>false</Private>
-        </Reference>
-		<Reference Include="System.Net.Http" />
-    </ItemGroup>
 	
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
 		<!-- Package after Release build -->
@@ -95,7 +84,8 @@
         <Exec Condition="'$(ConfigurationName)' == 'Release' And '$(OS)' != 'Windows_NT'" Command="pwsh -Command &quot;./package.ps1&quot;" />
 
 		<!-- Copy additional files -->
-	    <Copy SourceFiles="additional_files\info.json" DestinationFolder="$(OutputPath)" />
-		<Copy SourceFiles="additional_files\LICENSE" DestinationFolder="$(OutputPath)" />
+	    <!-- <Copy SourceFiles="additional_files\info.json" DestinationFolder="$(OutputPath)" /> -->
+		<!-- <Copy SourceFiles="additional_files\LICENSE" DestinationFolder="$(OutputPath)" /> -->
+		<Copy SourceFiles="additional_files\authorization_response.html" DestinationFolder="$(OutputPath)" />
 	</Target>
 </Project>
