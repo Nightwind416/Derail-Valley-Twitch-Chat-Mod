@@ -7,6 +7,9 @@ using System.Xml;
 
 namespace TwitchChat
 {
+    /// <summary>
+    /// Manages standard Twitch chat messages for different events
+    /// </summary>
     public class StandardMessages
     {
         public bool welcomeMessageActive = true;
@@ -18,11 +21,19 @@ namespace TwitchChat
         public bool newSubscriberMessageActive = true;
         public string newSubscriberMessage = "Thank you for subscribing!";
     }
+
+    /// <summary>
+    /// Handles command-related messages and their configurations
+    /// </summary>
     public class CommandMessages
     {
         public bool commandMessageActive = true;
         public string commandMessage = "!info !commands";
     }
+
+    /// <summary>
+    /// Manages periodic automated messages and their scheduling
+    /// </summary>
     public class TimedMessages
     {
         public bool welcomeMessageActive = true;
@@ -39,6 +50,11 @@ namespace TwitchChat
         public bool TimedMessage1Toggle = false;
         public string TimedMessage1 = "MessageNotSet";
         public float TimedMessage1Timer = 0;
+
+        /// <summary>
+        /// Initializes the timed message system by reading configurations from XML
+        /// and setting up message timers
+        /// </summary>
         private static void TimedMessagesInit()
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
@@ -97,6 +113,10 @@ namespace TwitchChat
             }
         }
     }
+
+    /// <summary>
+    /// Handles Dispatcher Mod related messages and configurations, when detected
+    /// </summary>
     public class DispatcherModMessages
     {
         public bool dispatcherMessageActive = false;

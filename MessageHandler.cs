@@ -8,6 +8,9 @@ using System.Text.Json;
 
 namespace TwitchChat
 {
+    /// <summary>
+    /// Handles Twitch chat messages and in-game notifications.
+    /// </summary>
     public class MessageHandler
     {
         private static int messageQueueTestCounter = 1;
@@ -17,25 +20,37 @@ namespace TwitchChat
             { "httpNotification", "" },
             { "alertNotification", "" }
         };
-        public static void SetVariable(string key, string value)
+
+        /// <summary>
+        /// Sets a notification variable in the queue.
+        /// </summary>
+        /// <param name="notification_type">The notification type.</param>
+        /// <param name="message">The notification message.</param>
+        public static void SetVariable(string notification_type, string message)
         {
-            if (NewNotificationQueue.ContainsKey(key))
+            if (NewNotificationQueue.ContainsKey(notification_type))
             {
-                if (NewNotificationQueue[key] != value)
+                if (NewNotificationQueue[notification_type] != message)
                 {
-                    NewNotificationQueue[key] = value;
-                    AttachNotification(value, "null");
+                    NewNotificationQueue[notification_type] = message;
+                    AttachNotification(message, "null");
                 }
             }
             else
             {
-                NewNotificationQueue.Add(key, value);
-                AttachNotification(value, "null");
+                NewNotificationQueue.Add(notification_type, message);
+                AttachNotification(message, "null");
             }
         }
-        public static string? GetVariable(string key)
+
+        /// <summary>
+        /// Retrieves the last notification received of a given type from the queue.
+        /// </summary>
+        /// <param name="notification_type">The notification type to retrieve.</param>
+        /// <returns>The notification message or null if not found.</returns>
+        public static string? GetVariable(string notification_type)
         {
-            return NewNotificationQueue.ContainsKey(key) ? NewNotificationQueue[key] : null;
+            return NewNotificationQueue.ContainsKey(notification_type) ? NewNotificationQueue[notification_type] : null;
         }
         public static void WebSocketNotificationTest()
         {
@@ -65,6 +80,11 @@ namespace TwitchChat
         {
             public string? text { get; set; }
         }
+
+        /// <summary>
+        /// Handles incoming Twitch chat notifications and processes commands.
+        /// </summary>
+        /// <param name="jsonMessage">The raw JSON message received from Twitch.</param>
         public static void HandleNotification(dynamic jsonMessage)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
@@ -149,6 +169,12 @@ namespace TwitchChat
                 Main.LogEntry($"{methodName}_Exception", $"Inner Exception: {ex.InnerException?.Message}");
             }
         }
+
+        /// <summary>
+        /// Displays an in-game notification attached to a GameObject (if included).
+        /// </summary>
+        /// <param name="displayed_text">The text to display.</param>
+        /// <param name="object_name">The name of the GameObject to attempt to attach to.</param>
         public static void AttachNotification(string displayed_text, string object_name)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;

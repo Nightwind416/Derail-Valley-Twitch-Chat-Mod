@@ -9,14 +9,24 @@ using System.Collections.Generic;
 
 namespace TwitchChat
 {
+    /// <summary>
+    /// Main entry point and core functionality handler for the Twitch Chat mod.
+    /// Manages mod initialization, settings, and logging functionality.
+    /// </summary>
     public static class Main
     {
-        private static bool _isEnabled;
+        // private static bool _isEnabled;
         public static bool _dispatcherModDetected;
         public static UnityModManager.ModEntry ModEntry { get; private set; } = null!;
         public static string settingsFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mods", "TwitchChatMod", "Settings.xml");
         private static string debugLog = string.Empty;
         private static string messageLog = string.Empty;
+
+        /// <summary>
+        /// Initializes the mod and sets up required components and dependencies.
+        /// </summary>
+        /// <param name="modEntry">The mod entry point provided by Unity Mod Manager.</param>
+        /// <returns>True if initialization was successful, false otherwise.</returns>
         private static bool Load(UnityModManager.ModEntry modEntry)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
@@ -61,30 +71,45 @@ namespace TwitchChat
             LogEntry(methodName, "Load method completed successfullyy.");
             return true;
         }
+
+        /// <summary>
+        /// Handles the mod's GUI rendering in the Unity Mod Manager interface.
+        /// </summary>
+        /// <param name="modEntry">The mod entry point provided by Unity Mod Manager.</param>
         private static void OnGUI(UnityModManager.ModEntry modEntry)
         {
             _ = MethodBase.GetCurrentMethod().Name;
             Settings.Instance.DrawButtons();
 
         }
+
+        /// <summary>
+        /// Saves the mod's GUI settings when changes are made.
+        /// </summary>
+        /// <param name="modEntry">The mod entry point provided by Unity Mod Manager.</param>
         private static void OnSaveGUI(UnityModManager.ModEntry modEntry)
         {
             _ = MethodBase.GetCurrentMethod().Name;
             Settings.Instance.Save(modEntry);
         }
-        private static bool OnToggle(UnityModManager.ModEntry _, bool isEnabled)
+
+        /// <summary>
+        /// Handles the enabling and disabling of the mod.
+        /// </summary>
+        /// <param name="_">Unused mod entry parameter.</param>
+        /// <param name="isEnabled">Boolean indicating whether the mod should be enabled or disabled.</param>
+        /// <returns>True if the toggle operation was successful, false otherwise.</returns>
+        private static bool OnToggle()
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
-            if (isEnabled)
+            if (ModEntry.Enabled)
             {
-                _isEnabled = true;
                 MessageHandler.AttachNotification("TwitchChatMod is now receiving message notifications from your channel.", "null");
                 LogEntry(methodName, "Mod Enabled!");
                 ModEntry.Enabled = true;
             }
             else
             {
-                _isEnabled = false;
                 MessageHandler.AttachNotification("TwitchChatMod is no longer receiving message notifications from your Channel.", "null");
                 LogEntry(methodName, "Mod Disabled!");
                 ModEntry.Enabled = false;
@@ -92,12 +117,18 @@ namespace TwitchChat
 
             return true;
         }
-        private static void OnUpdate(UnityModManager.ModEntry mod, float delta)
+
+        /// <summary>
+        /// Updates the mod's state each frame when enabled.
+        /// </summary>
+        /// <param name="modEntry">The mod entry point provided by Unity Mod Manager.</param>
+        /// <param name="delta">Time in seconds since the last update.</param>
+        private static void OnUpdate(UnityModManager.ModEntry modEntry, float delta)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
             try
             {
-                if (_isEnabled)
+                if (ModEntry.Enabled)
                 {
                     Settings.Instance.Update();
                 }
@@ -107,6 +138,11 @@ namespace TwitchChat
                 LogEntry(methodName, $"Exception: {e}");
             }
         }
+
+        /// <summary>
+        /// Initializes and manages the mod's log files, maintaining only the last 3 debug log files.
+        /// Creates necessary directories and log files with appropriate headers.
+        /// </summary>
         private static void InitializeLogFiles()
         {
             string logDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mods", "TwitchChatMod", "Logs");
@@ -152,6 +188,13 @@ namespace TwitchChat
         
             ModEntry.Logger.Log("Log files initialized.");
         }
+
+        /// <summary>
+        /// Writes a log entry to either the debug or message log file based on the source.
+        /// Implements retry logic for handling file access conflicts.
+        /// </summary>
+        /// <param name="source">The source (method) of the log entry, also determines which log file to use.</param>
+        /// <param name="message">The message to be logged.</param>
         public static void LogEntry(string source, string message)
         {
             string selected_log = (source == "ReceivedMessage" || source == "SentMessage") ? messageLog : debugLog;
@@ -199,6 +242,10 @@ namespace TwitchChat
                 }
             }
         }
+
+        /// <summary>
+        /// List of source/method names that should be logged when debug level is set to Minimal.
+        /// </summary>
         private static readonly HashSet<string> MinimalDebug =
         [
             "Load",
@@ -206,6 +253,10 @@ namespace TwitchChat
             "OnUpdate",
             "RegisterWebbSocketChatEvent"
         ];
+
+        /// <summary>
+        /// List of source/method names that should be excluded from logging when debug level is set to Reduced.
+        /// </summary>
         private static readonly HashSet<string> ReducedDebug =
         [
             "ReceiveMessages",

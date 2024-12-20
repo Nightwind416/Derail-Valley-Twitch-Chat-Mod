@@ -7,10 +7,17 @@ using System.Threading.Tasks;
 
 namespace TwitchChat
 {
+    /// <summary>
+    /// Handles Twitch API events and interactions.
+    /// </summary>
     public class TwitchEventHandler
     {
         public static readonly HttpClient httpClient = new();
         public static string user_id = string.Empty;
+
+        /// <summary>
+        /// Retrieves the user ID for the configured Twitch username.
+        /// </summary>
         public static async Task GetUserID()
         {
             string methodName = "GetUserID";
@@ -56,6 +63,10 @@ namespace TwitchChat
             }
             Main.LogEntry(methodName, $"User ID: {user_id}");
         }
+
+        /// <summary>
+        /// Checks the connection status with Twitch API.
+        /// </summary>
         public static async Task ConnectionStatus()
         {
             string methodName = "ConnectionStatus";
@@ -121,6 +132,11 @@ namespace TwitchChat
                 Main.LogEntry(methodName, $"General error: {ex.Message}");
             }
         }
+
+        /// <summary>
+        /// Sends a chat message to the Twitch channel.
+        /// </summary>
+        /// <param name="message">The message to send.</param>
         public static async Task SendMessage(string message)
         {
             string methodName = "SendChatMessageHTTP";
@@ -161,6 +177,11 @@ namespace TwitchChat
                 Main.LogEntry(methodName, $"Exception occurred: {ex.Message}");
             }
         }
+
+        /// <summary>
+        /// Retrieves the decoded client ID for Twitch API authentication.
+        /// </summary>
+        /// <returns>The decoded client ID string.</returns>
         public static string GetClientId()
         {
             string encodedClientId = "cWprbG1icmFzY3hzcW93NWdzdmw2bGE3MnR4bmVz";

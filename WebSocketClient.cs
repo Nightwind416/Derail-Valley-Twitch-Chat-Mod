@@ -10,6 +10,9 @@ using System.Threading.Tasks;
 
 namespace TwitchChat
 {
+    /// <summary>
+    /// Manages WebSocket connections and message handling for Twitch chat integration.
+    /// </summary>
     public class WebSocketManager
     {
         private static ClientWebSocket webSocketClient = new();
@@ -18,6 +21,11 @@ namespace TwitchChat
         private static bool isConnectionHealthy = false;
         private static Timer? connectionMonitorTimer;
         public static bool IsConnectionHealthy => isConnectionHealthy;
+
+        /// <summary>
+        /// Establishes a WebSocket connection to Twitch's EventSub service.
+        /// </summary>
+        /// <returns>A task representing the asynchronous connection operation.</returns>
         public static async Task ConnectToWebSocket()
         {
             string methodName = "ConnectToWebSocket";
@@ -67,6 +75,11 @@ namespace TwitchChat
                 Main.LogEntry(methodName, $"Connection error: {ex.Message}");
             }
         }
+
+        /// <summary>
+        /// Monitors the health of the WebSocket connection by checking keepalive messages.
+        /// </summary>
+        /// <param name="state">Timer state object (unused).</param>
         private static void CheckConnectionHealth(object state)
         {
             
@@ -80,11 +93,19 @@ namespace TwitchChat
                 _ = ReconnectAsync();
             }
         }
+
+        /// <summary>
+        /// Attempts to reconnect the WebSocket connection by disconnecting and connecting again.
+        /// </summary>
         private static async Task ReconnectAsync()
         {
             await DisconnectFromoWebSocket();
             await ConnectToWebSocket();
         }
+
+        /// <summary>
+        /// Continuously receives and processes messages from the WebSocket connection.
+        /// </summary>
         private static async Task ReceiveMessages()
         {
             string methodName = "ReceiveMessages";
@@ -189,6 +210,10 @@ namespace TwitchChat
                 Main.LogEntry(methodName, "WebSocket connection closed.");
             }
         }
+
+        /// <summary>
+        /// Registers for Twitch chat events using the WebSocket connection.
+        /// </summary>
         private static async Task RegisterWebbSocketChatEvent()
         {
             string methodName = "RegisterWebbSocketChatEvent";
@@ -232,6 +257,10 @@ namespace TwitchChat
                 Main.LogEntry(methodName, "Subscribed to channel.chat.message.");
             }
         }
+
+        /// <summary>
+        /// Gracefully disconnects from the WebSocket server.
+        /// </summary>
         public static async Task DisconnectFromoWebSocket()
         {
             string methodName = MethodBase.GetCurrentMethod().Name;

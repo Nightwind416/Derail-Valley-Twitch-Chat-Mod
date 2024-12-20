@@ -5,6 +5,9 @@ using UnityModManagerNet;
 
 namespace TwitchChat
 {
+    /// <summary>
+    /// Defines the level of debug information to be logged
+    /// </summary>
     public enum DebugLevel
     {
         Off,
@@ -13,6 +16,10 @@ namespace TwitchChat
         Full
     }
 
+    /// <summary>
+    /// Handles the mod settings and UI configuration for the Twitch Chat integration.
+    /// Implements UnityModManager.ModSettings for save/load functionality and IDrawable for UI rendering.
+    /// </summary>
     [DrawFields(DrawFieldMask.Public)]
     [Serializable]
     public class Settings : UnityModManager.ModSettings, IDrawable
@@ -30,6 +37,11 @@ namespace TwitchChat
         private bool messageQueueAttachmentMessageTestFlag = false;
         private bool MessageQueueAttachmentTestFlag = false;
         public DebugLevel debugLevel = DebugLevel.Minimal;
+
+        /// <summary>
+        /// Draws the mod configuration UI using Unity's IMGUI system.
+        /// Handles user input and displays current connection status.
+        /// </summary>
         public void DrawButtons()
         {
             GUILayout.BeginHorizontal();
@@ -161,6 +173,11 @@ namespace TwitchChat
             GUI.color = Color.white;  // Reset color
             GUILayout.EndHorizontal();
         }
+
+        /// <summary>
+        /// Updates the settings based on UI interactions and handles various action flags.
+        /// Called every frame to process pending actions.
+        /// </summary>
         public void Update()
         {
             _ = this;
@@ -204,11 +221,30 @@ namespace TwitchChat
                 MessageHandler.WebSocketNotificationTest();
             }
         }
+
+        /// <summary>
+        /// Default constructor for Settings class
+        /// </summary>
         public Settings() { }
+
+        /// <summary>
+        /// Saves the current settings to the mod's configuration file
+        /// </summary>
+        /// <param name="entry">The mod entry point containing mod information</param>
         public override void Save(UnityModManager.ModEntry entry) {
             Save(this, entry);
         }
+
+        /// <summary>
+        /// Handles settings changes
+        /// </summary>
         public void OnChange() { }
+
+        /// <summary>
+        /// Gets the path for the settings file
+        /// </summary>
+        /// <param name="modEntry">The mod entry point containing mod information</param>
+        /// <returns>The full path to the settings file</returns>
         public override string GetPath(UnityModManager.ModEntry modEntry) {
             return Path.Combine(modEntry.Path, "Settings.xml");
         }

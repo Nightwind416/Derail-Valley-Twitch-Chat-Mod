@@ -11,8 +11,14 @@ using System.Net.Http;
 
 namespace TwitchChat
 {
+    /// <summary>
+    /// Manages OAuth authentication flow with Twitch API.
+    /// </summary>
     public class OAuthTokenManager : MonoBehaviour
     {
+        /// <summary>
+        /// Initiates the OAuth token retrieval process through Twitch authentication.
+        /// </summary>
         public static async Task GetOathToken()
         {
             string methodName = "GetOathToken";
@@ -145,6 +151,10 @@ namespace TwitchChat
                 Settings.Instance.authentication_status = "Authorization failed. Please try again.";
             }
         }
+
+        /// <summary>
+        /// Validates the stored OAuth token with Twitch API.
+        /// </summary>
         public static async Task ValidateAuthToken()
         {
             string methodName = "ValidateAuthToken";
