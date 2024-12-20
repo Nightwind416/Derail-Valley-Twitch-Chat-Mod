@@ -22,6 +22,11 @@ namespace TwitchChat
         private static Timer? connectionMonitorTimer;
         public static bool IsConnectionHealthy => isConnectionHealthy;
 
+        private static string lastMessageType = "None";
+        private static string lastChatMessage = "No messages received";
+        public static string LastMessageType => lastMessageType;
+        public static string LastChatMessage => lastChatMessage;
+
         /// <summary>
         /// Establishes a WebSocket connection to Twitch's EventSub service.
         /// </summary>
@@ -137,6 +142,8 @@ namespace TwitchChat
                         if (jsonMessage.TryGetProperty("metadata", out JsonElement metadata) && metadata.TryGetProperty("message_type", out JsonElement messageType))
                         {
                             string messageTypeString = messageType.GetString() ?? string.Empty;
+                            lastMessageType = messageTypeString;  // Update last message type
+
                             if (messageTypeString == null)
                             {
                                 Main.LogEntry(methodName, "Received message with null message type, skipping...");
@@ -157,6 +164,14 @@ namespace TwitchChat
                             }
                             else if (messageTypeString == "notification")
                             {
+                                // Extract and store chat message details
+                                if (jsonMessage.TryGetProperty("payload", out JsonElement payload) &&
+                                    payload.TryGetProperty("event", out JsonElement evt))
+                                {
+                                    string extractedUserName = evt.GetProperty("chatter_user_name").GetString() ?? "unknown";
+                                    string extractedMessage = evt.GetProperty("message").GetProperty("text").GetString() ?? "empty";
+                                    lastChatMessage = $"{extractedUserName}: {extractedMessage}";
+                                }
                                 MessageHandler.HandleNotification(jsonMessage);
                             }
                             else if (messageTypeString == "session_keepalive")

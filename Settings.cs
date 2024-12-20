@@ -107,6 +107,21 @@ namespace TwitchChat
             GUILayout.Label("■", GUILayout.Width(25));
             GUI.color = Color.white;
             GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Last Message Type:", GUILayout.Width(150));
+            GUI.color = Color.cyan;
+            GUILayout.Label(WebSocketManager.LastMessageType);
+            GUI.color = Color.white;
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Last Chat Message:", GUILayout.Width(150));
+            GUI.color = Color.cyan;
+            GUILayout.Label(WebSocketManager.LastChatMessage);
+            GUI.color = Color.white;
+            GUILayout.EndHorizontal();
+
             GUILayout.BeginHorizontal();
             string buttonText = WebSocketManager.IsConnectionHealthy
                 ? "Disconnect"
@@ -119,12 +134,14 @@ namespace TwitchChat
             GUILayout.EndHorizontal();
         
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Click here...", GUILayout.Width(100)))
+            if (GUILayout.Button("Send Test", GUILayout.Width(100)))
             {
                 sendMessageFlag = true;
             }
-            GUILayout.Label("... to send a test message to your Twitch channel");
+            GUILayout.Label("Each click of the button will send a 'test' message to your Twitch channel");
             GUILayout.EndHorizontal();
+            GUILayout.Label("Note1: Test messages are sent to the channel chat and are visible to all viewers");
+            GUILayout.Label("Note2: 'Good' test messages only confirm a valid Token, use Connection Status for status on receiving messages");
 
             GUILayout.Space(10);
             GUILayout.Box("", GUILayout.ExpandWidth(true), GUILayout.Height(1));

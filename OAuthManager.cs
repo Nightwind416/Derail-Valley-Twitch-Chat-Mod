@@ -292,9 +292,14 @@ namespace TwitchChat
             width: 90%;
         }
         h1 {
-            color: #35ea3e;
+            color: #35eae4;
             margin-bottom: 0.5em;
             font-size: 2em;
+        }
+        h2 {
+            color: #31e5e5;
+            margin-bottom: 0.5em;
+            font-size: 1.5em;
         }
         .success-message {
             color: #43d299;
@@ -310,7 +315,6 @@ namespace TwitchChat
         a {
             color: #1596ff;
             text-decoration: none;
-            margin: 0 10px;
             transition: color 0.3s;
         }
         a:hover {
@@ -322,7 +326,6 @@ namespace TwitchChat
             color: #a0a0a0;
             margin-top: 1.5em;
             padding-top: 1.5em;
-            border-top: 1px solid #404040;
         }
         .revoke-section {
             margin-top: 1.5em;
@@ -333,46 +336,75 @@ namespace TwitchChat
             text-align: left;
         }
         .revoke-section h2 {
-            color: #e0e0e0;
+            text-align: center;
+            color:rgb(237, 73, 55);
             font-size: 1.2em;
             margin-bottom: 0.5em;
+        }
+        .donation-section {
+            margin: 1.5em 0;
+            padding: 1em;
+            background-color: #363636;
+            border-radius: 8px;
+        }
+        .paypal-button {
+            padding: 8px 16px;
+            background: #0070ba;
+            border-radius: 4px;
+            color: white !important;
+        }
+        .social-section {
+            margin: 1.5em 0;
+            padding: 1em;
+            background-color: #363636;
+            border-radius: 8px;
+            text-align: center;
         }
     </style>
 </head>
 <body>
-    <div class=""container"">
-        <h1>Authorization Successful</h1>
+    <div class='container'>
+        <h1>Authorization Successful</h1>        
+        <p class='success-message'>TwitchChat Authentication Token Received!</p>
+        <p class='disclaimer'>(It is safe to close this window and return to the game at this time.)</p>
         
-        <p class=""success-message"">TwitchChat Authentication Token Received!</p>
-        <p>Your Derail Valley game is now hooked up to Twitch to enable in-game messaging and alerts. Make sure to finish configuring and enabling the mod using the in game settings. Authentication Tokens are typicllay good for 30 days, but may be revoked or cancelled for any number of reasons. If your Token is not validated, you can request a new one using the same in-game process.</p>
-        
-        <div class=""link-list"">
-            <a href=""https://www.nexusmods.com/derailvalley/mods/1069"" target=""_blank"">Nexus Mods Page</a> |
-            <a href=""https://github.com/Nightwind416/Derail-Valley-Twitch-Chat-Mod"" target=""_blank"">GitHub Repository</a> |
-            <a href=""https://github.com/Nightwind416/Derail-Valley-Twitch-Chat-Mod/issues"" target=""_blank"">Issues and Suggestions</a>
-        </div>
-        
-        <p>Derail Valley TwitchChat Mod developed by Nightwind</p>
-        <p>Click here for <a href=""https://www.twitch.tv/nightwind416"" target=""_blank"">Nightwind's Twitch Channel</a></p>
-        
-        <div class=""revoke-section"">
+        <div class='revoke-section'>
             <h2>Managing Your Twitch Authorization</h2>
             <p>If you ever need or want to revoke access/remove authorization:</p>
             <ol>
-                <li>Visit the official <a href=""https://www.twitch.tv/settings/connections"" target=""_blank"">Twitch Connection Settings</a> page</li>
-                <li>Find ""DerailValleyChatMod"" under the ""Other Connections"" section, lower on the page</li>
-                <li>Click ""Disconnect""</li>
+                <li>Visit the official <a href='https://www.twitch.tv/settings/connections' target='_blank'>Twitch Connection Settings</a> page</li>
+                <li>Find DerailValleyChatMod under the Other Connections section, lower on the page</li>
+                <li>Click Disconnect</li>
             </ol>
             <p>You can always re-authorize the mod by requesting a new Authorization Token through the in-game settings menu.</p>
         </div>
         
-        <div class=""disclaimer"">
-            <p>This is a third-party modification created by an independent developer and not affiliated with or endorsed by Altfuture or the Derail Valley development team.</p>
-            <p>(It is safe to close this window and return to the game at this time.)</p>
+        <div class='link-list'>
+            <h2>TwitchChatMod Details</h2>
+            <a href='https://www.nexusmods.com/derailvalley/mods/1069' target='_blank'>Nexus Mods Page</a> |
+            <a href='https://github.com/Nightwind416/Derail-Valley-Twitch-Chat-Mod' target='_blank'>GitHub Repository</a> |
+            <a href='https://github.com/Nightwind416/Derail-Valley-Twitch-Chat-Mod/issues' target='_blank'>Issues and Suggestions</a>
+            <p>Your Derail Valley game is now hooked up to Twitch to enable in-game messaging and alerts. Make sure to finish configuring and enabling the mod using the in game settings. Authentication Tokens are typically good for 30 days, but may be revoked or cancelled for any number of reasons. If your Token is not validated, you can request a new one using the same in-game process.</p>
+            <h2>Created By</h2>
+            <p>Derail Valley TwitchChat Mod developed by Nightwind</p>
+            <p>Follow <a href='https://www.twitch.tv/nightwind416' target='_blank'>Nightwind's Twitch Channel</a> to see the mod in action</p>
+        </div>
+
+        <div class='donation-section'>
+            <h2>Donations</h2>
+            <div style='display: flex; justify-content: center; align-items: center; gap: 10px;'>
+                <a href='https://ko-fi.com/A0A217PWSY' target='_blank'><img src='https://storage.ko-fi.com/cdn/kofi5.png?v=6' style='height: 40px !important;border:0px;height:36px;' alt='Buy Me a Coffee at ko-fi.com' /></a>
+                <a href='https://www.buymeacoffee.com/christophe1xf' target='_blank'><img src='https://cdn.buymeacoffee.com/buttons/v2/default-blue.png' style='height: 60px !important;width: 217px !important;' ></a>
+                <a href='https://paypal.me/Nightwind416?country.x=US&locale.x=en_US' target='_blank' class='paypal-button'>PayPal.me Donation</a>                
+            </div>
+        </div>
+        
+        <div class='disclaimer'>
+            <p>This is a third-party modification created by an independent developer and not affiliated with or endorsed by<a href='https://www.altfuture.gg' target='_blank'>Altfuture</a>or the<a href='https://www.derailvalley.com' target='_blank'>Derail Valley</a>development team.</p>
         </div>
     </div>
     
-    <script type='text/javascript'>
+    <script>
         var xhr = new XMLHttpRequest();
         xhr.open('GET', 'http://localhost/?' + window.location.hash.substring(1), true);
         xhr.send();
