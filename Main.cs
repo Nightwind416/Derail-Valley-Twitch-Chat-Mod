@@ -78,7 +78,6 @@ namespace TwitchChat
             if (isEnabled)
             {
                 _isEnabled = true;
-                TwitchEventHandler.ValidateAuthToken().Wait();
                 MessageHandler.AttachNotification("TwitchChatMod is now receiving message notifications from your channel.", "null");
                 LogEntry(methodName, "Mod Enabled!");
                 ModEntry.Enabled = true;
@@ -86,7 +85,6 @@ namespace TwitchChat
             else
             {
                 _isEnabled = false;
-                WebSocketManager.DisconnectFromoWebSocket().Wait();
                 MessageHandler.AttachNotification("TwitchChatMod is no longer receiving message notifications from your Channel.", "null");
                 LogEntry(methodName, "Mod Disabled!");
                 ModEntry.Enabled = false;
