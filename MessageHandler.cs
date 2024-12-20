@@ -42,35 +42,29 @@ namespace TwitchChat
             SetVariable("webSocketNotification", $"Received Twitch message attachment test #{messageQueueTestCounter}");
             messageQueueTestCounter++;            
         }
-
         private class TwitchMessage
         {
             public Metadata? metadata { get; set; }
             public Payload? payload { get; set; }
         }
-
         private class Metadata
         {
             public string? subscription_type { get; set; }
         }
-
         private class Payload
         {
             public Event? @event { get; set; }
         }
-
         private class Event
         {
             public string? chatter_user_name { get; set; }
             public string? chatter_user_id { get; set; }
             public Message? message { get; set; }
         }
-
         private class Message
         {
             public string? text { get; set; }
         }
-
         public static void HandleNotification(dynamic jsonMessage)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
@@ -111,17 +105,17 @@ namespace TwitchChat
                             if (text.Contains("HeyGuys"))
                             {
                                 Main.LogEntry($"{methodName}_HeyGuys", "Text contains 'HeyGuys', sending 'VoHiYo'");
-                                TwitchEventHandler.SendChatMessageHTTP("[HTTP] VoHiYo").Wait();
+                                TwitchEventHandler.SendMessage("[HTTP] VoHiYo").Wait();
                             }
                             else if (text.ToLower().StartsWith("!info"))
                             {
                                 Main.LogEntry($"{methodName}_Info", "Text contains '!info', sending 'This is a test message'");
-                                TwitchEventHandler.SendChatMessageHTTP("[HTTP] This is an info message").Wait();
+                                TwitchEventHandler.SendMessage("[HTTP] This is an info message").Wait();
                             }
                             else if (text.ToLower().StartsWith("!commands"))
                             {
                                 Main.LogEntry($"{methodName}_Commands", "Text contains '!commands', sending 'Available commands: !info !commands !test'");
-                                TwitchEventHandler.SendChatMessageHTTP("[HTTP] Available commands: !info !commands !test").Wait();
+                                TwitchEventHandler.SendMessage("[HTTP] Available commands: !info !commands !test").Wait();
                             }
                             else
                             {

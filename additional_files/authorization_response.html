@@ -4,33 +4,81 @@
     <title>Derail Valley TwitchChat Authorization</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Arial, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
-            background-color: #f5f5f5;
+            background-color: #2c3e50;
+            color: #333;
         }
         .container {
             text-align: center;
-            padding: 2em;
+            padding: 2.5em;
             background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            max-width: 600px;
+            width: 90%;
         }
         h1 {
             color: #6441a5;
             margin-bottom: 0.5em;
+            font-size: 2em;
+        }
+        .success-message {
+            color: #27ae60;
+            font-weight: bold;
+            margin-bottom: 1.5em;
+        }
+        .links {
+            margin: 1.5em 0;
+            padding: 1em;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+        .links a {
+            color: #6441a5;
+            text-decoration: none;
+            margin: 0 10px;
+            transition: color 0.3s;
+        }
+        .links a:hover {
+            color: #3a2a5c;
+            text-decoration: underline;
+        }
+        .disclaimer {
+            font-size: 0.9em;
+            color: #7f8c8d;
+            margin-top: 1.5em;
+            padding-top: 1.5em;
+            border-top: 1px solid #eee;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Authorization Successful</h1>
-        <p>Derail Valley TwitchChat has received your authorization approval.</p>
-        <p>Mod provided by Nightwind</p>
-        <p>You can now close this window and return to the game.</p>
+        <p class="success-message">TwitchChat Authentication Token Received!</p>
+        <p>Your Derail Valley game is now hooked up to Twitch to enable in-game messaging and alerts. Make sure to finish configuring and enabling the mod using the in game settings.</p>
+        
+        <div class="links">
+            <a href="https://www.nexusmods.com/derailvalley/mods/1069" target="_blank">Nexus Mods Page</a> |
+            <a href="https://github.com/Nightwind416/Derail-Valley-Twitch-Chat-Mod" target="_blank">GitHub Repository</a> |
+            <a href="https://github.com/Nightwind416/Derail-Valley-Twitch-Chat-Mod/issues" target="_blank">Issues and Suggestions</a>
+        </div>
+        
+        <p>Mod developed by Nightwind</p>
+
+        <div class="links">
+            <a href="https://www.twitch.tv/nightwind416" target="_blank">Nightwind's Twitch Channel</a>
+        </div>
+        
+        <div class="disclaimer">
+            <p>This is a third-party modification created by an independent developer and not affiliated with or endorsed by Altfuture or the Derail Valley development team.</p>
+            <p>(It is safe to close this window and return to the game at this time.)</p>
+        </div>
     </div>
     <script type='text/javascript'>
         var xhr = new XMLHttpRequest();

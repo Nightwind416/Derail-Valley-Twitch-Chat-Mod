@@ -5,7 +5,6 @@ using System.Threading;
 using UnityEngine;
 using UnityModManagerNet;
 using System.Reflection;
-using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace TwitchChat
@@ -49,6 +48,7 @@ namespace TwitchChat
             
             // Load the mod's settings
             Settings.Instance = UnityModManager.ModSettings.Load<Settings>(modEntry);
+            Settings.Instance.authentication_status = "Unverified or not set";
             
             // Register the mod's GUI methods
             modEntry.OnGUI = OnGUI;
