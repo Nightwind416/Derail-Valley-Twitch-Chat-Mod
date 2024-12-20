@@ -54,7 +54,7 @@ namespace TwitchChat
         }
         public static void WebSocketNotificationTest()
         {
-            SetVariable("webSocketNotification", $"Received Twitch message attachment test #{messageQueueTestCounter}");
+            SetVariable("webSocketNotification", $"Message Queue Attachment Notification Test #{messageQueueTestCounter}");
             messageQueueTestCounter++;            
         }
         private class TwitchMessage

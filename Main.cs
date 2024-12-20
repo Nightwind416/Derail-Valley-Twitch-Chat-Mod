@@ -99,7 +99,7 @@ namespace TwitchChat
         /// <param name="_">Unused mod entry parameter.</param>
         /// <param name="isEnabled">Boolean indicating whether the mod should be enabled or disabled.</param>
         /// <returns>True if the toggle operation was successful, false otherwise.</returns>
-        private static bool OnToggle()
+        private static bool OnToggle(UnityModManager.ModEntry _, bool isEnabled)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
             if (ModEntry.Enabled)

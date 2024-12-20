@@ -32,7 +32,7 @@ namespace TwitchChat
         private bool getOAuthTokenFlag = false;
         private bool toggleWebSocketFlag = false;
         private bool connectionStatusFlag = false;
-        private bool sendChatMessageHttpFlag = false;
+        private bool sendMessageFlag = false;
         private bool directAttachmentMessageTestFlag = false;
         private bool messageQueueAttachmentMessageTestFlag = false;
         private bool MessageQueueAttachmentTestFlag = false;
@@ -121,7 +121,7 @@ namespace TwitchChat
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Click here...", GUILayout.Width(100)))
             {
-                sendChatMessageHttpFlag = true;
+                sendMessageFlag = true;
             }
             GUILayout.Label("... to send a test message to your Twitch channel");
             GUILayout.EndHorizontal();
@@ -200,10 +200,10 @@ namespace TwitchChat
                 connectionStatusFlag = false;
                 _ = TwitchEventHandler.ConnectionStatus();
             }
-            if (sendChatMessageHttpFlag)
+            if (sendMessageFlag)
             {
-                sendChatMessageHttpFlag = false;
-                _ = TwitchEventHandler.SendMessage("HTTP message test 'from' Derail Valley");
+                sendMessageFlag = false;
+                _ = TwitchEventHandler.SendMessage("Test message sent 'from' Derail Valley settings page. If you see this, your Authentication Token is working!");
             }
             if (directAttachmentMessageTestFlag)
             {
@@ -213,7 +213,7 @@ namespace TwitchChat
             if (MessageQueueAttachmentTestFlag)
             {
                 MessageQueueAttachmentTestFlag = false;
-                MessageHandler.SetVariable("indirectNotification", "Indirect Attachment Test Message Sent");
+                MessageHandler.WebSocketNotificationTest();
             }
             if (messageQueueAttachmentMessageTestFlag)
             {

@@ -6,46 +6,51 @@
 		<Nullable>enable</Nullable>
 		<WarningsAsErrors>CS8600;CS8602;CS8603</WarningsAsErrors>
 		<OutputType>Library</OutputType>
-		<DerailValleyBasePath>D:\SteamLibrary\steamapps\common\Derail Valley\</DerailValleyBasePath> <!-- Change to local game install path -->
+		<DerailValleyManagedAssets>D:\SteamLibrary\steamapps\common\Derail Valley\DerailValley_Data\Managed\</DerailValleyManagedAssets> <!-- Change to local game install path during build -->
 		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 		<DebugType>none</DebugType>
+		<!-- <ModId>TwitchChat</ModId> -->
+		<ModVersion>2.0.0</ModVersion>
+		<!-- <ModDisplayName>TwitchChat</ModDisplayName> -->
+		<ModAuthor>Nightwind416</ModAuthor>
+		<GameVersion>build 99.3</GameVersion>
+		<EntryMethod>TwitchChat.Main.Load</EntryMethod>
+		<ManagerVersion>0.27.3</ManagerVersion>
+		<ModHomepage>https://www.nexusmods.com/derailvalley/mods/1069</ModHomepage>
+		<ModRepository>https://github.com/Nightwind416/Derail-Valley-Twitch-Chat-Mod</ModRepository>
 	</PropertyGroup>
 
 	<!-- Import TextTemplate targets -->
-    <Import Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TextTemplating\Microsoft.TextTemplating.targets" Condition="EXISTS('$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TextTemplating\Microsoft.TextTemplating.targets')" />
+	<Import Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TextTemplating\Microsoft.TextTemplating.targets" Condition="EXISTS('$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TextTemplating\Microsoft.TextTemplating.targets')" />
 
 	<!-- Derail Valley Managed -->
 	<ItemGroup>
 		<Reference Include="DV.UIFramework">
-			<HintPath>$(DerailValleyBasePath)DerailValley_Data\Managed\DV.UIFramework.dll</HintPath>
+			<HintPath>$(DerailValleyManagedAssets)DV.UIFramework.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
 		<Reference Include="Assembly-CSharp">
-			<HintPath>$(DerailValleyBasePath)DerailValley_Data\Managed\Assembly-CSharp.dll</HintPath>
+			<HintPath>$(DerailValleyManagedAssets)Assembly-CSharp.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
 		<Reference Include="UnityEngine">
-			<HintPath>$(DerailValleyBasePath)DerailValley_Data\Managed\UnityEngine.dll</HintPath>
+			<HintPath>$(DerailValleyManagedAssets)UnityEngine.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
 		<Reference Include="UnityEngine.CoreModule">
-			<HintPath>$(DerailValleyBasePath)DerailValley_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+			<HintPath>$(DerailValleyManagedAssets)UnityEngine.CoreModule.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
 		<Reference Include="UnityEngine.UIModule">
-			<HintPath>$(DerailValleyBasePath)DerailValley_Data\Managed\UnityEngine.UIModule.dll</HintPath>
+			<HintPath>$(DerailValleyManagedAssets)UnityEngine.UIModule.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
 		<Reference Include="UnityEngine.IMGUIModule">
-			<HintPath>$(DerailValleyBasePath)DerailValley_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
-			<Private>false</Private>
-		</Reference>
-		<Reference Include="UnityEditor">
-			<HintPath>libs\UnityEditor.dll</HintPath>
+			<HintPath>$(DerailValleyManagedAssets)UnityEngine.IMGUIModule.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
 		<Reference Include="UnityEngine.InputLegacyModule">
-			<HintPath>$(DerailValleyBasePath)DerailValley_Data\Managed\UnityEngine.InputLegacyModule.dll</HintPath>
+			<HintPath>$(DerailValleyManagedAssets)UnityEngine.InputLegacyModule.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
 	</ItemGroup>
@@ -53,39 +58,66 @@
 	<!-- Unity Mod Manager -->
 	<ItemGroup>
 		<Reference Include="UnityModManager">
-			<HintPath>$(DerailValleyBasePath)DerailValley_Data\Managed\UnityModManager\UnityModManager.dll</HintPath>
+			<HintPath>$(DerailValleyManagedAssets)UnityModManager\UnityModManager.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
 		<Reference Include="0Harmony">
-			<HintPath>$(DerailValleyBasePath)DerailValley_Data\Managed\UnityModManager\0Harmony.dll</HintPath>
+			<HintPath>$(DerailValleyManagedAssets)UnityModManager\0Harmony.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
 		<Reference Include="dnlib">
-			<HintPath>$(DerailValleyBasePath)DerailValley_Data\Managed\UnityModManager\dnlib.dll</HintPath>
+			<HintPath>$(DerailValleyManagedAssets)UnityModManager\dnlib.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="UnityEditor">
+			<HintPath>libs\UnityEditor.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
 	</ItemGroup>
 
-	<!-- Microsoft Extensions -->
+	<!-- Required Runtime Packages -->
 	<ItemGroup>
-	  <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
-	  <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.2.0" />
-	  <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+		<PackageReference Include="System.Text.Json" Version="8.0.0" PrivateAssets="all" />
+		<PackageReference Include="System.Net.WebSockets.Client" Version="4.3.2" PrivateAssets="all" />
+		<PackageReference Include="System.Net.Http" Version="4.3.4" PrivateAssets="all" />
 	</ItemGroup>
 
-	<!-- Websocket -->
+	<!-- Development/Build Time Only Packages -->
 	<ItemGroup>
-	  <PackageReference Include="System.Net.WebSockets.Client" Version="4.3.2" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" PrivateAssets="all" />
+		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.2.0" PrivateAssets="all" />
+		<PackageReference Include="Microsoft.CSharp" Version="4.7.0" PrivateAssets="all" />
 	</ItemGroup>
-	
+
+	<Target Name="GenerateInfoJson" BeforeTargets="PostBuildEvent">
+		<PropertyGroup>
+			<InfoJsonContent>
+{
+	"Id": "$(AssemblyName)",
+	"Version": "$(ModVersion)",
+	"DisplayName": "$(AssemblyName)",
+	"Author": "$(ModAuthor)", 
+	"GameVersion": "$(GameVersion)",
+	"EntryMethod": "$(EntryMethod)",
+	"ManagerVersion": "$(ManagerVersion)",
+	"Homepage": "$(ModHomepage)",
+	"Repository": "$(ModRepository)"
+}
+			</InfoJsonContent>
+		</PropertyGroup>
+
+		<WriteLinesToFile
+			File="$(OutputPath)info.json"
+			Lines="$(InfoJsonContent)"
+			Overwrite="true"
+			WriteOnlyWhenDifferent="true" />
+
+		<Message Text="Generated info.json" Importance="high" />
+	</Target>
+
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
 		<!-- Package after Release build -->
-        <Exec Condition="'$(ConfigurationName)' == 'Release' And '$(OS)' == 'Windows_NT'" Command="powershell -executionpolicy bypass -Command &quot;./package.ps1&quot;" />
-        <Exec Condition="'$(ConfigurationName)' == 'Release' And '$(OS)' != 'Windows_NT'" Command="pwsh -Command &quot;./package.ps1&quot;" />
-
-		<!-- Copy additional files -->
-	    <Copy SourceFiles="additional_files\info.json" DestinationFolder="$(OutputPath)" />
-		<Copy SourceFiles="additional_files\LICENSE" DestinationFolder="$(OutputPath)" />
-		<Copy SourceFiles="additional_files\authorization_response.html" DestinationFolder="$(OutputPath)" />
+		<Exec Condition="'$(ConfigurationName)' == 'Release' And '$(OS)' == 'Windows_NT'" Command="powershell -executionpolicy bypass -Command &quot;./package.ps1&quot;" />
+		<Exec Condition="'$(ConfigurationName)' == 'Release' And '$(OS)' != 'Windows_NT'" Command="pwsh -Command &quot;./package.ps1&quot;" />
 	</Target>
 </Project>

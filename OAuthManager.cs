@@ -78,16 +78,18 @@ namespace TwitchChat
                     string htmlPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "authorization_response.html");
                     string responseString;
                     
-                    if (File.Exists(htmlPath))
-                    {
-                        responseString = File.ReadAllText(htmlPath);
-                    }
-                    else
-                    {
-                        // Fallback to simple HTML if file is not found
-                        responseString = "<html><body>Authorization successful. You can close this window.</body></html>";
-                        Main.LogEntry(methodName, "Authorization response HTML file not found, using fallback.");
-                    }
+                    // if (File.Exists(htmlPath))
+                    // {
+                    //     responseString = File.ReadAllText(htmlPath);
+                    // }
+                    // else
+                    // {
+                    //     // Fallback to simple HTML if file is not found
+                    //     responseString = "<html><body>Authorization successful. You can close this window.</body></html>";
+                    //     Main.LogEntry(methodName, "Authorization response HTML file not found, using fallback.");
+                    // }
+
+                    responseString = AuthorizationResponse;
 
                     byte[] buffer = Encoding.UTF8.GetBytes(responseString);
                     context.Response.ContentLength64 = buffer.Length;
@@ -264,5 +266,118 @@ namespace TwitchChat
                 }
             }
         }
+        private static readonly string AuthorizationResponse = @"
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Derail Valley TwitchChat Authorization</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+        }
+        .container {
+            text-align: center;
+            padding: 2.5em;
+            background-color: #0a0909;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+            max-width: 800px;
+            width: 90%;
+        }
+        h1 {
+            color: #35ea3e;
+            margin-bottom: 0.5em;
+            font-size: 2em;
+        }
+        .success-message {
+            color: #43d299;
+            font-weight: bold;
+            margin-bottom: 1.5em;
+        }
+        .link-list {
+            margin: 1.5em 0;
+            padding: 1em;
+            background-color: #363636;
+            border-radius: 8px;
+        }
+        a {
+            color: #1596ff;
+            text-decoration: none;
+            margin: 0 10px;
+            transition: color 0.3s;
+        }
+        a:hover {
+            color: #43ed36;
+            text-decoration: underline;
+        }
+        .disclaimer {
+            font-size: 0.9em;
+            color: #a0a0a0;
+            margin-top: 1.5em;
+            padding-top: 1.5em;
+            border-top: 1px solid #404040;
+        }
+        .revoke-section {
+            margin-top: 1.5em;
+            padding: 1em;
+            background-color: #363636;
+            border-radius: 5px;
+            border: 1px solid #404040;
+            text-align: left;
+        }
+        .revoke-section h2 {
+            color: #e0e0e0;
+            font-size: 1.2em;
+            margin-bottom: 0.5em;
+        }
+    </style>
+</head>
+<body>
+    <div class=""container"">
+        <h1>Authorization Successful</h1>
+        
+        <p class=""success-message"">TwitchChat Authentication Token Received!</p>
+        <p>Your Derail Valley game is now hooked up to Twitch to enable in-game messaging and alerts. Make sure to finish configuring and enabling the mod using the in game settings. Authentication Tokens are typicllay good for 30 days, but may be revoked or cancelled for any number of reasons. If your Token is not validated, you can request a new one using the same in-game process.</p>
+        
+        <div class=""link-list"">
+            <a href=""https://www.nexusmods.com/derailvalley/mods/1069"" target=""_blank"">Nexus Mods Page</a> |
+            <a href=""https://github.com/Nightwind416/Derail-Valley-Twitch-Chat-Mod"" target=""_blank"">GitHub Repository</a> |
+            <a href=""https://github.com/Nightwind416/Derail-Valley-Twitch-Chat-Mod/issues"" target=""_blank"">Issues and Suggestions</a>
+        </div>
+        
+        <p>Derail Valley TwitchChat Mod developed by Nightwind</p>
+        <p>Click here for <a href=""https://www.twitch.tv/nightwind416"" target=""_blank"">Nightwind's Twitch Channel</a></p>
+        
+        <div class=""revoke-section"">
+            <h2>Managing Your Twitch Authorization</h2>
+            <p>If you ever need or want to revoke access/remove authorization:</p>
+            <ol>
+                <li>Visit the official <a href=""https://www.twitch.tv/settings/connections"" target=""_blank"">Twitch Connection Settings</a> page</li>
+                <li>Find ""DerailValleyChatMod"" under the ""Other Connections"" section, lower on the page</li>
+                <li>Click ""Disconnect""</li>
+            </ol>
+            <p>You can always re-authorize the mod by requesting a new Authorization Token through the in-game settings menu.</p>
+        </div>
+        
+        <div class=""disclaimer"">
+            <p>This is a third-party modification created by an independent developer and not affiliated with or endorsed by Altfuture or the Derail Valley development team.</p>
+            <p>(It is safe to close this window and return to the game at this time.)</p>
+        </div>
+    </div>
+    
+    <script type='text/javascript'>
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', 'http://localhost/?' + window.location.hash.substring(1), true);
+        xhr.send();
+    </script>
+</body>
+</html>";
     }
 }
