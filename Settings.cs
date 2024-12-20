@@ -11,6 +11,7 @@ namespace TwitchChat
     {
         public static Settings Instance { get; set; } = null!;
         public string twitchUsername = string.Empty;
+        public int messageDuration = 20;
         public string EncodedOAuthToken = string.Empty;
         private bool getOathTokenFlag = false;
         private bool connectToWebSocketFlag = false;
@@ -20,7 +21,6 @@ namespace TwitchChat
         private bool directAttachmentMessageTestFlag = false;
         private bool messageQueueAttachmentMessageTestFlag = false;
         private bool indirectAttachmentMessageTestFlag = false;
-        public int messageDuration = 20;
         public void DrawButtons()
         {
             GUILayout.Label("Twitch Username");
@@ -32,7 +32,6 @@ namespace TwitchChat
                 getOathTokenFlag = true;
             }
             GUILayout.Label($"Current Oath Token: {TwitchEventHandler.oath_access_token}");
-            GUILayout.Label($"Current Oath Token Expiration: {TwitchEventHandler.oath_token_expiration}");
             
             GUILayout.Label("WebSocket Actions");
             GUILayout.BeginHorizontal();
@@ -45,8 +44,6 @@ namespace TwitchChat
                 disconnectFromWebSocketFlag = true;
             }
             GUILayout.EndHorizontal();
-            GUILayout.Label("Last WebSocket Type Received: " + WebSocketManager.lastWebSocketTypeReceived);
-            GUILayout.Label("Last WebSocket Message Received: " + WebSocketManager.lastWebSocketMessageReceived);
             GUILayout.Label("Last WebSocket Message Received: " + MessageHandler.NewNotificationQueue["webSocketNotification"]);
         
             GUILayout.Label("Send Test Messages");

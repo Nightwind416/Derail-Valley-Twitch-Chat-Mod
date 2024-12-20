@@ -1,24 +1,21 @@
-using System.Net.Http;
 using System;
-using System.Text.Json;
 using System.Net;
-using System.Threading.Tasks;
-using System.Reflection;
-using Newtonsoft.Json;
-using System.Text;
-using System.Threading;
+using System.Net.Http;
 using System.Net.Http.Headers;
-using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
+using System.Reflection;
+using System.Text;
+using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
+// using Newtonsoft.Json;
 
 namespace TwitchChat
 {
     public class TwitchEventHandler
     {
         public static readonly HttpClient httpClient = new();
-        public static readonly string redirectUri = "http://localhost/";
+        private static readonly string redirectUri = "http://localhost/";
         public static string oath_access_token = string.Empty;
-        public static string oath_token_expiration = string.Empty;
         public static string user_id = string.Empty;
         public static async Task GetOathToken()
         {
@@ -27,17 +24,19 @@ namespace TwitchChat
         
             try
             {
-                // if (!string.IsNullOrEmpty(Settings.Instance.EncodedOAuthToken))
-                // {
-                //     await ValidateAuthToken();
-                // }
+                if (string.IsNullOrEmpty(Settings.Instance.twitchUsername))
+                {
+                    Main.LogEntry(methodName, "Twitch username is not set. Please set a username in the settings first.");
+                    return;
+                }
+                
+                Main.LogEntry(methodName, $"Using Twitch username: {Settings.Instance.twitchUsername}");
                 
                 string clientId = Main.GetClientId();
                 string scope = "chat:edit chat:read channel:bot channel:manage:broadcast channel:moderate channel:read:subscriptions user:read:chat user:read:subscriptions user:write:chat user:read:email user:edit:follows";
                 string state = Guid.NewGuid().ToString();
         
                 string authorizationUrl = $"https://id.twitch.tv/oauth2/authorize?response_type=token&client_id={clientId}&redirect_uri={redirectUri}&scope={Uri.EscapeDataString(scope)}&state={state}";
-                // string authorizationUrl = $"https://id.twitch.tv/oauth2/authorize?response_type=token&client_id={clientId}&redirect_uri={redirectUri}&scope={Uri.EscapeDataString(scope)}&state={state}";
                 Main.LogEntry(methodName, $"Authorization URL: {authorizationUrl}");
         
                 // Open the authorization URL in the default web browser
@@ -50,17 +49,25 @@ namespace TwitchChat
                 Main.LogEntry(methodName, "Opened Twitch authorization URL in the default web browser.");
         
                 // Start an HTTP listener to capture the response
-                HttpListener listener = new();
+                using var listener = new HttpListener();
                 listener.Prefixes.Add(redirectUri);
                 listener.Start();
                 Main.LogEntry(methodName, "Waiting for Twitch authorization response...");
 
-                CancellationTokenSource cts = new();
-                cts.CancelAfter(TimeSpan.FromSeconds(60));
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
         
                 try
                 {
-                    HttpListenerContext context = await listener.GetContextAsync().WithCancellation(cts.Token);
+                    var getContextTask = listener.GetContextAsync();
+                    var context = await Task.WhenAny(getContextTask, Task.Delay(-1, cts.Token))
+                        .ContinueWith(t => t.IsFaulted || t.IsCanceled ? null : getContextTask.Result);
+
+                    if (context == null)
+                    {
+                        Main.LogEntry(methodName, "Authorization response timed out.");
+                        return;
+                    }
+
                     string responseString = $@"
                     <html>
                     <body>
@@ -78,8 +85,8 @@ namespace TwitchChat
                     context.Response.OutputStream.Close();
 
                     // Handle the /save_token request
-                    context = await listener.GetContextAsync().WithCancellation(cts.Token);
-                    string responseUrl = context.Request.Url.ToString();
+                    var secondContext = await listener.GetContextAsync();
+                    string responseUrl = secondContext.Request.Url.ToString();
                     Main.LogEntry(methodName, $"Received response:\n{responseUrl}");
 
                     string accessToken = string.Empty;
@@ -102,7 +109,6 @@ namespace TwitchChat
                         oath_access_token = accessToken;
                         await GetUserID();
                         await ValidateAuthToken();
-                        // GetTokenExpirationTime();
                     
                         // Encode and save the token to settings
                         string encodedToken = Convert.ToBase64String(Encoding.UTF8.GetBytes(accessToken));
@@ -129,15 +135,9 @@ namespace TwitchChat
                 Main.LogEntry(methodName, $"Failed to get oath Token: {ex.Message}");
             }
         }
-        public static async Task ValidateAuthToken()
+        private static async Task ValidateAuthToken()
         {
             string methodName = "ValidateAuthToken";
-            
-            // if (string.IsNullOrEmpty(Settings.Instance.EncodedOAuthToken))
-            // {
-            //     Main.LogEntry(methodName, "EncodedOAuthToken is empty. Skipping validation.");
-            //     return;
-            // }
 
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", oath_access_token);
             Main.LogEntry(methodName, $"Validating oath token...");
@@ -169,7 +169,9 @@ namespace TwitchChat
                     }
 
                     // Fetch your user ID
-                    if (await GetUserID())
+                    await GetUserID();
+                    
+                    if (user_id != null && user_id != string.Empty)
                     {
                         Main.LogEntry(methodName, "User ID automatically retrieved.");
                     }
@@ -216,41 +218,7 @@ namespace TwitchChat
                 }
             }
         }
-        // Method to check the expiration time of a JWT token
-        private static void GetTokenExpirationTime()
-        {
-            var handler = new JwtSecurityTokenHandler();
-            var jwtToken = handler.ReadToken(oath_access_token) as JwtSecurityToken;
-
-            if (jwtToken == null)
-                oath_token_expiration = "Not a valid JWT token";
-
-            var expClaim = jwtToken?.Claims.FirstOrDefault(claim => claim.Type == "exp");
-            if (expClaim == null)
-                oath_token_expiration = "No exp claim";
-
-            var expUnix = expClaim != null ? long.Parse(expClaim.Value) : 0;
-            var expDateTime = DateTimeOffset.FromUnixTimeSeconds(expUnix).UtcDateTime;
-
-            oath_token_expiration = expDateTime.ToString("yyyy-MM-dd HH:mm:ss");
-
-        }
-        // Example usage
-        // string accessToken = "your_access_token_here";
-        // DateTime? expirationTime = GetTokenExpirationTime(accessToken);
-
-        // if (expirationTime.HasValue)
-        // {
-        //     TimeSpan timeLeft = expirationTime.Value - DateTime.UtcNow;
-        //     Console.WriteLine($"Token expires in: {timeLeft.TotalMinutes} minutes");
-        // }
-        // else
-        // {
-        //     Console.WriteLine("Unable to determine token expiration time.");
-        // }
-
-
-        public static async Task<bool> GetUserID()
+        private static async Task GetUserID()
         {
             string methodName = "GetUserID";
             Main.LogEntry(methodName, "Adding Authorization and Client-Id headers.");
@@ -266,7 +234,6 @@ namespace TwitchChat
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
                 Main.LogEntry(methodName, $"Response error content: {errorContent}");
-                return false;
             }
         
             response.EnsureSuccessStatusCode();
@@ -279,13 +246,17 @@ namespace TwitchChat
             if (lookup_id == null)
             {
                 Main.LogEntry(methodName, "User ID is null.");
-                return false;
             }
         
-            user_id = lookup_id;
+            if (lookup_id != null)
+            {
+                user_id = lookup_id;
+            }
+            else
+            {
+                Main.LogEntry(methodName, "Failed to retrieve user ID.");
+            }
             Main.LogEntry(methodName, $"User ID: {user_id}");
-        
-            return true;
         }
         public static async Task ConnectionStatus()
         {
@@ -400,12 +371,18 @@ namespace TwitchChat
             string methodName = "SendChatMessageHTTP";
             Main.LogEntry(methodName, $"Preparing to send chat message: {chatMessage}");
         
-            var content = new StringContent(JsonConvert.SerializeObject(new
+            var messageData = new
             {
                 broadcaster_id = user_id,
                 sender_id = user_id,
                 message = chatMessage
-            }), Encoding.UTF8, "application/json");
+            };
+            
+            var content = new StringContent(
+                JsonSerializer.Serialize(messageData),
+                Encoding.UTF8, 
+                "application/json"
+            );
         
             Main.LogEntry(methodName, $"Created content: {content}");
         
@@ -429,21 +406,5 @@ namespace TwitchChat
                 Main.LogEntry(methodName, $"Exception occurred: {ex.Message}");
             }
         }
-    }
-}
-
-public static class TaskExtensions
-{
-    public static async Task<T> WithCancellation<T>(this Task<T> task, CancellationToken cancellationToken)
-    {
-        var tcs = new TaskCompletionSource<bool>();
-        using (cancellationToken.Register(s => ((TaskCompletionSource<bool>)s).TrySetResult(true), tcs))
-        {
-            if (task != await Task.WhenAny(task, tcs.Task))
-            {
-                throw new OperationCanceledException(cancellationToken);
-            }
-        }
-        return await task;
     }
 }

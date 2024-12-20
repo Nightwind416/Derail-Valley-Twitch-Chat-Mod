@@ -1,12 +1,12 @@
 using System;
-using System.Net.WebSockets;
 using System.Net.Http;
-using System.Text;
 using System.Net.Http.Headers;
+using System.Net.WebSockets;
+using System.Reflection;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
-using System.Reflection;
 
 namespace TwitchChat
 {
@@ -14,9 +14,7 @@ namespace TwitchChat
     {
         private static ClientWebSocket webSocketClient = new();
         private static readonly Uri serverUri = new("wss://eventsub.wss.twitch.tv/ws?keepalive_timeout_seconds=30");
-        public static string session_id = string.Empty;
-        public static string lastWebSocketTypeReceived = "None";
-        public static string lastWebSocketMessageReceived = "None";
+        private static string session_id = string.Empty;
         public static async Task ConnectToWebSocket()
         {
             string methodName = "ConnectToWebSocket";
@@ -89,35 +87,30 @@ namespace TwitchChat
                         if (jsonMessage?.metadata?.message_type == "session_welcome")
                         {
                             session_id = jsonMessage.payload.session.id.ToString().Trim();
+                            
                             Main.LogEntry(methodName, $"Session ID: {session_id}");
-            
-                            lastWebSocketTypeReceived = "Session Welcome";
                             Main.LogEntry(methodName, "TwitchChat connected to WebSocket");
+                            
                             await RegisterWebbSocketChatEvent();
                         }
                         else if (jsonMessage?.metadata?.message_type == "notification")
                         {
-                            lastWebSocketTypeReceived = "Notification";
                             MessageHandler.HandleNotification(jsonMessage);
                         }
                         else if (jsonMessage?.metadata?.message_type == "session_keepalive")
                         {
-                            lastWebSocketTypeReceived = "Keepalive";
                             Main.LogEntry(methodName, "Received keepalive message.");
                         }
                         else if (jsonMessage?.metadata?.message_type == "session_reconnect")
                         {
-                            lastWebSocketTypeReceived = "Reconnect";
                             Main.LogEntry(methodName, "Received reconnect message.");
                         }
                         else if (jsonMessage?.metadata?.message_type == "revocation")
                         {
-                            lastWebSocketTypeReceived = "Revocation";
                             Main.LogEntry(methodName, "Received revocation message.");
                         }
                         else
                         {
-                            lastWebSocketTypeReceived = "Unknown";
                             Main.LogEntry(methodName, $"Unknown message type: {jsonMessage?.metadata?.message_type}");
                         }
                     }
@@ -129,12 +122,10 @@ namespace TwitchChat
                 catch (WebSocketException ex)
                 {
                     Main.LogEntry(methodName, $"WebSocket error: {ex.Message}");
-                    lastWebSocketTypeReceived = "WebSocket Error";
                     break;
                 }
                 catch (Exception ex)
                 {
-                    lastWebSocketTypeReceived = "Receive Message Error";
                     Main.LogEntry(methodName, $"Error receiving message: {ex.Message}");
                 }
             }
@@ -144,11 +135,9 @@ namespace TwitchChat
                 string closeReason = webSocketClient.CloseStatusDescription;
                 int closeCode = (int)webSocketClient.CloseStatus.Value;
                 Main.LogEntry(methodName, $"WebSocket connection closed with code {closeCode}: {closeReason}");
-                lastWebSocketTypeReceived = $"Connection closed with code {closeCode}: {closeReason}";
             }
             else
             {
-                lastWebSocketTypeReceived = "Connection closed.";
                 Main.LogEntry(methodName, "WebSocket connection closed.");
             }
         }

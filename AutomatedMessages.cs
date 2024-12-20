@@ -7,7 +7,23 @@ using System.Xml;
 
 namespace TwitchChat
 {
-    public class AutomaticResponses
+    public class StandardMessages
+    {
+        public bool welcomeMessageActive = true;
+        public string welcomeMessage = "Welcome to my Derail Valley stream!";
+        public bool infoMessageActive = true;
+        public string infoMessage = "Please keep chat clean and respectful. Use !commands to see available commands.";
+        public bool newFollowerMessageActive = true;
+        public string newFollowerMessage = "Welcome to the crew!";
+        public bool newSubscriberMessageActive = true;
+        public string newSubscriberMessage = "Thank you for subscribing!";
+    }
+    public class CommandMessages
+    {
+        public bool commandMessageActive = true;
+        public string commandMessage = "!info !commands";
+    }
+    public class TimedMessages
     {
         public bool welcomeMessageActive = true;
         public string welcomeMessage = "Welcome to my Derail Valley stream!";
@@ -19,13 +35,11 @@ namespace TwitchChat
         public string newSubscriberMessage = "Thank you for subscribing!";
         public bool commandMessageActive = true;
         public string commandMessage = "!info !commands";
-        public bool dispatcherMessageActive = false;
-        public string dispatcherMessage = "MessageNotSet";
         public bool timedMessagesActive = false;
         public bool TimedMessage1Toggle = false;
         public string TimedMessage1 = "MessageNotSet";
         public float TimedMessage1Timer = 0;
-        private static void TimedMessages()
+        private static void TimedMessagesInit()
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
             try
@@ -82,5 +96,10 @@ namespace TwitchChat
                 Main.LogEntry(methodName, $"An error occurred: {ex.Message}");
             }
         }
+    }
+    public class DispatcherModMessages
+    {
+        public bool dispatcherMessageActive = false;
+        public string dispatcherMessage = "MessageNotSet";
     }
 }

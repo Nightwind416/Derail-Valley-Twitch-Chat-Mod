@@ -9,6 +9,7 @@ namespace TwitchChat
 {
     public class MessageHandler
     {
+        private static int messageQueueTestCounter = 1;
         public static Dictionary<string, string> NewNotificationQueue = new()
         {
             { "webSocketNotification", "Nothing received yet (webSocketNotification)" },
@@ -17,7 +18,6 @@ namespace TwitchChat
             { "messageQueuenotification", "Nothing received yet (messageQueuenotification)" },
             { "alertMessage", "Nothing received yet (alertMessage)" }
         };
-
         public static void SetVariable(string key, string value)
         {
             if (NewNotificationQueue.ContainsKey(key))
@@ -38,7 +38,6 @@ namespace TwitchChat
         {
             return NewNotificationQueue.ContainsKey(key) ? NewNotificationQueue[key] : null;
         }
-        private static int messageQueueTestCounter = 1;
         public static void MessageQueueAttachmentMessageTest()
         {
             SetVariable("messageQueuenotification", $"Queued Attachment Test {messageQueueTestCounter}");
@@ -65,8 +64,6 @@ namespace TwitchChat
         
                     Main.LogEntry($"{methodName}_Message", $"Message: #{chatter}: {text}");
                     Main.LogEntry("ReceivedMessage", $"{chatter}: {text}");
-
-                    WebSocketManager.lastWebSocketMessageReceived = $"{chatter}: {text}";
         
                     text = jsonMessage.payload.@event.message.text.ToString();
         
@@ -94,7 +91,7 @@ namespace TwitchChat
                             Main.LogEntry($"{methodName}_OtherMessage", "[HTTP] Other message, not responding");
                             UnityMainThreadDispatcher.Instance().Enqueue(() =>
                             {
-                                MessageHandler.SetVariable("webSocketNotification", $"{chatter}: {text}");
+                                SetVariable("webSocketNotification", $"{chatter}: {text}");
                             });
                         }
 
