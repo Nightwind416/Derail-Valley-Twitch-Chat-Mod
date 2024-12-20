@@ -19,9 +19,10 @@ namespace TwitchChat
     {
         public static Settings Instance { get; set; } = null!;
         public string twitchUsername = string.Empty;
+        public string authentication_status = "Unverified or not set";
         public int messageDuration = 20;
         public string EncodedOAuthToken = string.Empty;
-        private bool getOathTokenFlag = false;
+        private bool getOAuthTokenFlag = false;
         private bool toggleWebSocketFlag = false;
         private bool connectionStatusFlag = false;
         private bool sendChatMessageHttpFlag = false;
@@ -49,37 +50,64 @@ namespace TwitchChat
             string authButtonText = string.IsNullOrEmpty(EncodedOAuthToken) 
                 ? "Request Authorization Token" 
                 : "Validate Token";
-            if (GUILayout.Button(authButtonText, GUILayout.Width(200)))
+
+            // Set button color based on validation status
+            GUI.color = authentication_status == "Validated!" ? Color.green : Color.white;
+            
+            // Create button style that shows if interactive
+            GUIStyle buttonStyle = new(GUI.skin.button);
+            buttonStyle.normal.textColor = authentication_status == "Validated!" ? Color.black : Color.white;
+
+            // Button is disabled if already validated
+            GUI.enabled = authentication_status != "Validated!";
+            if (GUILayout.Button(authButtonText, buttonStyle, GUILayout.Width(200)))
             {
                 if (string.IsNullOrEmpty(EncodedOAuthToken))
-                    getOathTokenFlag = true;
+                    getOAuthTokenFlag = true;
                 else
-                    _ = TwitchEventHandler.ValidateAuthToken();
+                    _ = OAuthTokenManager.ValidateAuthToken();
             }
-            GUILayout.Label($"Encoded Authorization Token: {EncodedOAuthToken}");
-            GUILayout.Label($"Last Authorization Status: {TwitchEventHandler.oath_status}");
+            GUI.enabled = true;
+            GUI.color = Color.white; // Reset color
+            
+            // Set status message color
+            if (authentication_status == "Validated!")
+                GUI.color = Color.green;
+            else if (authentication_status == "Authorization failed. Please try again." || authentication_status == "No Username Set")
+                GUI.color = Color.red;
+            else if (authentication_status == "Unverified or not set")
+                GUI.color = Color.yellow;
+            else
+                GUI.color = Color.cyan;
+                
+            GUILayout.Label($"Last Authorization Status: {authentication_status}");
+            GUI.color = Color.white; // Reset color
 
             GUILayout.Space(10);
             GUILayout.Box("", GUILayout.ExpandWidth(true), GUILayout.Height(1));
             GUILayout.Space(10);
             
-            GUILayout.Label("Channel Connection Status");
-            GUI.color = WebSocketManager.IsConnectionHealthy ? Color.green : Color.red;
-            GUILayout.Label("■", GUILayout.Width(20));
+            GUILayout.Label("Channel Connection");
+            GUILayout.BeginHorizontal();
             GUI.color = Color.white;
-            GUILayout.Label("Connection Status: " + (WebSocketManager.IsConnectionHealthy ? "Connected" : "Disconnected"));
+            GUI.color = WebSocketManager.IsConnectionHealthy ? Color.green : Color.red;
+            GUILayout.Label(WebSocketManager.IsConnectionHealthy ? "Connected" : "Disconnected", GUILayout.Width(100));
+            GUILayout.Label("■", GUILayout.Width(25));
+            GUI.color = Color.white;
+            GUILayout.EndHorizontal();
             GUILayout.BeginHorizontal();
             string buttonText = WebSocketManager.IsConnectionHealthy
-                ? "Disconnect Channel"
-                : "Connect Channel";
-            if (GUILayout.Button(buttonText, GUILayout.Width(150)))
+                ? "Disconnect"
+                : " Connect ";
+            if (GUILayout.Button(buttonText, GUILayout.Width(100)))
             {
                 toggleWebSocketFlag = true;
             }
+            GUI.color = Color.white;
             GUILayout.EndHorizontal();
         
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Click here...", GUILayout.Width(400)))
+            if (GUILayout.Button("Click here...", GUILayout.Width(100)))
             {
                 sendChatMessageHttpFlag = true;
             }
@@ -137,10 +165,10 @@ namespace TwitchChat
         {
             _ = this;
 
-            if (getOathTokenFlag)
+            if (getOAuthTokenFlag)
             {
-                getOathTokenFlag = false;
-                _ = TwitchEventHandler.GetOathToken();
+                getOAuthTokenFlag = false;
+                _ = OAuthTokenManager.GetOathToken();
             }
             if (toggleWebSocketFlag)
             {
@@ -158,7 +186,7 @@ namespace TwitchChat
             if (sendChatMessageHttpFlag)
             {
                 sendChatMessageHttpFlag = false;
-                _ = TwitchEventHandler.SendChatMessageHTTP("HTTP message test 'from' Derail Valley");
+                _ = TwitchEventHandler.SendMessage("HTTP message test 'from' Derail Valley");
             }
             if (directAttachmentMessageTestFlag)
             {

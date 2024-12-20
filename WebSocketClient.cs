@@ -13,15 +13,11 @@ namespace TwitchChat
     public class WebSocketManager
     {
         private static ClientWebSocket webSocketClient = new();
-        private static readonly Uri serverUri = new("wss://eventsub.wss.twitch.tv/ws?keepalive_timeout_seconds=30");
         private static string session_id = string.Empty;
         private static DateTime lastKeepaliveTime = DateTime.UtcNow;
         private static bool isConnectionHealthy = false;
         private static Timer? connectionMonitorTimer;
-        private static readonly TimeSpan keepaliveTimeout = TimeSpan.FromSeconds(45); // Twitch timeout is 30s, we add buffer
-
         public static bool IsConnectionHealthy => isConnectionHealthy;
-
         public static async Task ConnectToWebSocket()
         {
             string methodName = "ConnectToWebSocket";
@@ -49,6 +45,8 @@ namespace TwitchChat
 
             try
             {
+                Uri serverUri = new("wss://eventsub.wss.twitch.tv/ws?keepalive_timeout_seconds=30");
+                
                 webSocketClient?.Dispose();
                 webSocketClient = new ClientWebSocket();
                 await webSocketClient.ConnectAsync(serverUri, CancellationToken.None);
@@ -69,12 +67,12 @@ namespace TwitchChat
                 Main.LogEntry(methodName, $"Connection error: {ex.Message}");
             }
         }
-
         private static void CheckConnectionHealth(object state)
         {
+            
             var timeSinceLastKeepalive = DateTime.UtcNow - lastKeepaliveTime;
             bool wasHealthy = isConnectionHealthy;
-            isConnectionHealthy = timeSinceLastKeepalive <= keepaliveTimeout;
+            isConnectionHealthy = timeSinceLastKeepalive <= TimeSpan.FromSeconds(45);  // Twitch timeout is 30s, this adds buffer
 
             if (wasHealthy && !isConnectionHealthy)
             {
@@ -82,13 +80,11 @@ namespace TwitchChat
                 _ = ReconnectAsync();
             }
         }
-
         private static async Task ReconnectAsync()
         {
             await DisconnectFromoWebSocket();
             await ConnectToWebSocket();
         }
-
         private static async Task ReceiveMessages()
         {
             string methodName = "ReceiveMessages";

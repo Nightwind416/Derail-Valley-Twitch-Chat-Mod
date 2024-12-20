@@ -84,8 +84,8 @@
         <Exec Condition="'$(ConfigurationName)' == 'Release' And '$(OS)' != 'Windows_NT'" Command="pwsh -Command &quot;./package.ps1&quot;" />
 
 		<!-- Copy additional files -->
-	    <!-- <Copy SourceFiles="additional_files\info.json" DestinationFolder="$(OutputPath)" /> -->
-		<!-- <Copy SourceFiles="additional_files\LICENSE" DestinationFolder="$(OutputPath)" /> -->
+	    <Copy SourceFiles="additional_files\info.json" DestinationFolder="$(OutputPath)" />
+		<Copy SourceFiles="additional_files\LICENSE" DestinationFolder="$(OutputPath)" />
 		<Copy SourceFiles="additional_files\authorization_response.html" DestinationFolder="$(OutputPath)" />
 	</Target>
 </Project>
