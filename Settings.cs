@@ -167,6 +167,13 @@ namespace TwitchChat
             GUILayout.Box("", GUILayout.ExpandWidth(true), GUILayout.Height(1));
             GUILayout.Space(10);
 
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Automated Messages Status:", GUILayout.Width(150));
+            GUI.color = AutomatedMessages.AreTimersRunning ? Color.green : Color.red;
+            GUILayout.Label(AutomatedMessages.AreTimersRunning ? "Running" : "Stopped");
+            GUI.color = Color.white;
+            GUILayout.EndHorizontal();
+
             GUI.color = Color.cyan;
             GUILayout.Label("Debug Settings");
             GUI.color = Color.white;  // Reset color for subsequent elements
@@ -265,5 +272,49 @@ namespace TwitchChat
         public override string GetPath(UnityModManager.ModEntry modEntry) {
             return Path.Combine(modEntry.Path, "Settings.xml");
         }
+    }
+
+    /// <summary>
+    /// Handles standard messages and their configurations
+    /// </summary>
+    public class StandardMessages
+    {
+        public bool welcomeMessageActive = true;
+        public string welcomeMessage = "Welcome to my Derail Valley stream!";
+        public bool newFollowerMessageActive = true;
+        public string newFollowerMessage = "Welcome to the crew!";
+        public bool newSubscriberMessageActive = true;
+        public string newSubscriberMessage = "Thank you for subscribing!";
+    }
+
+    /// <summary>
+    /// Handles command-related messages and their configurations
+    /// </summary>
+    public class CommandMessages
+    {
+        public bool commandMessageActive = true;
+        public string commandMessage = "!info !commands";
+        public bool infoMessageActive = true;
+        public string infoMessage = "Please keep chat clean and respectful. Use !commands to see available commands.";
+    }
+
+    /// <summary>
+    /// Handles periodic automated messages and their scheduling
+    /// </summary>
+    public class TimedMessages
+    {
+        public bool timedMessageSystemActive = false;
+        public bool TimedMessage1Toggle = false;
+        public string TimedMessage1 = "MessageNotSet";
+        public float TimedMessage1Timer = 0;
+    }
+
+    /// <summary>
+    /// Handles Dispatcher Mod related messages and configurations, when detected
+    /// </summary>
+    public class DispatcherModMessages
+    {
+        public bool dispatcherMessageActive = false;
+        public string dispatcherMessage = "MessageNotSet";
     }
 }

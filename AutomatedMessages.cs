@@ -1,99 +1,48 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Timers;
-using System.Xml;
 
 namespace TwitchChat
 {
-    /// <summary>
-    /// Manages standard Twitch chat messages for different events
-    /// </summary>
-    public class StandardMessages
+    public class AutomatedMessages
     {
-        public bool welcomeMessageActive = true;
-        public string welcomeMessage = "Welcome to my Derail Valley stream!";
-        public bool infoMessageActive = true;
-        public string infoMessage = "Please keep chat clean and respectful. Use !commands to see available commands.";
-        public bool newFollowerMessageActive = true;
-        public string newFollowerMessage = "Welcome to the crew!";
-        public bool newSubscriberMessageActive = true;
-        public string newSubscriberMessage = "Thank you for subscribing!";
-    }
-
-    /// <summary>
-    /// Handles command-related messages and their configurations
-    /// </summary>
-    public class CommandMessages
-    {
-        public bool commandMessageActive = true;
-        public string commandMessage = "!info !commands";
-    }
-
-    /// <summary>
-    /// Manages periodic automated messages and their scheduling
-    /// </summary>
-    public class TimedMessages
-    {
-        public bool welcomeMessageActive = true;
-        public string welcomeMessage = "Welcome to my Derail Valley stream!";
-        public bool infoMessageActive = true;
-        public string infoMessage = "Please keep chat clean and respectful. Use !commands to see available commands.";
-        public bool newFollowerMessageActive = true;
-        public string newFollowerMessage = "Welcome to the crew!";
-        public bool newSubscriberMessageActive = true;
-        public string newSubscriberMessage = "Thank you for subscribing!";
-        public bool commandMessageActive = true;
-        public string commandMessage = "!info !commands";
-        public bool timedMessagesActive = false;
-        public bool TimedMessage1Toggle = false;
-        public string TimedMessage1 = "MessageNotSet";
-        public float TimedMessage1Timer = 0;
+        private static readonly List<Timer> activeTimers = new();
+        
+        // Add this new property
+        public static bool AreTimersRunning => activeTimers.Count > 0 && activeTimers.Any(t => t.Enabled);
 
         /// <summary>
         /// Initializes the timed message system by reading configurations from XML
         /// and setting up message timers
         /// </summary>
-        private static void TimedMessagesInit()
+        public static void TimedMessagesInit()
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
             try
             {
-                // Check if the file exists
-                if (!File.Exists(Main.settingsFile))
-                {
-                    Main.LogEntry(methodName, $"Settings file not found: {Main.settingsFile}");
-                    return;
-                }
-
-                // Load the XML document
-                var xmlDoc = new XmlDocument();
-                xmlDoc.Load(Main.settingsFile);
-
-                // Extract messages and their timers
+                StopAndClearTimers(); // Clear any existing timers before creating new ones
                 var messages = new Dictionary<string, int>();
 
+                // Extract messages and timers from Settings.Instance
                 for (int i = 1; i <= 10; i++)
                 {
-                    string activeKey = $"timedMessage{i}Toggle";
-                    string messageKey = $"timedMessage{i}";
-                    string timerKey = $"{messageKey}Timer";
-                
-                    var activeNode = xmlDoc.SelectSingleNode($"//Settings/{activeKey}");
-                    var messageNode = xmlDoc.SelectSingleNode($"//Settings/{messageKey}");
-                    var timerNode = xmlDoc.SelectSingleNode($"//Settings/{timerKey}");
-                
-                    bool isActive = activeNode != null && bool.TryParse(activeNode.InnerText, out bool active) && active;
-                
-                    if (isActive && messageNode != null && timerNode != null && int.TryParse(timerNode.InnerText, out int timerValue) && timerValue > 0)
+                    var toggleProperty = typeof(Settings).GetProperty($"timedMessage{i}Toggle");
+                    var messageProperty = typeof(Settings).GetProperty($"timedMessage{i}");
+                    var timerProperty = typeof(Settings).GetProperty($"timedMessage{i}Timer");
+
+                    if (toggleProperty != null && messageProperty != null && timerProperty != null)
                     {
-                        messages.Add(messageNode.InnerText, timerValue);
-                        Main.LogEntry(methodName, $"Added message: {messageNode.InnerText} with timer: {timerValue}");
-                    }
-                    else
-                    {
-                        Main.LogEntry(methodName, $"Skipped adding message: {messageKey} with timer: +{timerKey}");
+                        bool isActive = (bool)toggleProperty.GetValue(Settings.Instance);
+                        string message = (string)messageProperty.GetValue(Settings.Instance);
+                        int timerValue = (int)timerProperty.GetValue(Settings.Instance);
+
+                        if (isActive && timerValue > 0 && !string.IsNullOrEmpty(message))
+                        {
+                            messages.Add(message, timerValue);
+                            Main.LogEntry(methodName, $"Added message: {message} with timer: {timerValue}");
+                        }
                     }
                 }
 
@@ -104,6 +53,7 @@ namespace TwitchChat
                     message_timer.Elapsed += async (source, e) => await TwitchEventHandler.SendMessage(message.Key);
                     message_timer.AutoReset = true;
                     message_timer.Enabled = true;
+                    activeTimers.Add(message_timer); // Add to tracking collection
                     Main.LogEntry(methodName, $"Timer set for message: {message.Key} with interval: {message.Value * 1000} ms");
                 }
             }
@@ -112,14 +62,23 @@ namespace TwitchChat
                 Main.LogEntry(methodName, $"An error occurred: {ex.Message}");
             }
         }
-    }
-
-    /// <summary>
-    /// Handles Dispatcher Mod related messages and configurations, when detected
-    /// </summary>
-    public class DispatcherModMessages
-    {
-        public bool dispatcherMessageActive = false;
-        public string dispatcherMessage = "MessageNotSet";
+        public static void StopAndClearTimers()
+        {
+            string methodName = "StopAndClearTimers";
+            try
+            {
+                foreach (var timer in activeTimers)
+                {
+                    timer.Stop();
+                    timer.Dispose();
+                }
+                activeTimers.Clear();
+                Main.LogEntry(methodName, "All timers stopped and cleared");
+            }
+            catch (Exception ex)
+            {
+                Main.LogEntry(methodName, $"Error clearing timers: {ex.Message}");
+            }
+        }
     }
 }

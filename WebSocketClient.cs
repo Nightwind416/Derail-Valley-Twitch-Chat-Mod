@@ -270,6 +270,7 @@ namespace TwitchChat
             else
             {
                 Main.LogEntry(methodName, "Subscribed to channel.chat.message.");
+                AutomatedMessages.TimedMessagesInit();
             }
         }
 
@@ -286,6 +287,7 @@ namespace TwitchChat
             {
                 await webSocketClient.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing", CancellationToken.None);
                 Main.LogEntry(methodName, "Disconnected from WebSocket server.");
+                AutomatedMessages.StopAndClearTimers();
             }
         }
     }
