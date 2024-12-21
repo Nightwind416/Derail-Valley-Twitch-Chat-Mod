@@ -121,13 +121,13 @@ namespace TwitchChat
             {
                 if (message == "!commands" && settings.commandMessageActive)
                 {
-                    _ = TwitchEventHandler.SendWhisper(settings.commandMessage, sender);
+                    _ = TwitchEventHandler.SendWhisper(sender, settings.commandMessage);
                     return;
                 }
                 
                 if (message == "!info" && settings.infoMessageActive)
                 {
-                    _ = TwitchEventHandler.SendWhisper(settings.infoMessage, sender);
+                    _ = TwitchEventHandler.SendWhisper(sender, settings.infoMessage);
                     return;
                 }
 
