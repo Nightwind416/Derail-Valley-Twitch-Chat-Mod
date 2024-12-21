@@ -1,97 +1,95 @@
-<h1 align="center">Derail Valley Twitch Chat</h1>
+# TwitchChat for Derail Valley
 
-<p align="center">
-A way to view Twitch chat messages from in game (especially useful for VR users).
-</p>
-<p align="center">
-<a href="https://github.com/Nightwind416/derail-valley-twitch-chat-mod/issues">Report Bug or Request Feature</a>
-</p>
-
-## Table of Contents
-
-- [About The Mod](#about-the-mod)
-- [Dependencies](#dependencies)
-- [Features](#features)
-- [Twitch Credentials](#twitch-credentials)
-- [Settings](#settings)
-- [Messages](#messages)
-- [Conflicts](#conflicts)
-- [VR Note](#vr-note)
-- [Future Plans](#future-plans)
-
-## About The Mod
-
-This mod allows streamers to receive chat in real-time through notifications and popups directly in the game. After downloading and unzipping to the Derail Valley Mods folder, begin a game and open the Unity Mod Manager window (default is Ctrl + F10).
-TODO: Instructions on how to configure for mod users.
-
-## Dependencies
-
-### Unity Mod Manager
-
-- Nexus link
-- Author name
+A mod that seamlessly integrates Twitch chat into your Derail Valley gameplay experience, providing real-time message display and chat interaction capabilities - especially useful for VR users!
 
 ## Features
 
-- Seamless Twitch Integration: Automatic login and virtually hands free operation, once a token is aquired and saved.
-- Real-Time Chat Display: Incoming chat messages are displayed directly in the game.
-  - Top left corner for 'flat screen' players and hovering a few feet out around eye level for VR players.
-- Standard Messages: Welcome, Info, and Commands messages can be individually toggled and edited.
-- Timed Messages: Edit and automatically send up to 10 unique announcements tat pre-determined intervals.
-- Follower & Subscriber Alerts: Get notified when someone follows or subscribes.
-- Message Logging: Keeps a detailed log of all chat interactions for post-stream review.
+### Core Functionality
 
-## Twitch Credentials
+- **Real-Time Chat Display**: View Twitch chat messages through in-game notifications
+- **Secure Authentication**: Automated OAuth token handling for secure Twitch integration
+- **Message Logging**: Detailed chat logs for post-stream review
+- **Automated Messages**: Schedule periodic announcements to keep your chat informed
+- **VR Compatible**: Notifications display in VR-friendly format
 
-Use the "Request 
+### Upcoming Features (In Development)
 
-## Settings
+- Subscriber/Follower alerts and notifications
+- Message throttling and combining for busy chats
+- User list management (VIP, ignore, etc.)
+- Integration with "Remote Dispatch" mod
+- Colored announcement system for timed messages
 
-- Display Duration: This will set how long each message stays visible, in seconds, before fading out.
+## Installation
 
-## Automatic Messages (Temporarily disabled)
+1. Download mod zip from NexusMods: [TwitchChatMod](https://www.nexusmods.com/derailvalley/mods/1069)
+2. Extract the mod to your Derail Valley mods folder
+3. Launch the game and open Unity Mod Manager (default: Ctrl + F10)
+4. Configure your settings in the mod's settings panel
 
-- Welcome Message: Will be sent to the channel
-- Info Message: You can save up to 10 pre typed messages to send at pre-determined intervals
-- Command Message: Each message can have a separate timer
-- Set a timer to 0 to disable that specific message
+## Dependencies
 
-## Conflicts
+1. Download and install [Unity Mod Manager](https://www.nexusmods.com/site/mods/21)
+2. Follow the installation instructions and prompts
 
-- Note if you are also using [Dispatcher (Continued)](https://www.nexusmods.com/derailvalley/mods/743)
+## Setup & Configuration
 
-## VR Note
+### Twitch Authentication
 
-- Message notifications display hovering 'roughly centered and straight out a short distance', similar to the tutorial popup notifications.
-- Additional messages continue stacking below. This can be disruptive on active chat channels.
+1. Enter your Twitch username in the mod settings
+2. Click "Request Authorization Token"
+3. Complete the OAuth authentication in your browser
+4. Token is securely saved and valid for ~30 days
 
-## Future Plans
+### Settings Configuration
 
-- Add throttling and/or combining when many messages are coming in at once (mostly for VR disruption)
-- Add ability to add usernames to a local 'ignore' list
-- Re-add automated replies and timed messages
-- Add various command responses and triggers
-- See if the career manager can be utilized for deeper Twitch channel settings acces from 'in-game'
-- See about creating own menu/ui, leveraging off the DerailValley UI
+- Configure message duration and display preferences
+- Set up to 5 timed messages with individual intervals
+- Customize welcome messages and automated responses
+- Debug options available in the expanded troubleshooting section
+
+## VR Usage Notes
+
+- Messages appear in a comfortable viewing position
+- Multiple messages stack vertically
+- **Note**: Active chats may cause visual clutter in VR
+
+## Debug & Testing
+
+Access advanced options by expanding the "Debug and Troubleshooting" section in settings:
+
+- Toggle processing of own messages (disabled by default)
+- Adjust debug logging levels
+- Test message display and channel connection
+
+## Support & Links
+
+- [Report Issues](https://github.com/Nightwind416/derail-valley-twitch-chat-mod/issues)
+- [Nexus Mods Page](https://www.nexusmods.com/derailvalley/mods/1069)
+- [GitHub Repository](https://github.com/Nightwind416/Derail-Valley-Twitch-Chat-Mod)
 
 ## Version History
 
-## 2.0.0 20 Dec 2024
+### 2.0.0 (December 20, 2024)
 
 - Complete code refactor
--- Removed and replaced TwitchLib with direct coded WebSocket and HTTP clients
--- Added automatic OAuth Token request/validating
--- Temporarily disabled automated and timed messages during base code refactoring
+- Direct WebSocket and HTTP client implementation
+- Automated OAuth Token handling
+- Temporary disable of automated messages during refactor
 
-## 1.2.0 6 Dec 2024 (internal only)
-
-- Major refactor and expansion of settings and credentials info
-
-### 1.1.0 29 Nov 2024
+### 1.1.0 (November 29, 2024)
 
 - Changed hard coded chat username to read from credentials file
 - Push project to public repository
 
-### 1.0.0 29 Nov 2024
+### 1.0.0 (November 29, 2024)
 
 - Initial Release
+
+## Donations
+
+If you find this mod useful and want to support its development, appreciate any donations that may be given:
+
+- [PayPal.me Donation Link](https://paypal.me/Nightwind416?country.x=US&locale.x=en_US)
+- [Buy Me a Coffee](https://www.buymeacoffee.com/christophe1xf)
+- [Ko-fi Support](https://ko-fi.com/A0A217PWSY)
