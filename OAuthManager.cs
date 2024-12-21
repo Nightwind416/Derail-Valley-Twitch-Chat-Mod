@@ -1,13 +1,13 @@
-using UnityEngine;
-using System.Threading.Tasks;
 using System;
-using System.Net;
 using System.IO;
+using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text;
 using System.Threading;
-using System.Net.Http.Headers;
-using System.Net.Http;
+using System.Threading.Tasks;
+using UnityEngine;
 
 namespace TwitchChat
 {

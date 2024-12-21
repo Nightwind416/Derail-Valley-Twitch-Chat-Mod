@@ -1,10 +1,9 @@
 using System;
-using UnityEngine;
-using DV.UIFramework;
-using System.Reflection;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
+using System.Reflection;
+using UnityEngine;
+using DV.UIFramework;
 
 namespace TwitchChat
 {
@@ -91,82 +90,141 @@ namespace TwitchChat
         
             try
             {
-                // Convert the dynamic message to string and then deserialize
                 string jsonString = jsonMessage.ToString();
-                var message = JsonSerializer.Deserialize<TwitchMessage>(jsonString);
-        
-                if (message?.metadata?.subscription_type == "channel.chat.message")
+                Main.LogEntry($"{methodName}", $"Processing message: {jsonString}");
+                
+                if (!jsonString.Contains("\"subscription_type\":\"channel.chat.message\""))
                 {
-                    Main.LogEntry($"{methodName}_SubscriptionType", "Message type is channel.chat.message");
-        
-                    var chatter = message.payload?.@event?.chatter_user_name;
-                    var chatterId = message.payload?.@event?.chatter_user_id;
-                    var text = message.payload?.@event?.message?.text;
-        
-                    // Skip processing if message is from ourselves
-                    if (chatterId == TwitchEventHandler.user_id)
+                    Main.LogEntry($"{methodName}", "Not a chat message, skipping");
+                    return;
+                }
+                
+                string chatter = ExtractValue(jsonString, "chatter_user_name");
+                string chatterId = ExtractValue(jsonString, "chatter_user_id");
+                string text = ExtractValue(jsonString, "text");
+
+                Main.LogEntry($"{methodName}", $"Extracted values - Chatter: {chatter}, ChatterId: {chatterId}, Text: {text}");
+
+                // Skip if any required values are missing
+                if (string.IsNullOrEmpty(chatter) || string.IsNullOrEmpty(text) || string.IsNullOrEmpty(chatterId))
+                {
+                    Main.LogEntry($"{methodName}", "Skipping message due to missing required values");
+                    return;
+                }
+
+                // Skip processing if message is from ourselves
+                if (chatterId == TwitchEventHandler.user_id)
+                {
+                    Main.LogEntry($"{methodName}", $"Skipping message from self (ID: {chatterId})");
+                    return;
+                }
+
+                if (!string.IsNullOrEmpty(chatter) && !string.IsNullOrEmpty(text))
+                {
+                    Main.LogEntry($"{methodName}", $"Valid message received from {chatter}: {text}");
+
+                    // Immediately try to show notification
+                    try
                     {
-                        Main.LogEntry($"{methodName}_SkipSelf", $"Skipping message from self (ID: {chatterId})");
-                        return;
+                        Main.LogEntry($"{methodName}", "Attempting to queue notification...");
+                        UnityMainThreadDispatcher.Instance().Enqueue(() =>
+                        {
+                            try
+                            {
+                                Main.LogEntry($"{methodName}", "Dispatching notification to main thread");
+                                string displayMessage = $"{chatter}: {text}";
+                                NewNotificationQueue["webSocketNotification"] = displayMessage;
+                                AttachNotification(displayMessage, "null");
+                                Main.LogEntry($"{methodName}", $"Successfully queued notification: {displayMessage}");
+                            }
+                            catch (Exception ex)
+                            {
+                                Main.LogEntry($"{methodName}", $"Error in main thread notification: {ex.Message}");
+                            }
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        Main.LogEntry($"{methodName}", $"Failed to queue notification: {ex.Message}");
                     }
 
-                    if (chatter != null && text != null)
+                    // Process commands separately
+                    if (text.Contains("HeyGuys"))
                     {
-                        Main.LogEntry($"{methodName}_ExtractChatter", $"Extracted chatter: {chatter}");
-                        Main.LogEntry($"{methodName}_ExtractText", $"Extracted text: {text}");
-        
-                        Main.LogEntry($"{methodName}_Message", $"Message: #{chatter}: {text}");
-                        Main.LogEntry("ReceivedMessage", $"{chatter}: {text}");
-        
-                        try
-                        {
-                            Main.LogEntry($"{methodName}_BeforeTextCheck", "Before checking text content");
-        
-                            if (text.Contains("HeyGuys"))
-                            {
-                                Main.LogEntry($"{methodName}_HeyGuys", "Text contains 'HeyGuys', sending 'VoHiYo'");
-                                TwitchEventHandler.SendMessage("[HTTP] VoHiYo").Wait();
-                            }
-                            else if (text.ToLower().StartsWith("!info"))
-                            {
-                                Main.LogEntry($"{methodName}_Info", "Text contains '!info', sending 'This is a test message'");
-                                TwitchEventHandler.SendMessage("[HTTP] This is an info message").Wait();
-                            }
-                            else if (text.ToLower().StartsWith("!commands"))
-                            {
-                                Main.LogEntry($"{methodName}_Commands", "Text contains '!commands', sending 'Available commands: !info !commands !test'");
-                                TwitchEventHandler.SendMessage("[HTTP] Available commands: !info !commands !test").Wait();
-                            }
-                            else
-                            {
-                                Main.LogEntry($"{methodName}_OtherMessage", "[HTTP] Other message, not responding");
-                                UnityMainThreadDispatcher.Instance().Enqueue(() =>
-                                {
-                                    SetVariable("webSocketNotification", $"{chatter}: {text}");
-                                });
-                            }
-        
-                            Main.LogEntry($"{methodName}_AfterTextCheck", "After checking text content");
-                        }
-                        catch (Exception ex)
-                        {
-                            Main.LogEntry($"{methodName}_MessageHandling", $"Exception in message handling: {ex.Message}");
-                            Main.LogEntry($"{methodName}_MessageHandling", $"Stack Trace: {ex.StackTrace}");
-                            Main.LogEntry($"{methodName}_MessageHandling", $"Inner Exception: {ex.InnerException?.Message}");
-                        }
-                    } // Added missing closing brace for if (chatter != null && text != null)
+                        _ = TwitchEventHandler.SendMessage("VoHiYo");
+                    }
+                    else if (text.ToLower().StartsWith("!info"))
+                    {
+                        _ = TwitchEventHandler.SendMessage("This is an info message");
+                    }
+                    else if (text.ToLower().StartsWith("!commands"))
+                    {
+                        _ = TwitchEventHandler.SendMessage("Available commands: !info !commands !test");
+                    }
                 }
                 else
                 {
-                    Main.LogEntry($"{methodName}_NonChatMessage", "Message type is not channel.chat.message");
+                    Main.LogEntry($"{methodName}", "Invalid message: missing chatter or text");
                 }
-                Main.LogEntry($"{methodName}_AfterSubscriptionTypeCheck", "After checking subscription type");
             }
             catch (Exception ex)
             {
-                Main.LogEntry($"{methodName}_Exception", $"Exception in HandleNotification: {ex.Message}");
-                Main.LogEntry($"{methodName}_Exception", $"Stack Trace: {ex.StackTrace}");
-                Main.LogEntry($"{methodName}_Exception", $"Inner Exception: {ex.InnerException?.Message}");
+                Main.LogEntry($"{methodName}", $"Error processing notification: {ex.Message}");
+                Main.LogEntry($"{methodName}", $"Stack Trace: {ex.StackTrace}");
+            }
+        }
+
+        private static string ExtractValue(string json, string key)
+        {
+            try
+            {
+                switch (key)
+                {
+                    case "chatter_user_name":
+                        // Look for the specific path in the JSON
+                        int nameStart = json.IndexOf("\"chatter_user_name\":\"") + "\"chatter_user_name\":\"".Length;
+                        if (nameStart > 0)
+                        {
+                            int nameEnd = json.IndexOf("\"", nameStart);
+                            if (nameEnd > nameStart)
+                            {
+                                return json.Substring(nameStart, nameEnd - nameStart);
+                            }
+                        }
+                        break;
+
+                    case "chatter_user_id":
+                        // Look for the specific path in the JSON
+                        int idStart = json.IndexOf("\"chatter_user_id\":\"") + "\"chatter_user_id\":\"".Length;
+                        if (idStart > 0)
+                        {
+                            int idEnd = json.IndexOf("\"", idStart);
+                            if (idEnd > idStart)
+                            {
+                                return json.Substring(idStart, idEnd - idStart);
+                            }
+                        }
+                        break;
+
+                    case "text":
+                        // Text is nested inside the message object
+                        int textStart = json.IndexOf("\"message\":{\"text\":\"") + "\"message\":{\"text\":\"".Length;
+                        if (textStart > 0)
+                        {
+                            int textEnd = json.IndexOf("\"", textStart);
+                            if (textEnd > textStart)
+                            {
+                                return json.Substring(textStart, textEnd - textStart);
+                            }
+                        }
+                        break;
+                }
+                return string.Empty;
+            }
+            catch (Exception ex)
+            {
+                Main.LogEntry("ExtractValue", $"Error extracting {key}: {ex.Message}");
+                return string.Empty;
             }
         }
 
@@ -188,7 +246,7 @@ namespace TwitchChat
             }
             else
             {
-                Main.LogEntry(methodName, "Object not found");
+                // Main.LogEntry(methodName, "Object not found");
             }
 
             // Find NotificationManager in the scene

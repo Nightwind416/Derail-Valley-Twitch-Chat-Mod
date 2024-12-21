@@ -3,7 +3,6 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.WebSockets;
 using System.Reflection;
-using System.Text.Json;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,6 +25,11 @@ namespace TwitchChat
         private static string lastChatMessage = "No messages received";
         public static string LastMessageType => lastMessageType;
         public static string LastChatMessage => lastChatMessage;
+
+        private static readonly SemaphoreSlim reconnectLock = new SemaphoreSlim(1, 1);
+        private static int reconnectAttempts = 0;
+        private static readonly int maxReconnectAttempts = 5;
+        private static readonly TimeSpan reconnectDelay = TimeSpan.FromSeconds(5);
 
         /// <summary>
         /// Establishes a WebSocket connection to Twitch's EventSub service.
@@ -87,15 +91,22 @@ namespace TwitchChat
         /// <param name="state">Timer state object (unused).</param>
         private static void CheckConnectionHealth(object state)
         {
-            
             var timeSinceLastKeepalive = DateTime.UtcNow - lastKeepaliveTime;
             bool wasHealthy = isConnectionHealthy;
-            isConnectionHealthy = timeSinceLastKeepalive <= TimeSpan.FromSeconds(45);  // Twitch timeout is 30s, this adds buffer
+            
+            // Reduce the threshold to 35 seconds (Twitch timeout is 30s)
+            isConnectionHealthy = timeSinceLastKeepalive <= TimeSpan.FromSeconds(35) 
+                && webSocketClient.State == WebSocketState.Open;
 
             if (wasHealthy && !isConnectionHealthy)
             {
-                Main.LogEntry("CheckConnectionHealth", "Connection appears to be dead (no recent keepalive)");
+                Main.LogEntry("CheckConnectionHealth", $"Connection appears to be dead (no keepalive for {timeSinceLastKeepalive.TotalSeconds:F1}s)");
                 _ = ReconnectAsync();
+            }
+            else if (!wasHealthy && isConnectionHealthy)
+            {
+                Main.LogEntry("CheckConnectionHealth", "Connection restored");
+                reconnectAttempts = 0; // Reset reconnect attempts when connection is healthy
             }
         }
 
@@ -104,8 +115,39 @@ namespace TwitchChat
         /// </summary>
         private static async Task ReconnectAsync()
         {
-            await DisconnectFromoWebSocket();
-            await ConnectToWebSocket();
+            try
+            {
+                if (!await reconnectLock.WaitAsync(0)) // Don't wait if already reconnecting
+                {
+                    Main.LogEntry("ReconnectAsync", "Reconnection already in progress");
+                    return;
+                }
+
+                using (reconnectLock)
+                {
+                    if (reconnectAttempts >= maxReconnectAttempts)
+                    {
+                        Main.LogEntry("ReconnectAsync", "Max reconnection attempts reached");
+                        isConnectionHealthy = false;
+                        return;
+                    }
+
+                    Main.LogEntry("ReconnectAsync", $"Attempting reconnect {reconnectAttempts + 1}/{maxReconnectAttempts}");
+                    
+                    await DisconnectFromoWebSocket();
+                    
+                    // Add delay before reconnecting
+                    await Task.Delay(reconnectDelay);
+                    
+                    await ConnectToWebSocket();
+                    reconnectAttempts++;
+                }
+            }
+            catch (Exception ex)
+            {
+                Main.LogEntry("ReconnectAsync", $"Reconnection error: {ex.Message}");
+                isConnectionHealthy = false;
+            }
         }
 
         /// <summary>
@@ -115,102 +157,77 @@ namespace TwitchChat
         {
             string methodName = "ReceiveMessages";
             var buffer = new byte[1024 * 4];
+
             while (webSocketClient.State == WebSocketState.Open)
             {
                 try
                 {
-                    var result = await webSocketClient.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
-                    var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
-        
-                    // Skip empty messages
-                    if (string.IsNullOrWhiteSpace(message))
-                    {
-                        Main.LogEntry(methodName, "Received empty message, skipping...");
-                        continue;
-                    }
-            
-                    Main.LogEntry(methodName, $"Received message: \n{message}");
-        
-                    try
-                    {
-                        var jsonMessage = JsonSerializer.Deserialize<JsonElement>(message);
-                        if (jsonMessage.ValueKind == JsonValueKind.Undefined)
-                        {
-                            Main.LogEntry(methodName, "Failed to parse JSON message");
-                            continue;
-                        }
-                        if (jsonMessage.TryGetProperty("metadata", out JsonElement metadata) && metadata.TryGetProperty("message_type", out JsonElement messageType))
-                        {
-                            string messageTypeString = messageType.GetString() ?? string.Empty;
-                            lastMessageType = messageTypeString;  // Update last message type
+                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(35));
+                    var result = await webSocketClient.ReceiveAsync(
+                        new ArraySegment<byte>(buffer), 
+                        cts.Token
+                    );
 
-                            if (messageTypeString == null)
-                            {
-                                Main.LogEntry(methodName, "Received message with null message type, skipping...");
-                                continue;
-                            }
-                            if (messageTypeString == "session_welcome")
-                            {
-                                var sessionId = jsonMessage.GetProperty("payload").GetProperty("session").GetProperty("id").GetString()?.Trim();
-                                if (!string.IsNullOrEmpty(sessionId))
-                                {
-                                    session_id = sessionId!;
-                                }
-                                
-                                Main.LogEntry(methodName, $"Session ID: {session_id}");
-                                Main.LogEntry(methodName, "TwitchChat connected to WebSocket");
-                                
-                                await RegisterWebbSocketChatEvent();
-                            }
-                            else if (messageTypeString == "notification")
-                            {
-                                // Extract and store chat message details
-                                if (jsonMessage.TryGetProperty("payload", out JsonElement payload) &&
-                                    payload.TryGetProperty("event", out JsonElement evt))
-                                {
-                                    string extractedUserName = evt.GetProperty("chatter_user_name").GetString() ?? "unknown";
-                                    string extractedMessage = evt.GetProperty("message").GetProperty("text").GetString() ?? "empty";
-                                    lastChatMessage = $"{extractedUserName}: {extractedMessage}";
-                                }
-                                MessageHandler.HandleNotification(jsonMessage);
-                            }
-                            else if (messageTypeString == "session_keepalive")
-                            {
-                                lastKeepaliveTime = DateTime.UtcNow;
-                                isConnectionHealthy = true;
-                                Main.LogEntry(methodName, "Received keepalive message.");
-                            }
-                            else if (messageTypeString == "session_reconnect")
-                            {
-                                Main.LogEntry(methodName, "Received reconnect message.");
-                            }
-                            else if (messageTypeString == "revocation")
-                            {
-                                Main.LogEntry(methodName, "Received revocation message.");
-                            }
-                            else
-                            {
-                                Main.LogEntry(methodName, $"Unknown message type: {messageTypeString}");
-                            }
-                        }
-                        else
-                        {
-                            Main.LogEntry(methodName, "Failed to parse JSON message");
-                        }
-                    }
-                    catch (JsonException ex)
+                    // Reset connection monitoring on any successful message
+                    lastKeepaliveTime = DateTime.UtcNow;
+
+                    // Simple string-based message type extraction
+                    string messageType = ExtractValue(Encoding.UTF8.GetString(buffer, 0, result.Count), "message_type");
+                    lastMessageType = messageType;
+
+                    switch (messageType)
                     {
-                        Main.LogEntry(methodName, $"JSON parsing error: {ex.Message}");
+                        case "session_welcome":
+                            session_id = ExtractValue(Encoding.UTF8.GetString(buffer, 0, result.Count), "id");
+                            Main.LogEntry(methodName, $"Session ID: {session_id}");
+                            Main.LogEntry(methodName, "TwitchChat connected to WebSocket");
+                            await RegisterWebbSocketChatEvent();
+                            break;
+
+                        case "notification":
+                            string userName = ExtractValue(Encoding.UTF8.GetString(buffer, 0, result.Count), "chatter_user_name");
+                            string chatMessage = ExtractValue(Encoding.UTF8.GetString(buffer, 0, result.Count), "text");
+                            lastChatMessage = $"{userName}: {chatMessage}";
+                            MessageHandler.HandleNotification(Encoding.UTF8.GetString(buffer, 0, result.Count));
+                            break;
+
+                        case "session_keepalive":
+                            lastKeepaliveTime = DateTime.UtcNow;
+                            isConnectionHealthy = true;
+                            Main.LogEntry(methodName, "Received keepalive message.");
+                            break;
+
+                        case "session_reconnect":
+                            Main.LogEntry(methodName, "Received reconnect message.");
+                            break;
+
+                        case "revocation":
+                            Main.LogEntry(methodName, "Received revocation message.");
+                            break;
+
+                        default:
+                            Main.LogEntry(methodName, $"Unknown message type: {messageType}");
+                            break;
                     }
                 }
-                catch (WebSocketException ex)
+                catch (OperationCanceledException)
                 {
-                    Main.LogEntry(methodName, $"WebSocket error: {ex.Message}");
+                    Main.LogEntry(methodName, "Receive operation timed out");
+                    isConnectionHealthy = false;
+                    _ = ReconnectAsync();
+                    break;
+                }
+                catch (WebSocketException wsEx)
+                {
+                    Main.LogEntry(methodName, $"WebSocket error: {wsEx.Message}");
+                    isConnectionHealthy = false;
+                    _ = ReconnectAsync();
                     break;
                 }
                 catch (Exception ex)
                 {
                     Main.LogEntry(methodName, $"Error receiving message: {ex.Message}");
+                    continue;
                 }
             }
             
@@ -226,6 +243,29 @@ namespace TwitchChat
             }
         }
 
+        private static string ExtractValue(string json, string key)
+        {
+            int keyIndex = json.IndexOf($"\"{key}\"");
+            if (keyIndex == -1) return string.Empty;
+
+            int valueStart = json.IndexOf(':', keyIndex) + 1;
+            while (valueStart < json.Length && char.IsWhiteSpace(json[valueStart])) valueStart++;
+
+            if (valueStart >= json.Length) return string.Empty;
+
+            if (json[valueStart] == '"')
+            {
+                valueStart++;
+                int valueEnd = json.IndexOf('"', valueStart);
+                return valueEnd == -1 ? string.Empty : json.Substring(valueStart, valueEnd - valueStart);
+            }
+            else
+            {
+                int valueEnd = json.IndexOfAny(new[] { ',', '}' }, valueStart);
+                return valueEnd == -1 ? string.Empty : json.Substring(valueStart, valueEnd - valueStart).Trim();
+            }
+        }
+
         /// <summary>
         /// Registers for Twitch chat events using the WebSocket connection.
         /// </summary>
@@ -238,21 +278,19 @@ namespace TwitchChat
                 return;
             }
 
-            var content = new StringContent(JsonSerializer.Serialize(new
-            {
-                type = "channel.chat.message",
-                version = "1",
-                condition = new
-                {
-                    broadcaster_user_id = TwitchEventHandler.user_id,
-                    user_id = TwitchEventHandler.user_id
-                },
-                transport = new
-                {
-                    method = "websocket",
-                    session_id = session_id
-                }
-            }), Encoding.UTF8, "application/json");
+            var jsonBody = $@"{{
+                ""type"": ""channel.chat.message"",
+                ""version"": ""1"",
+                ""condition"": {{
+                    ""broadcaster_user_id"": ""{TwitchEventHandler.user_id}"",
+                    ""user_id"": ""{TwitchEventHandler.user_id}""
+                }},
+                ""transport"": {{
+                    ""method"": ""websocket"",
+                    ""session_id"": ""{session_id}""
+                }}
+            }}";
+            var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
         
             byte[] tokenBytes = Convert.FromBase64String(Settings.Instance.EncodedOAuthToken);
             _ = Encoding.UTF8.GetString(tokenBytes);

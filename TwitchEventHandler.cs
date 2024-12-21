@@ -2,7 +2,6 @@ using System;
 using System.Net;
 using System.Net.Http;
 using System.Text;
-using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace TwitchChat
@@ -45,8 +44,18 @@ namespace TwitchChat
         
             var content = await response.Content.ReadAsStringAsync();
             Main.LogEntry(methodName, $"Response content: {content}");
-            var jsonDocument = JsonDocument.Parse(content);
-            var lookup_id = jsonDocument.RootElement.GetProperty("data")[0].GetProperty("id").GetString();
+            
+            // Replace JsonDocument parsing with string parsing
+            string? lookup_id = null;
+            if (content.Contains("\"id\":\""))
+            {
+                int startIndex = content.IndexOf("\"id\":\"") + 6;
+                int endIndex = content.IndexOf("\"", startIndex);
+                if (startIndex > 5 && endIndex > startIndex)
+                {
+                    lookup_id = content.Substring(startIndex, endIndex - startIndex);
+                }
+            }
         
             if (lookup_id == null)
             {
@@ -142,18 +151,8 @@ namespace TwitchChat
             string methodName = "SendChatMessageHTTP";
             Main.LogEntry(methodName, $"Preparing to send chat message: {message}");
         
-            var messageData = new
-            {
-                broadcaster_id = user_id,
-                sender_id = user_id,
-                message = message
-            };
-            
-            var content = new StringContent(
-                JsonSerializer.Serialize(messageData),
-                Encoding.UTF8, 
-                "application/json"
-            );
+            string jsonMessage = $"{{\"broadcaster_id\":\"{user_id}\",\"sender_id\":\"{user_id}\",\"message\":\"{message.Replace("\"", "\\\"")}\"}}";
+            var content = new StringContent(jsonMessage, Encoding.UTF8, "application/json");
         
             Main.LogEntry(methodName, $"Created content: {content}");
         

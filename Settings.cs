@@ -174,6 +174,90 @@ namespace TwitchChat
             GUI.color = Color.white;
             GUILayout.EndHorizontal();
 
+            GUILayout.BeginVertical(GUI.skin.box);
+            GUILayout.Label("Configure standard chat messages and notifications");
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Welcome Message: ", GUILayout.Width(150));
+            StandardMessages.welcomeMessage = GUILayout.TextField(StandardMessages.welcomeMessage, GUILayout.Width(200));
+            GUILayout.EndHorizontal();
+            
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("New Follower Message: ", GUILayout.Width(150));
+            StandardMessages.newFollowerMessage = GUILayout.TextField(StandardMessages.newFollowerMessage, GUILayout.Width(200));
+            GUILayout.EndHorizontal();
+            
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("New Subscriber Message: ", GUILayout.Width(150));
+            StandardMessages.newSubscriberMessage = GUILayout.TextField(StandardMessages.newSubscriberMessage, GUILayout.Width(200));
+            GUILayout.EndHorizontal();
+            GUILayout.EndVertical();
+
+            GUILayout.BeginVertical(GUI.skin.box);
+            GUILayout.Label("Configure command-related messages and responses");
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Command Message: ", GUILayout.Width(150));
+            CommandMessages.commandMessage = GUILayout.TextField(CommandMessages.commandMessage, GUILayout.Width(200));
+            GUILayout.EndHorizontal();
+            
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Info Message: ", GUILayout.Width(150));
+            CommandMessages.infoMessage = GUILayout.TextField(CommandMessages.infoMessage, GUILayout.Width(200));
+            GUILayout.EndHorizontal();
+            GUILayout.EndVertical();
+
+            GUILayout.BeginVertical(GUI.skin.box);
+            GUILayout.Label("Configure periodic automated messages");
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Toggle Timed Messages System", GUILayout.Width(200)))
+            {
+                TimedMessages.TimedMessageSystemToggle = !TimedMessages.TimedMessageSystemToggle;
+                AutomatedMessages.ToggleTimedMessages();
+            }
+            GUILayout.EndHorizontal();
+            
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Last Message Sent: ", GUILayout.Width(150));
+            GUILayout.Label(TimedMessages.lastTimedMessageSent);
+            GUILayout.EndHorizontal();
+            
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Timed Message 1: ", GUILayout.Width(150));
+            TimedMessages.TimedMessage1 = GUILayout.TextField(TimedMessages.TimedMessage1, GUILayout.Width(200));
+            GUILayout.Label("Timer (seconds): ", GUILayout.Width(150));
+            TimedMessages.TimedMessage1Timer = float.Parse(GUILayout.TextField(TimedMessages.TimedMessage1Timer.ToString(), GUILayout.Width(50)));
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Timed Message 2: ", GUILayout.Width(150));
+            TimedMessages.TimedMessage2 = GUILayout.TextField(TimedMessages.TimedMessage2, GUILayout.Width(200));
+            GUILayout.Label("Timer (seconds): ", GUILayout.Width(150));
+            TimedMessages.TimedMessage2Timer = float.Parse(GUILayout.TextField(TimedMessages.TimedMessage2Timer.ToString(), GUILayout.Width(50)));
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Timed Message 3: ", GUILayout.Width(150));
+            TimedMessages.TimedMessage3 = GUILayout.TextField(TimedMessages.TimedMessage3, GUILayout.Width(200));
+            GUILayout.Label("Timer (seconds): ", GUILayout.Width(150));
+            TimedMessages.TimedMessage3Timer = float.Parse(GUILayout.TextField(TimedMessages.TimedMessage3Timer.ToString(), GUILayout.Width(50)));
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Timed Message 4: ", GUILayout.Width(150));
+            TimedMessages.TimedMessage4 = GUILayout.TextField(TimedMessages.TimedMessage4, GUILayout.Width(200));
+            GUILayout.Label("Timer (seconds): ", GUILayout.Width(150));
+            TimedMessages.TimedMessage4Timer = float.Parse(GUILayout.TextField(TimedMessages.TimedMessage4Timer.ToString(), GUILayout.Width(50)));
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Timed Message 5: ", GUILayout.Width(150));
+            TimedMessages.TimedMessage5 = GUILayout.TextField(TimedMessages.TimedMessage5, GUILayout.Width(200));
+            GUILayout.Label("Timer (seconds): ", GUILayout.Width(150));
+            TimedMessages.TimedMessage5Timer = float.Parse(GUILayout.TextField(TimedMessages.TimedMessage5Timer.ToString(), GUILayout.Width(50)));
+            GUILayout.EndHorizontal();
+            GUILayout.EndVertical();
+
+            GUILayout.BeginVertical(GUI.skin.box);
+            GUILayout.Label("Configure Dispatcher Mod integration messages");
+            // Add Dispatcher Messages configuration UI here
+            GUILayout.EndVertical();
+
+            // Debug Settings Section (existing)
             GUI.color = Color.cyan;
             GUILayout.Label("Debug Settings");
             GUI.color = Color.white;  // Reset color for subsequent elements
@@ -280,11 +364,11 @@ namespace TwitchChat
     public class StandardMessages
     {
         public bool welcomeMessageActive = true;
-        public string welcomeMessage = "Welcome to my Derail Valley stream!";
+        public static string welcomeMessage = "Welcome to my Derail Valley stream!";
         public bool newFollowerMessageActive = true;
-        public string newFollowerMessage = "Welcome to the crew!";
+        public static string newFollowerMessage = "Welcome to the crew!";
         public bool newSubscriberMessageActive = true;
-        public string newSubscriberMessage = "Thank you for subscribing!";
+        public static string newSubscriberMessage = "Thank you for subscribing!";
     }
 
     /// <summary>
@@ -293,9 +377,9 @@ namespace TwitchChat
     public class CommandMessages
     {
         public bool commandMessageActive = true;
-        public string commandMessage = "!info !commands";
+        public static string commandMessage = "!info !commands";
         public bool infoMessageActive = true;
-        public string infoMessage = "Please keep chat clean and respectful. Use !commands to see available commands.";
+        public static string infoMessage = "Please keep chat clean and respectful. Use !commands to see available commands.";
     }
 
     /// <summary>
@@ -303,10 +387,23 @@ namespace TwitchChat
     /// </summary>
     public class TimedMessages
     {
-        public bool timedMessageSystemActive = false;
+        public static bool TimedMessageSystemToggle = false;
+        public static string lastTimedMessageSent = "No message sent yet";
         public bool TimedMessage1Toggle = false;
-        public string TimedMessage1 = "MessageNotSet";
-        public float TimedMessage1Timer = 0;
+        public static string TimedMessage1 = "MessageNotSet";
+        public static float TimedMessage1Timer = 0;
+        public bool TimedMessage2Toggle = false;
+        public static string TimedMessage2 = "MessageNotSet";
+        public static float TimedMessage2Timer = 0;
+        public bool TimedMessage3Toggle = false;
+        public static string TimedMessage3 = "MessageNotSet";
+        public static float TimedMessage3Timer = 0;
+        public bool TimedMessage4Toggle = false;
+        public static string TimedMessage4 = "MessageNotSet";
+        public static float TimedMessage4Timer = 0;
+        public bool TimedMessage5Toggle = false;
+        public static string TimedMessage5 = "MessageNotSet";
+        public static float TimedMessage5Timer = 0;
     }
 
     /// <summary>
@@ -315,6 +412,6 @@ namespace TwitchChat
     public class DispatcherModMessages
     {
         public bool dispatcherMessageActive = false;
-        public string dispatcherMessage = "MessageNotSet";
+        public static string dispatcherMessage = "MessageNotSet";
     }
 }

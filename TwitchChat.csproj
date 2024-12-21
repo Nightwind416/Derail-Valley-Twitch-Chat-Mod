@@ -7,17 +7,16 @@
 		<WarningsAsErrors>CS8600;CS8602;CS8603</WarningsAsErrors>
 		<OutputType>Library</OutputType>
 		<DerailValleyManagedAssets>D:\SteamLibrary\steamapps\common\Derail Valley\DerailValley_Data\Managed\</DerailValleyManagedAssets> <!-- Change to local game install path during build -->
-		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+		<CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
 		<DebugType>none</DebugType>
-		<!-- <ModId>TwitchChat</ModId> -->
 		<ModVersion>2.0.0</ModVersion>
-		<!-- <ModDisplayName>TwitchChat</ModDisplayName> -->
 		<ModAuthor>Nightwind416</ModAuthor>
 		<GameVersion>build 99.3</GameVersion>
 		<EntryMethod>TwitchChat.Main.Load</EntryMethod>
 		<ManagerVersion>0.27.3</ManagerVersion>
 		<ModHomepage>https://www.nexusmods.com/derailvalley/mods/1069</ModHomepage>
 		<ModRepository>https://github.com/Nightwind416/Derail-Valley-Twitch-Chat-Mod</ModRepository>
+		<PublishSingleFile>true</PublishSingleFile>
 	</PropertyGroup>
 
 	<!-- Import TextTemplate targets -->
@@ -77,9 +76,12 @@
 
 	<!-- Required Runtime Packages -->
 	<ItemGroup>
-		<PackageReference Include="System.Text.Json" Version="8.0.0" PrivateAssets="all" />
-		<PackageReference Include="System.Net.WebSockets.Client" Version="4.3.2" PrivateAssets="all" />
-		<PackageReference Include="System.Net.Http" Version="4.3.4" PrivateAssets="all" />
+		<PackageReference Include="System.Net.WebSockets.Client" Version="4.3.2">
+			<ExcludeAssets>runtime</ExcludeAssets>
+		</PackageReference>
+		<PackageReference Include="System.Net.Http" Version="4.3.4">
+			<ExcludeAssets>runtime</ExcludeAssets>
+		</PackageReference>
 	</ItemGroup>
 
 	<!-- Development/Build Time Only Packages -->

@@ -1,17 +1,22 @@
 param (
     [switch]$NoArchive,
-    [string]$OutputDirectory = $PSScriptRoot
+    [string]$OutputDirectory = $PSScriptRoot,
+    [string]$Configuration = "Release"
 )
 
 Set-Location "$PSScriptRoot"
 
-# Expanded list of files to include
+# Source directory for built files
+$BuildDir = "$PSScriptRoot/bin/$Configuration/net48"
+
+# Files to include from build directory
 $FilesToInclude = @(
-    "info.json"
+    "info.json",
+    "TwitchChat.dll"
 )
 
-# Get mod info
-$modInfo = Get-Content -Raw -Path "info.json" | ConvertFrom-Json
+# Get mod info from build output
+$modInfo = Get-Content -Raw -Path "$BuildDir/info.json" | ConvertFrom-Json
 $modId = $modInfo.Id
 $modVersion = $modInfo.Version
 
@@ -26,12 +31,13 @@ if (Test-Path "$ZipOutDir") {
 }
 New-Item "$ZipOutDir" -ItemType Directory -Force | Out-Null
 
-# Copy all required files
+# Copy required files from build directory
 foreach ($file in $FilesToInclude) {
-    if (Test-Path $file) {
-        Copy-Item -Force -Path $file -Destination "$ZipOutDir" -Recurse
+    $sourcePath = "$BuildDir/$file"
+    if (Test-Path $sourcePath) {
+        Copy-Item -Force -Path $sourcePath -Destination "$ZipOutDir"
     } else {
-        Write-Warning "File not found: $file"
+        Write-Warning "Build file not found: $sourcePath"
     }
 }
 
