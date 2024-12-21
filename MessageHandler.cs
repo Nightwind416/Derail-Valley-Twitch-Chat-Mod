@@ -123,7 +123,14 @@ namespace TwitchChat
                 {
                     Main.LogEntry($"{methodName}", $"Valid message received from {chatter}: {text}");
 
-                    // Immediately try to show notification
+                    // Redirect command messages
+                    if (text.ToLower().StartsWith("!"))
+                    {
+                        AutomatedMessages.CommandMessageProcessing(text, chatter);
+                        return; // Skip notification for command messages
+                    }
+
+                    // Show notification only for non-command messages
                     try
                     {
                         Main.LogEntry($"{methodName}", "Attempting to queue notification...");
@@ -146,20 +153,6 @@ namespace TwitchChat
                     catch (Exception ex)
                     {
                         Main.LogEntry($"{methodName}", $"Failed to queue notification: {ex.Message}");
-                    }
-
-                    // Process commands separately
-                    if (text.Contains("HeyGuys"))
-                    {
-                        _ = TwitchEventHandler.SendMessage("VoHiYo");
-                    }
-                    else if (text.ToLower().StartsWith("!info"))
-                    {
-                        _ = TwitchEventHandler.SendMessage("This is an info message");
-                    }
-                    else if (text.ToLower().StartsWith("!commands"))
-                    {
-                        _ = TwitchEventHandler.SendMessage("Available commands: !info !commands !test");
                     }
                 }
                 else

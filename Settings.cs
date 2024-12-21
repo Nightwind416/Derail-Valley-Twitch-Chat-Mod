@@ -53,6 +53,27 @@ namespace TwitchChat
         public string commandMessage = "!info !commands";
         public bool infoMessageActive = true;
         public string infoMessage = "Please keep chat clean and respectful. Use !commands to see available commands.";
+        
+        // Custom Commands
+        public bool customCommand1Active = false;
+        public string customCommand1Trigger = "custom1";
+        public string customCommand1Response = "Custom command 1 response";
+        
+        public bool customCommand2Active = false;
+        public string customCommand2Trigger = "custom2";
+        public string customCommand2Response = "Custom command 2 response";
+        
+        public bool customCommand3Active = false;
+        public string customCommand3Trigger = "custom3";
+        public string customCommand3Response = "Custom command 3 response";
+        
+        public bool customCommand4Active = false;
+        public string customCommand4Trigger = "custom4";
+        public string customCommand4Response = "Custom command 4 response";
+        
+        public bool customCommand5Active = false;
+        public string customCommand5Trigger = "custom5";
+        public string customCommand5Response = "Custom command 5 response";
 
         // Timed Messages Settings
         public bool timedMessageSystemToggle = false;
@@ -190,21 +211,23 @@ namespace TwitchChat
             GUILayout.EndVertical();
 
             // Test Message Display Section
-            GUILayout.Label("Test Message Display While In-Game: ");
-            GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Direct Attachment", GUILayout.Width(150)))
-                {
-                    directAttachmentMessageTestFlag = true;
-                }
-                GUILayout.Label("Typically used by script/mod alerts and non-Twitch messages");
-            GUILayout.EndHorizontal();
-            GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Message Queue", GUILayout.Width(150)))
-                {
-                    MessageQueueAttachmentTestFlag = true;
-                }
-                GUILayout.Label("Uses same 'queuing' system as received Twitch messages");
-            GUILayout.EndHorizontal();
+            GUILayout.BeginVertical(GUI.skin.box);
+                GUILayout.Label("Test Message Display While In-Game: ");
+                GUILayout.BeginHorizontal();
+                    if (GUILayout.Button("Direct Attachment", GUILayout.Width(150)))
+                    {
+                        directAttachmentMessageTestFlag = true;
+                    }
+                    GUILayout.Label("Typically used by script/mod alerts and non-Twitch messages");
+                GUILayout.EndHorizontal();
+                GUILayout.BeginHorizontal();
+                    if (GUILayout.Button("Message Queue", GUILayout.Width(150)))
+                    {
+                        MessageQueueAttachmentTestFlag = true;
+                    }
+                    GUILayout.Label("Uses same 'queuing' system as received Twitch messages");
+                GUILayout.EndHorizontal();
+            GUILayout.EndVertical();
 
             // Standard Messages Section
             GUILayout.BeginVertical(GUI.skin.box);
@@ -234,15 +257,64 @@ namespace TwitchChat
                 GUILayout.Label("Configure command-related messages and responses");
                 
                 GUILayout.BeginHorizontal();
-                    GUILayout.Label("Command Message: ", GUILayout.Width(400));
+                    Instance.commandMessageActive = GUILayout.Toggle(Instance.commandMessageActive, "", GUILayout.Width(20));
+                    GUILayout.Label("!Commands Message: ", GUILayout.Width(380));
                     Instance.commandMessage = GUILayout.TextField(Instance.commandMessage, GUILayout.Width(200));
                 GUILayout.EndHorizontal();
                 
                 GUILayout.BeginHorizontal();
-                    GUILayout.Label("Info Message: ", GUILayout.Width(400));
-                    
+                    Instance.infoMessageActive = GUILayout.Toggle(Instance.infoMessageActive, "", GUILayout.Width(20));
+                    GUILayout.Label("!Info Message: ", GUILayout.Width(380));
                     Instance.infoMessage = GUILayout.TextField(Instance.infoMessage, GUILayout.Width(200));
-                    GUILayout.EndHorizontal();
+                GUILayout.EndHorizontal();
+
+                GUILayout.Space(10);
+                GUILayout.Label("Custom Commands:");
+
+                // Custom Command 1
+                GUILayout.BeginHorizontal();
+                    Instance.customCommand1Active = GUILayout.Toggle(Instance.customCommand1Active, "", GUILayout.Width(20));
+                    GUILayout.Label("Trigger: !", GUILayout.Width(50));
+                    Instance.customCommand1Trigger = GUILayout.TextField(Instance.customCommand1Trigger, GUILayout.Width(100));
+                    GUILayout.Label("Response: ", GUILayout.Width(70));
+                    Instance.customCommand1Response = GUILayout.TextField(Instance.customCommand1Response, GUILayout.Width(360));
+                GUILayout.EndHorizontal();
+
+                // Custom Command 2
+                GUILayout.BeginHorizontal();
+                    Instance.customCommand2Active = GUILayout.Toggle(Instance.customCommand2Active, "", GUILayout.Width(20));
+                    GUILayout.Label("Trigger: !", GUILayout.Width(50));
+                    Instance.customCommand2Trigger = GUILayout.TextField(Instance.customCommand2Trigger, GUILayout.Width(100));
+                    GUILayout.Label("Response: ", GUILayout.Width(70));
+                    Instance.customCommand2Response = GUILayout.TextField(Instance.customCommand2Response, GUILayout.Width(360));
+                GUILayout.EndHorizontal();
+
+                // Custom Command 3
+                GUILayout.BeginHorizontal();
+                    Instance.customCommand3Active = GUILayout.Toggle(Instance.customCommand3Active, "", GUILayout.Width(20));
+                    GUILayout.Label("Trigger: !", GUILayout.Width(50));
+                    Instance.customCommand3Trigger = GUILayout.TextField(Instance.customCommand3Trigger, GUILayout.Width(100));
+                    GUILayout.Label("Response: ", GUILayout.Width(70));
+                    Instance.customCommand3Response = GUILayout.TextField(Instance.customCommand3Response, GUILayout.Width(360));
+                GUILayout.EndHorizontal();
+
+                // Custom Command 4
+                GUILayout.BeginHorizontal();
+                    Instance.customCommand4Active = GUILayout.Toggle(Instance.customCommand4Active, "", GUILayout.Width(20));
+                    GUILayout.Label("Trigger: !", GUILayout.Width(50));
+                    Instance.customCommand4Trigger = GUILayout.TextField(Instance.customCommand4Trigger, GUILayout.Width(100));
+                    GUILayout.Label("Response: ", GUILayout.Width(70));
+                    Instance.customCommand4Response = GUILayout.TextField(Instance.customCommand4Response, GUILayout.Width(360));
+                GUILayout.EndHorizontal();
+
+                // Custom Command 5
+                GUILayout.BeginHorizontal();
+                    Instance.customCommand5Active = GUILayout.Toggle(Instance.customCommand5Active, "", GUILayout.Width(20));
+                    GUILayout.Label("Trigger: !", GUILayout.Width(50));
+                    Instance.customCommand5Trigger = GUILayout.TextField(Instance.customCommand5Trigger, GUILayout.Width(100));
+                    GUILayout.Label("Response: ", GUILayout.Width(70));
+                    Instance.customCommand5Response = GUILayout.TextField(Instance.customCommand5Response, GUILayout.Width(360));
+                GUILayout.EndHorizontal();
             GUILayout.EndVertical();
 
             // Timed Messages Section

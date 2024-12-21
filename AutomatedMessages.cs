@@ -112,10 +112,51 @@ namespace TwitchChat
                 ?.SetValue(null, message);
         }
 
-        public static void CommandMessageProcessing(string command, string message)
+        public static void CommandMessageProcessing(string message, string sender)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
+            var settings = Settings.Instance;
 
+            try
+            {
+                if (message == "!commands" && settings.commandMessageActive)
+                {
+                    var enabledCommands = new List<string>();
+                    
+                    if (settings.infoMessageActive) enabledCommands.Add("!info");
+                    if (settings.customCommand1Active) enabledCommands.Add(settings.customCommand1Trigger);
+                    if (settings.customCommand2Active) enabledCommands.Add(settings.customCommand2Trigger);
+                    if (settings.customCommand3Active) enabledCommands.Add(settings.customCommand3Trigger);
+                    if (settings.customCommand4Active) enabledCommands.Add(settings.customCommand4Trigger);
+                    if (settings.customCommand5Active) enabledCommands.Add(settings.customCommand5Trigger);
+
+                    string response = "Available commands: " + string.Join("  ", enabledCommands);
+                    _ = TwitchEventHandler.SendMessage(response);
+                    return;
+                }
+
+                if (message == "!info" && settings.infoMessageActive)
+                {
+                    _ = TwitchEventHandler.SendMessage(settings.infoMessage);
+                    return;
+                }
+
+                // Process custom commands
+                if (settings.customCommand1Active && message == settings.customCommand1Trigger.ToLower())
+                    _ = TwitchEventHandler.SendMessage(settings.customCommand1Response);
+                else if (settings.customCommand2Active && message == settings.customCommand2Trigger.ToLower())
+                    _ = TwitchEventHandler.SendMessage(settings.customCommand2Response);
+                else if (settings.customCommand3Active && message == settings.customCommand3Trigger.ToLower())
+                    _ = TwitchEventHandler.SendMessage(settings.customCommand3Response);
+                else if (settings.customCommand4Active && message == settings.customCommand4Trigger.ToLower())
+                    _ = TwitchEventHandler.SendMessage(settings.customCommand4Response);
+                else if (settings.customCommand5Active && message == settings.customCommand5Trigger.ToLower())
+                    _ = TwitchEventHandler.SendMessage(settings.customCommand5Response);
+            }
+            catch (Exception ex)
+            {
+                Main.LogEntry(methodName, $"Error processing command: {ex.Message}");
+            }
         }
     }
 }
