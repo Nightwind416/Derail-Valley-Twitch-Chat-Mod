@@ -178,6 +178,81 @@ namespace TwitchChat
         }
 
         /// <summary>
+        /// Sends a whisper message to a specific Twitch user.
+        /// </summary>
+        /// <param name="toUserId">The user ID of the recipient.</param>
+        /// <param name="message">The message to send.</param>
+        public static async Task SendWhisper(string toUserId, string message)
+        {
+            string methodName = "SendWhisper";
+            Main.LogEntry(methodName, $"Preparing to send whisper to user {toUserId}: {message}");
+
+            string jsonMessage = $"{{\"from_user_id\":\"{user_id}\",\"to_user_id\":\"{toUserId}\",\"message\":\"{message.Replace("\"", "\\\"")}\"}}";
+            var content = new StringContent(jsonMessage, Encoding.UTF8, "application/json");
+
+            try
+            {
+                var response = await httpClient.PostAsync("https://api.twitch.tv/helix/whispers", content);
+                Main.LogEntry(methodName, $"Received response: {response.StatusCode}");
+
+                if (response.StatusCode != HttpStatusCode.NoContent)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    Main.LogEntry(methodName, $"Failed to send whisper. Error: {errorContent}");
+                }
+                else
+                {
+                    Main.LogEntry(methodName, $"Sent whisper to {toUserId}: {message}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Main.LogEntry(methodName, $"Exception occurred: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Sends an announcement to the channel.
+        /// </summary>
+        /// <param name="message">The announcement message.</param>
+        /// <param name="color">Optional color for the announcement (blue, green, orange, purple).</param>
+        public static async Task SendAnnouncement(string message, string color = "primary")
+        {
+            string methodName = "SendAnnouncement";
+            Main.LogEntry(methodName, $"Preparing to send announcement: {message}");
+
+            // Validate color parameter
+            string[] validColors = { "blue", "green", "orange", "purple", "primary" }; // primary is the channel’s accent color
+            if (!Array.Exists(validColors, c => c.Equals(color, StringComparison.OrdinalIgnoreCase)))
+            {
+                color = "primary";
+            }
+
+            string jsonMessage = $"{{\"broadcaster_id\":\"{user_id}\",\"moderator_id\":\"{user_id}\",\"message\":\"{message.Replace("\"", "\\\"")}\",\"color\":\"{color}\"}}";
+            var content = new StringContent(jsonMessage, Encoding.UTF8, "application/json");
+
+            try
+            {
+                var response = await httpClient.PostAsync("https://api.twitch.tv/helix/chat/announcements", content);
+                Main.LogEntry(methodName, $"Received response: {response.StatusCode}");
+
+                if (response.StatusCode != HttpStatusCode.NoContent)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    Main.LogEntry(methodName, $"Failed to send announcement. Error: {errorContent}");
+                }
+                else
+                {
+                    Main.LogEntry(methodName, $"Sent announcement: {message}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Main.LogEntry(methodName, $"Exception occurred: {ex.Message}");
+            }
+        }
+
+        /// <summary>
         /// Retrieves the decoded client ID for Twitch API authentication.
         /// </summary>
         /// <returns>The decoded client ID string.</returns>

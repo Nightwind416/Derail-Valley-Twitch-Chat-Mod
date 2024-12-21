@@ -271,6 +271,7 @@ namespace TwitchChat
 <html>
 <head>
     <title>Derail Valley TwitchChat Authorization</title>
+    <meta charset='UTF-8'>
     <style>
         .holiday-effects {
             z-index: 1;
@@ -586,7 +587,7 @@ namespace TwitchChat
                 snowflake.style.setProperty('--drift3', `${-50 + Math.random() * 100}px`);
                 snowflake.style.setProperty('--drift4', `${-50 + Math.random() * 100}px`);
                 
-                snowflake.innerHTML = '❄';
+                snowflake.innerHTML = '&#10052;';
                 container.appendChild(snowflake);
             }
         }

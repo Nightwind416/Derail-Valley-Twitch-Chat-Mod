@@ -121,24 +121,13 @@ namespace TwitchChat
             {
                 if (message == "!commands" && settings.commandMessageActive)
                 {
-                    var enabledCommands = new List<string>();
-                    
-                    if (settings.infoMessageActive) enabledCommands.Add("!info");
-                    if (settings.customCommand1Active) enabledCommands.Add(settings.customCommand1Trigger);
-                    if (settings.customCommand2Active) enabledCommands.Add(settings.customCommand2Trigger);
-                    if (settings.customCommand3Active) enabledCommands.Add(settings.customCommand3Trigger);
-                    if (settings.customCommand4Active) enabledCommands.Add(settings.customCommand4Trigger);
-                    if (settings.customCommand5Active) enabledCommands.Add(settings.customCommand5Trigger);
-
-                    string response = "Available commands: " + string.Join("  ", enabledCommands);
-                    _ = TwitchEventHandler.SendMessage(response);
-                    Settings.Instance.commandMessage = response;
+                    _ = TwitchEventHandler.SendWhisper(settings.commandMessage, sender);
                     return;
                 }
-
+                
                 if (message == "!info" && settings.infoMessageActive)
                 {
-                    _ = TwitchEventHandler.SendMessage(settings.infoMessage);
+                    _ = TwitchEventHandler.SendWhisper(settings.infoMessage, sender);
                     return;
                 }
 

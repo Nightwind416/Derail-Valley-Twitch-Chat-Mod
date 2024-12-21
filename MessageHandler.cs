@@ -126,8 +126,8 @@ namespace TwitchChat
                     // Redirect command messages
                     if (text.ToLower().StartsWith("!"))
                     {
-                        AutomatedMessages.CommandMessageProcessing(text, chatter);
-                        return; // Skip notification for command messages
+                        AutomatedMessages.CommandMessageProcessing(text, chatterId);
+                        return;
                     }
 
                     // Show notification only for non-command messages
