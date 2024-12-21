@@ -16,7 +16,7 @@ namespace TwitchChat
         /// Initializes the timed message system by reading configurations from XML
         /// and setting up message timers
         /// </summary>
-        public static void TimedMessagesInit()
+        private static void TimedMessagesInit()
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
             try
@@ -46,7 +46,8 @@ namespace TwitchChat
                     messageTimer.Elapsed += async (source, e) => 
                     {
                         await TwitchEventHandler.SendMessage(message.Key);
-                        TimedMessages.lastTimedMessageSent = $"{message.Key} (Sent at {DateTime.Now:HH:mm:ss})";
+                        typeof(TimedMessages).GetProperty("lastTimedMessageSent", BindingFlags.NonPublic | BindingFlags.Static)
+                            ?.SetValue(null, $"{message.Key} (Sent at {DateTime.Now:HH:mm:ss})");
                     };
                     messageTimer.AutoReset = true;
                     messageTimer.Enabled = true;
@@ -57,7 +58,8 @@ namespace TwitchChat
             catch (Exception ex)
             {
                 Main.LogEntry(methodName, $"An error occurred: {ex.Message}");
-                TimedMessages.lastTimedMessageSent = "Error initializing timed messages, see log for details";
+                typeof(TimedMessages).GetProperty("lastTimedMessageSent", BindingFlags.NonPublic | BindingFlags.Static)
+                    ?.SetValue(null, "Error initializing timed messages, see log for details");
             }
         }
 
@@ -70,19 +72,19 @@ namespace TwitchChat
                 {
                     TimedMessagesInit();
                     Main.LogEntry(methodName, "Timed messages system started");
-                    TimedMessages.lastTimedMessageSent = "Timed messages system started";
+                    SetLastTimedMessageSent("Timed messages system started");
                 }
                 else
                 {
                     StopAndClearTimers();
                     Main.LogEntry(methodName, "Timed messages system stopped");
-                    TimedMessages.lastTimedMessageSent = "Timed messages system stopped";
+                    SetLastTimedMessageSent("Timed messages system stopped");
                 }
             }
             catch (Exception ex)
             {
                 Main.LogEntry(methodName, $"Error toggling timed messages: {ex.Message}");
-                TimedMessages.lastTimedMessageSent = "Error toggling timed messages, see log for details";
+                SetLastTimedMessageSent("Error toggling timed messages, see log for details");
             }
         }
 
@@ -104,6 +106,12 @@ namespace TwitchChat
                 Main.LogEntry(methodName, $"Error clearing timers: {ex.Message}");
             }
         }
+        private static void SetLastTimedMessageSent(string message)
+        {
+            typeof(TimedMessages).GetProperty("lastTimedMessageSent", BindingFlags.NonPublic | BindingFlags.Static)
+                ?.SetValue(null, message);
+        }
+
         public static void CommandMessageProcessing(string command, string message)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;

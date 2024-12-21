@@ -76,6 +76,7 @@ namespace TwitchChat
 
                 // Start receiving messages
                 _ = Task.Run(ReceiveMessages);
+                
 
             }
             catch (Exception ex)
@@ -308,7 +309,10 @@ namespace TwitchChat
             else
             {
                 Main.LogEntry(methodName, "Subscribed to channel.chat.message.");
-                AutomatedMessages.TimedMessagesInit();
+                if (!string.IsNullOrEmpty(Settings.Instance.welcomeMessage))
+                {
+                    await TwitchEventHandler.SendMessage(Settings.Instance.welcomeMessage);
+                }
             }
         }
 
@@ -318,11 +322,18 @@ namespace TwitchChat
         public static async Task DisconnectFromoWebSocket()
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
-            connectionMonitorTimer?.Dispose();
-            isConnectionHealthy = false;
             
             if (webSocketClient.State == WebSocketState.Open)
             {
+                if (!string.IsNullOrEmpty(Settings.Instance.disconnectMessage))
+                {
+                    await TwitchEventHandler.SendMessage(Settings.Instance.disconnectMessage);
+                    // Small delay to ensure the message is sent before closing
+                    await Task.Delay(500);
+                }
+                
+                connectionMonitorTimer?.Dispose();
+                isConnectionHealthy = false;
                 await webSocketClient.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing", CancellationToken.None);
                 Main.LogEntry(methodName, "Disconnected from WebSocket server.");
                 AutomatedMessages.StopAndClearTimers();
