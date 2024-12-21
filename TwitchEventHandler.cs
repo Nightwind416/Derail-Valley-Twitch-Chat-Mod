@@ -222,7 +222,8 @@ namespace TwitchChat
             Main.LogEntry(methodName, $"Preparing to send announcement: {message}");
 
             // Validate color parameter
-            string[] validColors = { "blue", "green", "orange", "purple", "primary" }; // primary is the channel’s accent color
+            color = color.ToLower();
+            string[] validColors = ["blue", "green", "orange", "purple", "primary"]; // primary is the channel’s accent color
             if (!Array.Exists(validColors, c => c.Equals(color, StringComparison.OrdinalIgnoreCase)))
             {
                 color = "primary";

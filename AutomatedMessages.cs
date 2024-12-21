@@ -22,37 +22,44 @@ namespace TwitchChat
             try
             {
                 StopAndClearTimers(); // Clear any existing timers before creating new ones
-                var messages = new Dictionary<string, float>();
+                var messages = new Dictionary<string, (float timer, string color)>();
 
                 // Add messages if they are set and have a valid timer
                 if (!string.IsNullOrEmpty(TimedMessages.TimedMessage1) && TimedMessages.TimedMessage1Timer > 0)
-                    messages.Add(TimedMessages.TimedMessage1, TimedMessages.TimedMessage1Timer);
+                    messages.Add(TimedMessages.TimedMessage1, (TimedMessages.TimedMessage1Timer, TimedMessages.TimedMessage1Color));
                 if (!string.IsNullOrEmpty(TimedMessages.TimedMessage2) && TimedMessages.TimedMessage2Timer > 0)
-                    messages.Add(TimedMessages.TimedMessage2, TimedMessages.TimedMessage2Timer);
+                    messages.Add(TimedMessages.TimedMessage2, (TimedMessages.TimedMessage2Timer, TimedMessages.TimedMessage2Color));
                 if (!string.IsNullOrEmpty(TimedMessages.TimedMessage3) && TimedMessages.TimedMessage3Timer > 0)
-                    messages.Add(TimedMessages.TimedMessage3, TimedMessages.TimedMessage3Timer);
+                    messages.Add(TimedMessages.TimedMessage3, (TimedMessages.TimedMessage3Timer, TimedMessages.TimedMessage3Color));
                 if (!string.IsNullOrEmpty(TimedMessages.TimedMessage4) && TimedMessages.TimedMessage4Timer > 0)
-                    messages.Add(TimedMessages.TimedMessage4, TimedMessages.TimedMessage4Timer);
+                    messages.Add(TimedMessages.TimedMessage4, (TimedMessages.TimedMessage4Timer, TimedMessages.TimedMessage4Color));
                 if (!string.IsNullOrEmpty(TimedMessages.TimedMessage5) && TimedMessages.TimedMessage5Timer > 0)
-                    messages.Add(TimedMessages.TimedMessage5, TimedMessages.TimedMessage5Timer);
+                    messages.Add(TimedMessages.TimedMessage5, (TimedMessages.TimedMessage5Timer, TimedMessages.TimedMessage5Color));
 
                 // Create and start timers for each message
                 foreach (var message in messages)
                 {
-                    if (message.Value <= 0 || string.IsNullOrEmpty(message.Key) || message.Key == "MessageNotSet") 
+                    if (message.Value.timer <= 0 || string.IsNullOrEmpty(message.Key) || message.Key == "MessageNotSet") 
                         continue;
-
-                    Timer messageTimer = new(message.Value * 1000); // Convert seconds to milliseconds
+                    
+                    Timer messageTimer = new(message.Value.timer * 1000); // Convert seconds to milliseconds
+                    string messageText = message.Key;
+                    string messageColor = message.Value.color;
+                    
                     messageTimer.Elapsed += async (source, e) => 
                     {
-                        await TwitchEventHandler.SendMessage(message.Key);
+                        if (messageColor.ToLower() == "normal")
+                            await TwitchEventHandler.SendMessage(messageText);
+                        else
+                            await TwitchEventHandler.SendAnnouncement(messageText, messageColor);
+                        
                         typeof(TimedMessages).GetProperty("lastTimedMessageSent", BindingFlags.NonPublic | BindingFlags.Static)
-                            ?.SetValue(null, $"{message.Key} (Sent at {DateTime.Now:HH:mm:ss})");
+                            ?.SetValue(null, $"{messageText} (Sent at {DateTime.Now:HH:mm:ss})");
                     };
                     messageTimer.AutoReset = true;
                     messageTimer.Enabled = true;
                     activeTimers.Add(messageTimer);
-                    Main.LogEntry(methodName, $"Timer set for message: {message.Key} with interval: {message.Value} seconds");
+                    Main.LogEntry(methodName, $"Timer set for message: {messageText} with interval: {message.Value.timer} seconds");
                 }
             }
             catch (Exception ex)
@@ -119,28 +126,30 @@ namespace TwitchChat
 
             try
             {
-                if (message == "!commands" && settings.commandMessageActive)
+                string lowerMessage = message.ToLower();
+                
+                if (lowerMessage == "!commands" && settings.commandMessageActive)
                 {
                     _ = TwitchEventHandler.SendWhisper(sender, settings.commandMessage);
                     return;
                 }
                 
-                if (message == "!info" && settings.infoMessageActive)
+                if (lowerMessage == "!info" && settings.infoMessageActive)
                 {
                     _ = TwitchEventHandler.SendWhisper(sender, settings.infoMessage);
                     return;
                 }
 
                 // Process custom commands
-                if (settings.customCommand1Active && message == settings.customCommand1Trigger.ToLower())
+                if (settings.customCommand1Active && lowerMessage == settings.customCommand1Trigger.ToLower())
                     _ = TwitchEventHandler.SendMessage(settings.customCommand1Response);
-                else if (settings.customCommand2Active && message == settings.customCommand2Trigger.ToLower())
+                else if (settings.customCommand2Active && lowerMessage == settings.customCommand2Trigger.ToLower())
                     _ = TwitchEventHandler.SendMessage(settings.customCommand2Response);
-                else if (settings.customCommand3Active && message == settings.customCommand3Trigger.ToLower())
+                else if (settings.customCommand3Active && lowerMessage == settings.customCommand3Trigger.ToLower())
                     _ = TwitchEventHandler.SendMessage(settings.customCommand3Response);
-                else if (settings.customCommand4Active && message == settings.customCommand4Trigger.ToLower())
+                else if (settings.customCommand4Active && lowerMessage == settings.customCommand4Trigger.ToLower())
                     _ = TwitchEventHandler.SendMessage(settings.customCommand4Response);
-                else if (settings.customCommand5Active && message == settings.customCommand5Trigger.ToLower())
+                else if (settings.customCommand5Active && lowerMessage == settings.customCommand5Trigger.ToLower())
                     _ = TwitchEventHandler.SendMessage(settings.customCommand5Response);
             }
             catch (Exception ex)

@@ -262,7 +262,7 @@ namespace TwitchChat
             }
             else
             {
-                int valueEnd = json.IndexOfAny(new[] { ',', '}' }, valueStart);
+                int valueEnd = json.IndexOfAny([',', '}'], valueStart);
                 return valueEnd == -1 ? string.Empty : json.Substring(valueStart, valueEnd - valueStart).Trim();
             }
         }

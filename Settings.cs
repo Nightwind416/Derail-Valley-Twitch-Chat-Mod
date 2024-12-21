@@ -47,13 +47,13 @@ namespace TwitchChat
         public string newFollowerMessage = "Welcome to the crew!";
         public bool newSubscriberMessageActive = true;
         public string newSubscriberMessage = "Thank you for subscribing!";
-        public string disconnectMessage = "Stream ending, thanks for watching!";
+        public string disconnectMessage = "TwitchChatMod disconnecting, thanks for chatting!";
 
         // Command Messages Settings
         public bool commandMessageActive = true;
-        public string commandMessage = "!info !commands";
+        public string commandMessage = "Channel Commands:  !info";
         public bool infoMessageActive = true;
-        public string infoMessage = "Please keep chat clean and respectful. Use !commands to see available commands.";
+        public string infoMessage = "Please keep chat clean and respectful. Use !commands to see enabled channel commands.";
         
         // Custom Commands
         public bool customCommand1Active = false;
@@ -99,36 +99,52 @@ namespace TwitchChat
         public bool timedMessage5Toggle = false;
         public string timedMessage5 = "MessageNotSet";
         public float timedMessage5Timer = 0;
-        private int customCommand1TypeIndex = 0;
 
         // Dispatcher Messages Settings
         public bool dispatcherMessageActive = false;
         public string dispatcherMessage = "MessageNotSet";
 
-        // Add these at the class level
-        private static readonly string[] ColorOptions = new[] { "blue", "green", "orange", "purple", "primary" };
+        public readonly string[] ColorOptions = ["Normal", "Blue", "Green", "Orange", "Purple", "Primary"];
         private int message1ColorIndex = 0;
         private int message2ColorIndex = 0;
         private int message3ColorIndex = 0;
         private int message4ColorIndex = 0;
         private int message5ColorIndex = 0;
 
+        // Method to get announcement type by message number
+        // public string GetAnnouncementType(int messageNumber)
+        // {
+        //     int colorIndex = messageNumber switch
+        //     {
+        //         1 => message1ColorIndex,
+        //         2 => message2ColorIndex,
+        //         3 => message3ColorIndex,
+        //         4 => message4ColorIndex,
+        //         5 => message5ColorIndex,
+        //         _ => 0
+        //     };
+        //     return ColorOptions[colorIndex];
+        // }
+
         private void CycleColor(ref int colorIndex) {
             colorIndex = (colorIndex + 1) % ColorOptions.Length;
         }
 
-        private Color GetAnnouncementColor(int colorIndex) {
+        public Color GetAnnouncementColor(int colorIndex) {
             string colorName = ColorOptions[colorIndex];
             return colorName switch {
-                "regular" => Color.white,
-                "blue" => Color.blue,
-                "green" => Color.green,
-                "orange" => new Color(1f, 0.5f, 0f),
-                "purple" => new Color(0.5f, 0f, 0.5f),
-                "primary" => Color.red,
+                "Normal" => Color.white,
+                "Blue" => Color.blue,
+                "Green" => Color.green,
+                "Orange" => new Color(1f, 0.5f, 0f),
+                "Purple" => new Color(0.5f, 0f, 0.5f),
+                "Primary" => Color.red,
                 _ => Color.white
             };
         }
+
+        // Add this field near the other private fields at the top of the Settings class
+        private bool debugSectionExpanded = false;
 
         /// <summary>
         /// Draws the mod configuration UI using Unity's IMGUI system.
@@ -259,7 +275,7 @@ namespace TwitchChat
                     // Instance.newFollowerMessage = GUILayout.TextField(Instance.newFollowerMessage);
                     GUILayout.Label(Instance.newFollowerMessage, GUILayout.Width(200));
                     GUI.color = Color.yellow;
-                    GUILayout.Label("(Future implementation)");
+                    GUILayout.Label("(Future Implementation)");
                     GUI.color = Color.white;
                 GUILayout.EndHorizontal();
                 
@@ -268,7 +284,7 @@ namespace TwitchChat
                     // Instance.newSubscriberMessage = GUILayout.TextField(Instance.newSubscriberMessage);
                     GUILayout.Label(Instance.newSubscriberMessage, GUILayout.Width(200));
                     GUI.color = Color.yellow;
-                    GUILayout.Label("(Future implementation)");
+                    GUILayout.Label("(Future Implementation)");
                     GUI.color = Color.white;
                 GUILayout.EndHorizontal();
             GUILayout.EndVertical();
@@ -298,56 +314,61 @@ namespace TwitchChat
                 GUILayout.Space(10);
                 
                 GUILayout.Label("Custom Commands:");
+                
+                GUI.color = Color.yellow;
+                GUILayout.Label("(Custom Commands Currently Disabled - Future Implementation)");
+                GUI.color = Color.white;
+
                 GUILayout.Label("On?    Trigger Word     Response");
 
                 // Custom Command 1
                 GUILayout.BeginHorizontal();
+                    GUI.enabled = false;  // Disable interaction
                     bool prevCmd1Active = Instance.customCommand1Active;
                     Instance.customCommand1Active = GUILayout.Toggle(Instance.customCommand1Active, "", GUILayout.Width(20));
-                    if (prevCmd1Active != Instance.customCommand1Active)
-                        CommandMessages.UpdateCommandsResponse();
-                    Instance.customCommand1Trigger = GUILayout.TextField(Instance.customCommand1Trigger, GUILayout.Width(100));
-                    Instance.customCommand1Response = GUILayout.TextField(Instance.customCommand1Response);
+                    GUILayout.Label(Instance.customCommand1Trigger, GUILayout.Width(100));
+                    GUILayout.Label(Instance.customCommand1Response);
+                    GUI.enabled = true;  // Re-enable interaction
                 GUILayout.EndHorizontal();
 
                 // Custom Command 2
                 GUILayout.BeginHorizontal();
+                    GUI.enabled = false;
                     bool prevCmd2Active = Instance.customCommand2Active;
                     Instance.customCommand2Active = GUILayout.Toggle(Instance.customCommand2Active, "", GUILayout.Width(20));
-                    if (prevCmd2Active != Instance.customCommand2Active)
-                        CommandMessages.UpdateCommandsResponse();
-                    Instance.customCommand2Trigger = GUILayout.TextField(Instance.customCommand2Trigger, GUILayout.Width(100));
-                    Instance.customCommand2Response = GUILayout.TextField(Instance.customCommand2Response);
+                    GUILayout.Label(Instance.customCommand2Trigger, GUILayout.Width(100));
+                    GUILayout.Label(Instance.customCommand2Response);
+                    GUI.enabled = true;
                 GUILayout.EndHorizontal();
 
                 // Custom Command 3
                 GUILayout.BeginHorizontal();
+                    GUI.enabled = false;
                     bool prevCmd3Active = Instance.customCommand3Active;
                     Instance.customCommand3Active = GUILayout.Toggle(Instance.customCommand3Active, "", GUILayout.Width(20));
-                    if (prevCmd3Active != Instance.customCommand3Active)
-                        CommandMessages.UpdateCommandsResponse();
-                    Instance.customCommand3Trigger = GUILayout.TextField(Instance.customCommand3Trigger, GUILayout.Width(100));
-                    Instance.customCommand3Response = GUILayout.TextField(Instance.customCommand3Response);
+                    GUILayout.Label(Instance.customCommand3Trigger, GUILayout.Width(100));
+                    GUILayout.Label(Instance.customCommand3Response);
+                    GUI.enabled = true;
                 GUILayout.EndHorizontal();
 
                 // Custom Command 4
                 GUILayout.BeginHorizontal();
+                    GUI.enabled = false;
                     bool prevCmd4Active = Instance.customCommand4Active;
                     Instance.customCommand4Active = GUILayout.Toggle(Instance.customCommand4Active, "", GUILayout.Width(20));
-                    if (prevCmd4Active != Instance.customCommand4Active)
-                        CommandMessages.UpdateCommandsResponse();
-                    Instance.customCommand4Trigger = GUILayout.TextField(Instance.customCommand4Trigger, GUILayout.Width(100));
-                    Instance.customCommand4Response = GUILayout.TextField(Instance.customCommand4Response);
+                    GUILayout.Label(Instance.customCommand4Trigger, GUILayout.Width(100));
+                    GUILayout.Label(Instance.customCommand4Response);
+                    GUI.enabled = true;
                 GUILayout.EndHorizontal();
 
                 // Custom Command 5
                 GUILayout.BeginHorizontal();
+                    GUI.enabled = false;
                     bool prevCmd5Active = Instance.customCommand5Active;
                     Instance.customCommand5Active = GUILayout.Toggle(Instance.customCommand5Active, "", GUILayout.Width(20));
-                    if (prevCmd5Active != Instance.customCommand5Active)
-                        CommandMessages.UpdateCommandsResponse();
-                    Instance.customCommand5Trigger = GUILayout.TextField(Instance.customCommand5Trigger, GUILayout.Width(100));
-                    Instance.customCommand5Response = GUILayout.TextField(Instance.customCommand5Response);
+                    GUILayout.Label(Instance.customCommand5Trigger, GUILayout.Width(100));
+                    GUILayout.Label(Instance.customCommand5Response);
+                    GUI.enabled = true;
                 GUILayout.EndHorizontal();
             GUILayout.EndVertical();
 
@@ -367,7 +388,7 @@ namespace TwitchChat
                 }
                 
                 GUILayout.BeginHorizontal();
-                    GUILayout.Label("Timed Messaging System is currently:");
+                    GUILayout.Label("Timed Messaging System is currently:", GUILayout.Width(250));
                     GUI.color = AutomatedMessages.AreTimersRunning ? Color.green : Color.red;
                     GUILayout.Label(AutomatedMessages.AreTimersRunning ? "Enabled" : "Disabled");
                     GUI.color = Color.white;
@@ -389,50 +410,63 @@ namespace TwitchChat
                 // Disable all controls when system is running
                 GUI.enabled = !AutomatedMessages.AreTimersRunning;
 
-                GUILayout.Label("Message Type | Send Every | Message to Send");
+                GUI.color = Color.yellow;
+                GUILayout.Label("Setting type/colors currently not fully implemented. Normal and all 'color' choices will send as regular channel chat messages. Primary color will send an Announcement type message using the channels set 'accent' color.");
+                GUI.color = Color.white;
+                GUILayout.Label("Timed messages only require a validated authentication token and can be sent even if not connected to the channel and receiving messages.");
+                GUILayout.Label("Primary color choice will send an Announcement type message using the channels set 'accent' color..");
+                GUILayout.Label("Set the message timer to '0' to completly ignore a timed message when enabling the system.");
+
+                GUILayout.Label("     Type       Every               Message to Send");
                 
                 GUI.backgroundColor = GetAnnouncementColor(message1ColorIndex);
                 GUILayout.BeginHorizontal();
-                    if (GUILayout.Button("Color", GUILayout.Width(80))) {
+                    if (GUILayout.Button(ColorOptions[message1ColorIndex], GUILayout.Width(70))) {
                         CycleColor(ref message1ColorIndex);
+                        TimedMessages.TimedMessage1Color = ColorOptions[message1ColorIndex];
                     }
-                    Instance.timedMessage1Timer = float.Parse(GUILayout.TextField(Instance.timedMessage1Timer.ToString(), GUILayout.Width(40)));
+                    Instance.timedMessage1Timer = float.Parse(GUILayout.TextField(Instance.timedMessage1Timer.ToString(), GUILayout.Width(30)));
+                    GUILayout.Label("seconds", GUILayout.Width(60));
                     Instance.timedMessage1 = GUILayout.TextField(Instance.timedMessage1);
                 GUILayout.EndHorizontal();
 
                 GUI.backgroundColor = GetAnnouncementColor(message2ColorIndex);
                 GUILayout.BeginHorizontal();
-                    if (GUILayout.Button("Color", GUILayout.Width(80))) {
+                    if (GUILayout.Button(ColorOptions[message2ColorIndex], GUILayout.Width(70))) {
                         CycleColor(ref message2ColorIndex);
                     }
-                    Instance.timedMessage2Timer = float.Parse(GUILayout.TextField(Instance.timedMessage2Timer.ToString(), GUILayout.Width(40)));
+                    Instance.timedMessage2Timer = float.Parse(GUILayout.TextField(Instance.timedMessage2Timer.ToString(), GUILayout.Width(30)));
+                    GUILayout.Label("seconds", GUILayout.Width(60));
                     Instance.timedMessage2 = GUILayout.TextField(Instance.timedMessage2);
                 GUILayout.EndHorizontal();
 
                 GUI.backgroundColor = GetAnnouncementColor(message3ColorIndex);
                 GUILayout.BeginHorizontal();
-                    if (GUILayout.Button("Color", GUILayout.Width(80))) {
+                    if (GUILayout.Button(ColorOptions[message3ColorIndex], GUILayout.Width(70))) {
                         CycleColor(ref message3ColorIndex);
                     }
-                    Instance.timedMessage3Timer = float.Parse(GUILayout.TextField(Instance.timedMessage3Timer.ToString(), GUILayout.Width(40)));
+                    Instance.timedMessage3Timer = float.Parse(GUILayout.TextField(Instance.timedMessage3Timer.ToString(), GUILayout.Width(30)));
+                    GUILayout.Label("seconds", GUILayout.Width(60));
                     Instance.timedMessage3 = GUILayout.TextField(Instance.timedMessage3);
                 GUILayout.EndHorizontal();
 
                 GUI.backgroundColor = GetAnnouncementColor(message4ColorIndex);
                 GUILayout.BeginHorizontal();
-                    if (GUILayout.Button("Color", GUILayout.Width(80))) {
+                    if (GUILayout.Button(ColorOptions[message4ColorIndex], GUILayout.Width(70))) {
                         CycleColor(ref message4ColorIndex);
                     }
-                    Instance.timedMessage4Timer = float.Parse(GUILayout.TextField(Instance.timedMessage4Timer.ToString(), GUILayout.Width(40)));
+                    Instance.timedMessage4Timer = float.Parse(GUILayout.TextField(Instance.timedMessage4Timer.ToString(), GUILayout.Width(30)));
+                    GUILayout.Label("seconds", GUILayout.Width(60));
                     Instance.timedMessage4 = GUILayout.TextField(Instance.timedMessage4);
                 GUILayout.EndHorizontal();
 
                 GUI.backgroundColor = GetAnnouncementColor(message5ColorIndex);
                 GUILayout.BeginHorizontal();
-                    if (GUILayout.Button("Color", GUILayout.Width(80))) {
+                    if (GUILayout.Button(ColorOptions[message5ColorIndex], GUILayout.Width(70))) {
                         CycleColor(ref message5ColorIndex);
                     }
-                    Instance.timedMessage5Timer = float.Parse(GUILayout.TextField(Instance.timedMessage5Timer.ToString(), GUILayout.Width(40)));
+                    Instance.timedMessage5Timer = float.Parse(GUILayout.TextField(Instance.timedMessage5Timer.ToString(), GUILayout.Width(30)));
+                    GUILayout.Label("seconds", GUILayout.Width(60));
                     Instance.timedMessage5 = GUILayout.TextField(Instance.timedMessage5);
                 GUILayout.EndHorizontal();
 
@@ -448,90 +482,104 @@ namespace TwitchChat
                 GUILayout.Label("Configure Dispatcher Mod integration messages");
                 GUILayout.Space(10);
                 // Add Dispatcher Messages configuration UI here
+                GUI.color = Color.yellow;
+                GUILayout.Label("(Future Implementation)");
+                GUI.color = Color.white;
             GUILayout.EndVertical();
 
             GUILayout.Space(10);
 
-            GUI.color = Color.cyan;
-            GUILayout.Label("Debug and Troubleshooting");
-            GUI.color = Color.white;
+            // Debug and Troubleshooting Section Header
+            GUILayout.BeginHorizontal();
+                GUI.color = Color.cyan;
+                string toggleSymbol = debugSectionExpanded ? "▼" : "►";
+                if (GUILayout.Button($"{toggleSymbol} Debug and Troubleshooting", GUI.skin.label))
+                {
+                    debugSectionExpanded = !debugSectionExpanded;
+                }
+                GUI.color = Color.white;
+            GUILayout.EndHorizontal();
             
-            GUILayout.Space(10);
-        
-            // Debug Settings Section (existing)
-            GUILayout.BeginVertical(GUI.skin.box);
-                GUILayout.Label("Debug Level");
-                
-                // Store current selection before grid
-                int currentSelection = (int)debugLevel;
-                
-                // Create string array for debug levels
-                string[] options = {"Off", "Minimal", "Reduced", "Full"};
-                
-                // Color each button based on selection
-                GUILayout.BeginHorizontal();
-                    for (int i = 0; i < options.Length; i++)
-                    {
-                        GUI.color = (i == currentSelection) ? Color.cyan : Color.white;
-                        if (GUILayout.Button(options[i], GUILayout.Width(75)))
-                        {
-                            debugLevel = (DebugLevel)i;
-                        }
-                    }
-                    GUI.color = Color.white;  // Reset color
-                GUILayout.EndHorizontal();
-            GUILayout.EndVertical();
-
-            GUILayout.Space(10);
-            
-            // Test Message Display Section
-            GUILayout.BeginVertical(GUI.skin.box);
-                GUILayout.Label("Test In-Game Message Display");
+            if (debugSectionExpanded)
+            {
                 GUILayout.Space(10);
-
-                GUILayout.BeginHorizontal();
-                    if (GUILayout.Button("Direct Attachment", GUILayout.Width(125)))
-                    {
-                        directAttachmentMessageTestFlag = true;
-                    }
-                    GUILayout.Label("Typically used by script/mod alerts and non-Twitch messages");
-                GUILayout.EndHorizontal();
-                GUILayout.BeginHorizontal();
-                    if (GUILayout.Button("Message Queue", GUILayout.Width(125)))
-                    {
-                        MessageQueueAttachmentTestFlag = true;
-                    }
-                    GUILayout.Label("Uses same 'queuing' system as received Twitch messages");
-                GUILayout.EndHorizontal();
-            GUILayout.EndVertical();
-                
-            GUILayout.Space(10);
             
-            GUILayout.BeginVertical(GUI.skin.box);
-                GUILayout.Label("Click the button to send the message to your Twitch channel");
-                GUILayout.BeginHorizontal();
-                    if (GUILayout.Button("Send", GUILayout.Width(80)))
-                    {
-                        sendMessageFlag = true;
-                    }
-                    testMessage = GUILayout.TextField(testMessage);
-                GUILayout.EndHorizontal();
-                GUILayout.Label("Note1: You can edit the message above before sending");
-                GUILayout.Label("Note2: These messages are sent to your channel chat and will be visible to all viewers");
-                GUILayout.Label("Note3: Mssages received on Twitch only confirm a valid Token");
-                GUILayout.Label("Note4: Use Connection Status below to check received message status");
-            GUILayout.EndVertical();
+                // Debug Settings Section
+                GUILayout.BeginVertical(GUI.skin.box);
+                    GUILayout.Label("Debug Level");
+                    
+                    // Store current selection before grid
+                    int currentSelection = (int)debugLevel;
+                    
+                    // Create string array for debug levels
+                    string[] options = ["Off", "Minimal", "Reduced", "Full"];
+                    
+                    // Color each button based on selection
+                    GUILayout.BeginHorizontal();
+                        for (int i = 0; i < options.Length; i++)
+                        {
+                            GUI.color = (i == currentSelection) ? Color.cyan : Color.white;
+                            if (GUILayout.Button(options[i], GUILayout.Width(75)))
+                            {
+                                debugLevel = (DebugLevel)i;
+                            }
+                        }
+                        GUI.color = Color.white;  // Reset color
+                    GUILayout.EndHorizontal();
+                GUILayout.EndVertical();
 
-            GUILayout.BeginVertical(GUI.skin.box);
-                GUILayout.Label("Click the button to send a whisper to the user_id");
-                GUILayout.BeginHorizontal();
-                    if (GUILayout.Button("Send", GUILayout.Width(80)))
-                    {
-                        await TwitchEventHandler.SendWhisper("1218746026", "This is a test whisper message");
-                    }
-                GUILayout.EndHorizontal();
-                GUILayout.Label("Note1: You can edit the message above before sending");
-            GUILayout.EndVertical();
+                GUILayout.Space(10);
+                
+                // Test Message Display Section
+                GUILayout.BeginVertical(GUI.skin.box);
+                    GUILayout.Label("Test In-Game Message Display");
+                    GUILayout.Space(10);
+
+                    GUILayout.BeginHorizontal();
+                        if (GUILayout.Button("Direct Attachment", GUILayout.Width(125)))
+                        {
+                            directAttachmentMessageTestFlag = true;
+                        }
+                        GUILayout.Label("Typically used by script/mod alerts and non-Twitch messages");
+                    GUILayout.EndHorizontal();
+                    GUILayout.BeginHorizontal();
+                        if (GUILayout.Button("Message Queue", GUILayout.Width(125)))
+                        {
+                            MessageQueueAttachmentTestFlag = true;
+                        }
+                        GUILayout.Label("Uses same 'queuing' system as received Twitch messages");
+                    GUILayout.EndHorizontal();
+                GUILayout.EndVertical();
+                    
+                GUILayout.Space(10);
+                
+                GUILayout.BeginVertical(GUI.skin.box);
+                    GUILayout.Label("Click the button to send the message to your Twitch channel");
+                    GUILayout.BeginHorizontal();
+                        if (GUILayout.Button("Send", GUILayout.Width(80)))
+                        {
+                            sendMessageFlag = true;
+                        }
+                        testMessage = GUILayout.TextField(testMessage);
+                    GUILayout.EndHorizontal();
+                    GUILayout.Label("Note1: You can edit the message above before sending");
+                    GUILayout.Label("Note2: These messages are sent to your channel chat and will be visible to all viewers");
+                    GUILayout.Label("Note3: Mssages received on Twitch only confirm a valid Token");
+                    GUILayout.Label("Note4: Use Connection Status below to check received message status");
+                GUILayout.EndVertical();
+
+                GUILayout.BeginVertical(GUI.skin.box);
+                    GUILayout.Label("Click the button to send a whisper to the user_id");
+                    GUILayout.BeginHorizontal();
+                        if (GUILayout.Button("Send", GUILayout.Width(80)))
+                        {
+                            await TwitchEventHandler.SendWhisper("1218746026", "This is a test whisper message");
+                        }
+                    GUILayout.EndHorizontal();
+                    GUILayout.Label("Note1: You can edit the message above before sending");
+                GUILayout.EndVertical();
+            }
+
         }
 
         /// <summary>
@@ -632,13 +680,13 @@ namespace TwitchChat
             var enabledCommands = new List<string>();
             
             if (Settings.Instance.infoMessageActive) enabledCommands.Add("!info");
-            if (Settings.Instance.customCommand1Active) enabledCommands.Add(Settings.Instance.customCommand1Trigger);
-            if (Settings.Instance.customCommand2Active) enabledCommands.Add(Settings.Instance.customCommand2Trigger);
-            if (Settings.Instance.customCommand3Active) enabledCommands.Add(Settings.Instance.customCommand3Trigger);
-            if (Settings.Instance.customCommand4Active) enabledCommands.Add(Settings.Instance.customCommand4Trigger);
-            if (Settings.Instance.customCommand5Active) enabledCommands.Add(Settings.Instance.customCommand5Trigger);
+            if (Settings.Instance.customCommand1Active) enabledCommands.Add($"!{Settings.Instance.customCommand1Trigger}");
+            if (Settings.Instance.customCommand2Active) enabledCommands.Add($"!{Settings.Instance.customCommand2Trigger}");
+            if (Settings.Instance.customCommand3Active) enabledCommands.Add($"!{Settings.Instance.customCommand3Trigger}");
+            if (Settings.Instance.customCommand4Active) enabledCommands.Add($"!{Settings.Instance.customCommand4Trigger}");
+            if (Settings.Instance.customCommand5Active) enabledCommands.Add($"!{Settings.Instance.customCommand5Trigger}");
 
-            string response = "Available commands: " + string.Join("  ", enabledCommands);
+            string response = "Channel Commands:" + string.Join("  ", enabledCommands);
             Settings.Instance.commandMessage = response;
         }
     }
@@ -652,14 +700,19 @@ namespace TwitchChat
         public static string lastTimedMessageSent => Settings.Instance.lastTimedMessageSent;
         public static string TimedMessage1 => Settings.Instance.timedMessage1;
         public static float TimedMessage1Timer => Settings.Instance.timedMessage1Timer;
+        public static string TimedMessage1Color = "Normal";
         public static string TimedMessage2 => Settings.Instance.timedMessage2;
         public static float TimedMessage2Timer => Settings.Instance.timedMessage2Timer;
+        public static string TimedMessage2Color = "Normal";
         public static string TimedMessage3 => Settings.Instance.timedMessage3;
         public static float TimedMessage3Timer => Settings.Instance.timedMessage3Timer;
+        public static string TimedMessage3Color = "Normal";
         public static string TimedMessage4 => Settings.Instance.timedMessage4;
         public static float TimedMessage4Timer => Settings.Instance.timedMessage4Timer;
+        public static string TimedMessage4Color = "Normal";
         public static string TimedMessage5 => Settings.Instance.timedMessage5;
         public static float TimedMessage5Timer => Settings.Instance.timedMessage5Timer;
+        public static string TimedMessage5Color = "Normal";
     }
 
     /// <summary>
