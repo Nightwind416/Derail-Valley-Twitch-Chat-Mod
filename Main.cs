@@ -10,8 +10,10 @@ using UnityModManagerNet;
 namespace TwitchChat
 {
     /// <summary>
-    /// Main entry point and core functionality handler for the Twitch Chat mod.
-    /// Manages mod initialization, settings, and logging functionality.
+    /// Core module for the Twitch Chat mod.
+    /// Handles mod initialization, lifecycle management, settings persistence,
+    /// and logging functionality. Acts as the central coordinator for all mod components
+    /// and provides integration with Unity Mod Manager.
     /// </summary>
     public static class Main
     {

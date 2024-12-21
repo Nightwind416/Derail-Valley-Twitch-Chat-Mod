@@ -7,7 +7,9 @@ using System.Threading.Tasks;
 namespace TwitchChat
 {
     /// <summary>
-    /// Handles Twitch API events and interactions.
+    /// Manages Twitch API interactions and event handling.
+    /// Provides methods for user authentication, sending messages, announcements, whispers,
+    /// and handling various Twitch API endpoints.
     /// </summary>
     public class TwitchEventHandler
     {

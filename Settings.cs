@@ -411,11 +411,10 @@ namespace TwitchChat
                 GUI.enabled = !AutomatedMessages.AreTimersRunning;
 
                 GUI.color = Color.yellow;
-                GUILayout.Label("Setting type/colors currently not fully implemented. Normal and all 'color' choices will send as regular channel chat messages. Primary color will send an Announcement type message using the channels set 'accent' color.");
+                GUILayout.Label("Setting type/colors is not implemented yet. All choices will send as regular channel chat messages at their designated intervals.");
                 GUI.color = Color.white;
-                GUILayout.Label("Timed messages only require a validated authentication token and can be sent even if not connected to the channel and receiving messages.");
-                GUILayout.Label("Primary color choice will send an Announcement type message using the channels set 'accent' color..");
-                GUILayout.Label("Set the message timer to '0' to completly ignore a timed message when enabling the system.");
+                GUILayout.Label("Note 1: Timed messages only require a validated authentication token and can be sent even if not connected to the channel and receiving messages.");
+                GUILayout.Label("Note 2: Set the message timer to '0' to completly ignore a timed message when enabling the system.");
 
                 GUILayout.Label("     Type       Every               Message to Send");
                 
@@ -568,16 +567,16 @@ namespace TwitchChat
                     GUILayout.Label("Note4: Use Connection Status below to check received message status");
                 GUILayout.EndVertical();
 
-                GUILayout.BeginVertical(GUI.skin.box);
-                    GUILayout.Label("Click the button to send a whisper to the user_id");
-                    GUILayout.BeginHorizontal();
-                        if (GUILayout.Button("Send", GUILayout.Width(80)))
-                        {
-                            await TwitchEventHandler.SendWhisper("1218746026", "This is a test whisper message");
-                        }
-                    GUILayout.EndHorizontal();
-                    GUILayout.Label("Note1: You can edit the message above before sending");
-                GUILayout.EndVertical();
+                // GUILayout.BeginVertical(GUI.skin.box);
+                //     GUILayout.Label("Click the button to send a whisper to the user_id");
+                //     GUILayout.BeginHorizontal();
+                //         if (GUILayout.Button("Send", GUILayout.Width(80)))
+                //         {
+                //             await TwitchEventHandler.SendWhisper("1218746026", "This is a test whisper message");
+                //         }
+                //     GUILayout.EndHorizontal();
+                //     GUILayout.Label("Note1: You can edit the message above before sending");
+                // GUILayout.EndVertical();
             }
 
         }
@@ -659,7 +658,8 @@ namespace TwitchChat
     }
 
     /// <summary>
-    /// Handles standard messages and their configurations
+    /// Manages standard welcome and event messages.
+    /// Provides access to configured messages for new followers, subscribers, and general welcomes.
     /// </summary>
     public class StandardMessages
     {
@@ -669,7 +669,9 @@ namespace TwitchChat
     }
 
     /// <summary>
-    /// Handles command-related messages and their configurations
+    /// Manages chat command messages and responses.
+    /// Handles command registration, response configuration, and message updates
+    /// for interactive chat commands.
     /// </summary>
     public class CommandMessages
     {
@@ -692,7 +694,8 @@ namespace TwitchChat
     }
 
     /// <summary>
-    /// Handles periodic automated messages and their scheduling
+    /// Manages periodic automated message configurations.
+    /// Provides access to timed message settings and scheduling information.
     /// </summary>
     public class TimedMessages
     {
@@ -716,7 +719,8 @@ namespace TwitchChat
     }
 
     /// <summary>
-    /// Handles Dispatcher Mod related messages and configurations, when detected
+    /// Manages integration with the Dispatcher Mod.
+    /// Handles message routing and configuration when the Dispatcher Mod is present.
     /// </summary>
     public class DispatcherModMessages
     {

@@ -11,6 +11,8 @@ namespace TwitchChat
 {
     /// <summary>
     /// Manages WebSocket connections and message handling for Twitch chat integration.
+    /// Handles connection establishment, monitoring, reconnection, and message processing.
+    /// Provides real-time communication with Twitch's EventSub service.
     /// </summary>
     public class WebSocketManager
     {

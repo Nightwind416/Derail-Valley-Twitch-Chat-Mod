@@ -6,6 +6,12 @@ using System.Timers;
 
 namespace TwitchChat
 {
+    /// <summary>
+    /// Manages automated message system and command processing.
+    /// Handles timed message scheduling, command responses, and automated
+    /// message delivery. Provides timer management and command parsing functionality
+    /// for both periodic messages and user commands.
+    /// </summary>
     public class AutomatedMessages
     {
         private static readonly List<Timer> activeTimers = new();

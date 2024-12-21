@@ -13,6 +13,8 @@ namespace TwitchChat
 {
     /// <summary>
     /// Manages OAuth authentication flow with Twitch API.
+    /// Handles token acquisition, validation, and storage for secure API access.
+    /// Provides browser-based authentication and token management features.
     /// </summary>
     public class OAuthTokenManager : MonoBehaviour
     {

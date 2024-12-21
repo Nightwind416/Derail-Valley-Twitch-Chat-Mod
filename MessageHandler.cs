@@ -8,7 +8,10 @@ using DV.UIFramework;
 namespace TwitchChat
 {
     /// <summary>
-    /// Handles Twitch chat messages and in-game notifications.
+    /// Manages Twitch chat messages and in-game notifications.
+    /// Handles message queuing, processing, and display of notifications
+    /// in the game world. Provides parsing and filtering of incoming chat messages
+    /// and manages notification attachments to game objects.
     /// </summary>
     public class MessageHandler
     {
