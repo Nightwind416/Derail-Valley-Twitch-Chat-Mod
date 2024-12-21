@@ -119,6 +119,8 @@ namespace TwitchChat
                 GUILayout.EndHorizontal();
             GUILayout.EndVertical();
 
+            GUILayout.Space(10);
+
             // Twitch Authentication Section
             GUILayout.BeginVertical(GUI.skin.box);
                 GUILayout.Label("Twitch Authorization");
@@ -158,6 +160,8 @@ namespace TwitchChat
                 GUILayout.Label($"Last Authorization Status: {authentication_status}");
                 GUI.color = Color.white; // Reset color
             GUILayout.EndVertical();
+
+            GUILayout.Space(10);
             
             // WebSocket Connection Section
             GUILayout.BeginVertical(GUI.skin.box);
@@ -210,6 +214,8 @@ namespace TwitchChat
                 GUILayout.Label("Note4: Use Connection Status below to check received message status");
             GUILayout.EndVertical();
 
+            GUILayout.Space(10);
+
             // Test Message Display Section
             GUILayout.BeginVertical(GUI.skin.box);
                 GUILayout.Label("Test Message Display While In-Game: ");
@@ -229,28 +235,32 @@ namespace TwitchChat
                 GUILayout.EndHorizontal();
             GUILayout.EndVertical();
 
+            GUILayout.Space(10);
+
             // Standard Messages Section
             GUILayout.BeginVertical(GUI.skin.box);
                 GUILayout.Label("Configure standard chat messages and notifications");
                 GUILayout.BeginHorizontal();
-                    GUILayout.Label("Welcome Message: ", GUILayout.Width(400));
+                    GUILayout.Label("Welcome Message: ", GUILayout.Width(180));
                     Instance.welcomeMessage = GUILayout.TextField(Instance.welcomeMessage, GUILayout.Width(200));
                 GUILayout.EndHorizontal();
                 
                 GUILayout.BeginHorizontal();
-                    GUILayout.Label("New Follower Message: ", GUILayout.Width(400));
+                    GUILayout.Label("New Follower Message: ", GUILayout.Width(180));
                     // Instance.newFollowerMessage = GUILayout.TextField(Instance.newFollowerMessage, GUILayout.Width(200));
                     GUILayout.Label(Instance.newFollowerMessage);
                     GUILayout.Label("(Not yet implemented)");
                 GUILayout.EndHorizontal();
                 
                 GUILayout.BeginHorizontal();
-                    GUILayout.Label("New Subscriber Message: ", GUILayout.Width(400));
+                    GUILayout.Label("New Subscriber Message: ", GUILayout.Width(180));
                     // Instance.newSubscriberMessage = GUILayout.TextField(Instance.newSubscriberMessage, GUILayout.Width(200));
                     GUILayout.Label(Instance.newSubscriberMessage);
                     GUILayout.Label("(Not yet implemented)");
                 GUILayout.EndHorizontal();
             GUILayout.EndVertical();
+
+            GUILayout.Space(10);
 
             // Command Messages Section
             GUILayout.BeginVertical(GUI.skin.box);
@@ -258,13 +268,13 @@ namespace TwitchChat
                 
                 GUILayout.BeginHorizontal();
                     Instance.commandMessageActive = GUILayout.Toggle(Instance.commandMessageActive, "", GUILayout.Width(20));
-                    GUILayout.Label("!Commands Message: ", GUILayout.Width(380));
-                    Instance.commandMessage = GUILayout.TextField(Instance.commandMessage, GUILayout.Width(200));
+                    GUILayout.Label("!Commands Message: ", GUILayout.Width(100));
+                    GUILayout.Label(Instance.commandMessage, GUILayout.Width(200));
                 GUILayout.EndHorizontal();
                 
                 GUILayout.BeginHorizontal();
                     Instance.infoMessageActive = GUILayout.Toggle(Instance.infoMessageActive, "", GUILayout.Width(20));
-                    GUILayout.Label("!Info Message: ", GUILayout.Width(380));
+                    GUILayout.Label("!Info Message: ", GUILayout.Width(100));
                     Instance.infoMessage = GUILayout.TextField(Instance.infoMessage, GUILayout.Width(200));
                 GUILayout.EndHorizontal();
 
@@ -316,6 +326,8 @@ namespace TwitchChat
                     Instance.customCommand5Response = GUILayout.TextField(Instance.customCommand5Response, GUILayout.Width(360));
                 GUILayout.EndHorizontal();
             GUILayout.EndVertical();
+
+            GUILayout.Space(10);
 
             // Timed Messages Section
             GUILayout.BeginVertical(GUI.skin.box);
@@ -370,11 +382,15 @@ namespace TwitchChat
                 GUILayout.EndHorizontal();
             GUILayout.EndVertical();
 
+            GUILayout.Space(10);
+
             // Dispatcher Mod Integration Section
             GUILayout.BeginVertical(GUI.skin.box);
                 GUILayout.Label("Configure Dispatcher Mod integration messages");
                 // Add Dispatcher Messages configuration UI here
             GUILayout.EndVertical();
+
+            GUILayout.Space(10);
         
             // Debug Settings Section (existing)
             GUILayout.BeginVertical(GUI.skin.box);

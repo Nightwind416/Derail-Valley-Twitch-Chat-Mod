@@ -132,6 +132,7 @@ namespace TwitchChat
 
                     string response = "Available commands: " + string.Join("  ", enabledCommands);
                     _ = TwitchEventHandler.SendMessage(response);
+                    Settings.Instance.commandMessage = response;
                     return;
                 }
 

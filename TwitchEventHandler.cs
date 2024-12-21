@@ -148,7 +148,7 @@ namespace TwitchChat
         /// <param name="message">The message to send.</param>
         public static async Task SendMessage(string message)
         {
-            string methodName = "SendChatMessageHTTP";
+            string methodName = "SendMessage";
             Main.LogEntry(methodName, $"Preparing to send chat message: {message}");
         
             string jsonMessage = $"{{\"broadcaster_id\":\"{user_id}\",\"sender_id\":\"{user_id}\",\"message\":\"{message.Replace("\"", "\\\"")}\"}}";
