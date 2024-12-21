@@ -145,12 +145,13 @@ namespace TwitchChat
 
         // Add this field near the other private fields at the top of the Settings class
         private bool debugSectionExpanded = false;
+        public bool processOwnMessages = false;  // Add this new property
 
         /// <summary>
         /// Draws the mod configuration UI using Unity's IMGUI system.
         /// Handles user input and displays current connection status.
         /// </summary>
-        public async void DrawButtons()
+        public void DrawButtons()
         {
             GUILayout.Space(10);
 
@@ -525,6 +526,20 @@ namespace TwitchChat
                         }
                         GUI.color = Color.white;  // Reset color
                     GUILayout.EndHorizontal();
+                GUILayout.EndVertical();
+
+                GUILayout.Space(10);
+
+                // Add new toggle for processing own messages
+                GUILayout.BeginVertical(GUI.skin.box);
+                    GUILayout.Label("Debug Options");
+                    processOwnMessages = GUILayout.Toggle(processOwnMessages, "Process messages from self (for testing)");
+                    if (processOwnMessages)
+                    {
+                        GUI.color = Color.yellow;
+                        GUILayout.Label("⚠️ Warning: Bot will process its own messages. Turn off when not testing.");
+                        GUI.color = Color.white;
+                    }
                 GUILayout.EndVertical();
 
                 GUILayout.Space(10);
