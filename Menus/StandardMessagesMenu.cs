@@ -20,7 +20,7 @@ namespace TwitchChat.Menus
         private void CreateStandardMessagesMenu()
         {
             // Title
-            CreateTitle("Standard Messages");
+            CreateTitle("Standard Messages", 24, Color.white, TextAnchor.UpperCenter);
 
             // Welcome Message
             CreateInputField("Welcome Message", Settings.Instance.welcomeMessage, 0.8f, value => 
@@ -38,24 +38,6 @@ namespace TwitchChat.Menus
             Button backButton = CreateButton("BackButton", "Back", 
                 new Vector2(0.3f, 0.1f), new Vector2(0.7f, 0.17f));
             backButton.onClick.AddListener(() => OnBackButtonClicked?.Invoke());
-        }
-
-        private void CreateTitle(string titleText)
-        {
-            GameObject titleObj = new GameObject("Title");
-            titleObj.transform.SetParent(menuObject.transform, false);
-            Text title = titleObj.AddComponent<Text>();
-            title.text = titleText;
-            title.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            title.fontSize = 24;
-            title.alignment = TextAnchor.UpperCenter;
-            title.color = Color.white;
-            
-            RectTransform titleRect = titleObj.GetComponent<RectTransform>();
-            titleRect.anchorMin = new Vector2(0, 0.9f);
-            titleRect.anchorMax = new Vector2(1, 1f);
-            titleRect.offsetMin = new Vector2(10, 0);
-            titleRect.offsetMax = new Vector2(-10, 0);
         }
 
         private void CreateInputField(string label, string initialValue, float verticalPosition, 

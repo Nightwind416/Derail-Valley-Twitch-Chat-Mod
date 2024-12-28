@@ -16,7 +16,7 @@ namespace TwitchChat.Menus
 
         private void CreateCustomCommandsMenu()
         {
-            CreateTitle("Custom Commands");
+            CreateTitle("Custom Commands", 24, Color.white, TextAnchor.UpperCenter);
 
             // Custom Command 1
             CreateCustomCommandSet("Custom Command 1", 0.8f,
@@ -124,11 +124,6 @@ namespace TwitchChat.Menus
             rect.offsetMax = Vector2.zero;
 
             return input;
-        }
-
-        private void CreateTitle(string titleText)
-        {
-            // ... same as other menus ...
         }
     }
 }
