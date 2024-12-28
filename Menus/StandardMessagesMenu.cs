@@ -35,9 +35,7 @@ namespace TwitchChat.Menus
                 Settings.Instance.newSubscriberMessage = value, out subscriberMessageInput);
 
             // Back button
-            Button backButton = CreateButton("BackButton", "Back", 
-                new Vector2(0.3f, 0.1f), new Vector2(0.7f, 0.17f));
-            backButton.onClick.AddListener(() => OnBackButtonClicked?.Invoke());
+            CreateButton("BackButton", "Back", new Vector2(0.3f, 0.1f), new Vector2(0.7f, 0.17f), 18, Color.white, TextAnchor.MiddleCenter, () => OnBackButtonClicked?.Invoke());
         }
 
         private void CreateInputField(string label, string initialValue, float verticalPosition, 

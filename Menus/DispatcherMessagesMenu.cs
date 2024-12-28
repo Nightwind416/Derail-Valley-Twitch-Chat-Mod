@@ -1,6 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.Events;  // Add this line
+using UnityEngine.Events;
 
 namespace TwitchChat.Menus
 {
@@ -45,8 +45,7 @@ namespace TwitchChat.Menus
             warningRect.offsetMax = Vector2.zero;
 
             Button backButton = CreateButton("BackButton", "Back", 
-                new Vector2(0.3f, 0.1f), new Vector2(0.7f, 0.17f));
-            backButton.onClick.AddListener(() => OnBackButtonClicked?.Invoke());
+                new Vector2(0.3f, 0.1f), new Vector2(0.7f, 0.17f), 18, Color.white, TextAnchor.MiddleCenter, () => OnBackButtonClicked?.Invoke());
         }
 
         private void CreateToggleWithInput(string label, bool initialToggleState, string initialInputValue,

@@ -1,6 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.Events;  // Add this namespace
+using UnityEngine.Events;
 
 namespace TwitchChat.Menus
 {

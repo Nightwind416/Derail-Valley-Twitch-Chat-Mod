@@ -43,8 +43,7 @@ namespace TwitchChat.Menus
             }
 
             Button backButton = CreateButton("BackButton", "Back", 
-                new Vector2(0.3f, 0.05f), new Vector2(0.7f, 0.12f));
-            backButton.onClick.AddListener(() => OnBackButtonClicked?.Invoke());
+                new Vector2(0.3f, 0.05f), new Vector2(0.7f, 0.12f), 18, Color.white, TextAnchor.MiddleCenter, () => OnBackButtonClicked?.Invoke());
         }
 
         private void CreateTimedMessageSet(string label, float verticalPosition, int messageIndex)
