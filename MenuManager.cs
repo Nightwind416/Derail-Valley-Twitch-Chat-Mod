@@ -12,8 +12,25 @@ namespace TwitchChat
         private static MenuManager? instance;
         private static GameObject? menuCanvas;
         private bool paper1Visible = true;
+        private bool paper2Visible = true;
+        private bool paper3Visible = true;
+        private bool paper4Visible = true;
+        private bool paper5Visible = true;
         private bool attachedToStickyTape1 = false;
+        private bool attachedToStickyTape2 = false;
+        private bool attachedToStickyTape3 = false;
+        private bool attachedToStickyTape4 = false;
+        private bool attachedToStickyTape5 = false;
         private GameObject? stickyTapeBase1;
+        private GameObject? stickyTapeBase2;
+        private GameObject? stickyTapeBase3;
+        private GameObject? stickyTapeBase4;
+        private GameObject? stickyTapeBase5;
+        private string licenseName1 = "LicenseTrainDriver";
+        private string licenseName2 = "LicenseShunting";
+        private string licenseName3 = "LicenseLocomotiveDE2";
+        private string licenseName4 = "LicenseMuseumCitySouth";
+        private string licenseName5 = "LicenseFreightHaul";
         private GameObject? licenseObject1;
         private GameObject? licenseObject2;
         private GameObject? licenseObject3;
@@ -51,7 +68,7 @@ namespace TwitchChat
 
             if (licenseObject1 == null)
             {
-                licenseObject1 = GameObject.Find("LicenseTrainDriver");
+                licenseObject1 = GameObject.Find(licenseName1);
                 if (licenseObject1 != null)
                 {
                     Main.LogEntry(methodName, "Attaching menu to license");
