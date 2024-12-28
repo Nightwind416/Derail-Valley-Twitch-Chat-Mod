@@ -16,20 +16,7 @@ namespace TwitchChat.Menus
         private void CreateMainMenu()
         {
             // Title
-            GameObject titleObj = new GameObject("Title");
-            titleObj.transform.SetParent(menuObject.transform, false);
-            Text titleText = titleObj.AddComponent<Text>();
-            titleText.text = "TwitchChatMod Menu";
-            titleText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            titleText.fontSize = 24;
-            titleText.alignment = TextAnchor.UpperCenter;
-            titleText.color = Color.white;
-            
-            RectTransform titleRect = titleObj.GetComponent<RectTransform>();
-            titleRect.anchorMin = new Vector2(0, 0.9f);
-            titleRect.anchorMax = new Vector2(1, 1f);
-            titleRect.offsetMin = new Vector2(10, 0);
-            titleRect.offsetMax = new Vector2(-10, 0);
+            CreateTitle("TwitchChatMod Menu", 24, Color.white, TextAnchor.UpperCenter);
 
             // Menu buttons
             CreateMenuButton("Settings", 0.8f);

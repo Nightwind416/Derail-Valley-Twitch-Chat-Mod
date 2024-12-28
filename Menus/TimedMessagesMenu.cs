@@ -19,7 +19,7 @@ namespace TwitchChat.Menus
 
         private void CreateTimedMessagesMenu()
         {
-            CreateTitle("Timed Messages");
+            CreateTitle("Timed Messages", 24, Color.white, TextAnchor.UpperCenter);
 
             // System Toggle
             systemToggle = CreateToggle("System Toggle", Settings.Instance.timedMessageSystemToggle,
@@ -60,12 +60,5 @@ namespace TwitchChat.Menus
             // Create message input and timer input fields based on messageIndex
             // Use reflection or switch statement to access the correct Settings.Instance properties
         }
-
-        private void CreateTitle(string titleText)
-        {
-            // ... same as other menus ...
-        }
-
-        // Add helper methods for creating toggles, input fields, etc.
     }
 }

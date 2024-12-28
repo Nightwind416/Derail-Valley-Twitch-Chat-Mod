@@ -31,7 +31,7 @@ namespace TwitchChat.Menus
             rectTransform.offsetMax = Vector2.zero;
         }
 
-        protected Button CreateButton(string name, string text, Vector2 anchorMin, Vector2 anchorMax)
+        protected Button CreateButton(string name, string text, Vector2 anchorMin, Vector2 anchorMax, int fontSize = 18, Color? textColor = null, TextAnchor alignment = TextAnchor.MiddleCenter)
         {
             GameObject buttonObj = new GameObject(name);
             buttonObj.transform.SetParent(menuObject.transform, false);
@@ -46,9 +46,9 @@ namespace TwitchChat.Menus
             Text buttonText = buttonTextObj.AddComponent<Text>();
             buttonText.text = text;
             buttonText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            buttonText.fontSize = 18;
-            buttonText.alignment = TextAnchor.MiddleCenter;
-            buttonText.color = Color.white;
+            buttonText.fontSize = fontSize;
+            buttonText.alignment = alignment;
+            buttonText.color = textColor ?? Color.white;
             
             RectTransform buttonRect = buttonObj.GetComponent<RectTransform>();
             buttonRect.anchorMin = anchorMin;
@@ -65,16 +65,16 @@ namespace TwitchChat.Menus
             return button;
         }
 
-        protected void CreateTitle(string titleText)
+        protected void CreateTitle(string titleText, int fontSize = 24, Color? textColor = null, TextAnchor alignment = TextAnchor.UpperCenter)
         {
             GameObject titleObj = new GameObject("Title");
             titleObj.transform.SetParent(menuObject.transform, false);
             Text title = titleObj.AddComponent<Text>();
             title.text = titleText;
             title.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            title.fontSize = 24;
-            title.alignment = TextAnchor.UpperCenter;
-            title.color = Color.white;
+            title.fontSize = fontSize;
+            title.alignment = alignment;
+            title.color = textColor ?? Color.white;
             
             RectTransform titleRect = titleObj.GetComponent<RectTransform>();
             titleRect.anchorMin = new Vector2(0, 0.9f);
@@ -83,7 +83,7 @@ namespace TwitchChat.Menus
             titleRect.offsetMax = Vector2.zero;
         }
 
-        protected Toggle CreateToggle(string label, bool initialState, UnityAction<bool> onValueChanged)
+        protected Toggle CreateToggle(string label, bool initialState, UnityAction<bool> onValueChanged, Color? toggleColor = null, Color? checkmarkColor = null)
         {
             GameObject toggleObj = new GameObject($"{label}Toggle");
             toggleObj.transform.SetParent(menuObject.transform, false);
@@ -91,8 +91,58 @@ namespace TwitchChat.Menus
             Toggle toggle = toggleObj.AddComponent<Toggle>();
             toggle.isOn = initialState;
             toggle.onValueChanged.AddListener(onValueChanged);
+
+            // Add background image for toggle
+            Image toggleImage = toggleObj.AddComponent<Image>();
+            toggleImage.color = toggleColor ?? new Color(0.2f, 0.2f, 0.2f);
+
+            // Add checkmark
+            GameObject checkmark = new GameObject("Checkmark");
+            checkmark.transform.SetParent(toggleObj.transform, false);
+            Image checkmarkImage = checkmark.AddComponent<Image>();
+            checkmarkImage.color = checkmarkColor ?? Color.white;
+            RectTransform checkmarkRect = checkmark.GetComponent<RectTransform>();
+            checkmarkRect.anchorMin = Vector2.zero;
+            checkmarkRect.anchorMax = Vector2.one;
+            checkmarkRect.offsetMin = new Vector2(2, 2);
+            checkmarkRect.offsetMax = new Vector2(-2, -2);
+            toggle.graphic = checkmarkImage;
             
             return toggle;
+        }
+
+        protected InputField CreateInputField(string name, string initialValue, UnityAction<string> onValueChanged, int fontSize = 16, Color? textColor = null, TextAnchor alignment = TextAnchor.MiddleLeft)
+        {
+            GameObject inputObj = new GameObject(name);
+            inputObj.transform.SetParent(menuObject.transform, false);
+            
+            // Create background image
+            Image backgroundImage = inputObj.AddComponent<Image>();
+            backgroundImage.color = new Color(0.2f, 0.2f, 0.2f, 1f);
+
+            // Create child text area
+            GameObject textArea = new GameObject("Text");
+            textArea.transform.SetParent(inputObj.transform, false);
+            Text inputText = textArea.AddComponent<Text>();
+            inputText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            inputText.fontSize = fontSize;
+            inputText.color = textColor ?? Color.white;
+            inputText.alignment = alignment;
+            
+            // Set up the RectTransform for the text area
+            RectTransform textRect = textArea.GetComponent<RectTransform>();
+            textRect.anchorMin = new Vector2(0, 0);
+            textRect.anchorMax = new Vector2(1, 1);
+            textRect.offsetMin = new Vector2(5, 2);
+            textRect.offsetMax = new Vector2(-5, -2);
+
+            // Set up the InputField
+            InputField input = inputObj.AddComponent<InputField>();
+            input.textComponent = inputText;
+            input.text = initialValue;
+            input.onValueChanged.AddListener(onValueChanged);
+
+            return input;
         }
 
         protected Text CreateStatusText()

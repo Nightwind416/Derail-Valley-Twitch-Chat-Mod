@@ -19,7 +19,7 @@ namespace TwitchChat.Menus
 
         private void CreateDispatcherMessagesMenu()
         {
-            CreateTitle("Dispatcher Messages");
+            CreateTitle("Dispatcher Messages", 24, Color.white, TextAnchor.UpperCenter);
 
             CreateToggleWithInput("Dispatcher Integration", Settings.Instance.dispatcherMessageActive,
                 Settings.Instance.dispatcherMessage, 0.7f,
@@ -46,11 +46,6 @@ namespace TwitchChat.Menus
             Button backButton = CreateButton("BackButton", "Back", 
                 new Vector2(0.3f, 0.1f), new Vector2(0.7f, 0.17f));
             backButton.onClick.AddListener(() => OnBackButtonClicked?.Invoke());
-        }
-
-        private new void CreateTitle(string titleText)
-        {
-            base.CreateTitle(titleText);
         }
 
         private void CreateToggleWithInput(string label, bool initialToggleState, string initialInputValue,

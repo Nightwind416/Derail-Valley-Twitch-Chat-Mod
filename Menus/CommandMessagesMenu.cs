@@ -44,24 +44,6 @@ namespace TwitchChat.Menus
             backButton.onClick.AddListener(() => OnBackButtonClicked?.Invoke());
         }
 
-        private void CreateTitle(string titleText)
-        {
-            GameObject titleObj = new GameObject("Title");
-            titleObj.transform.SetParent(menuObject.transform, false);
-            Text title = titleObj.AddComponent<Text>();
-            title.text = titleText;
-            title.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            title.fontSize = 24;
-            title.alignment = TextAnchor.UpperCenter;
-            title.color = Color.white;
-            
-            RectTransform titleRect = titleObj.GetComponent<RectTransform>();
-            titleRect.anchorMin = new Vector2(0, 0.9f);
-            titleRect.anchorMax = new Vector2(1, 1f);
-            titleRect.offsetMin = new Vector2(10, 0);
-            titleRect.offsetMax = new Vector2(-10, 0);
-        }
-
         private void CreateToggleWithInput(string label, bool initialToggleState, string initialInputValue, 
             float verticalPosition, UnityAction<bool> onToggleChanged, UnityAction<string> onInputChanged,
             out Toggle toggle, out InputField inputField)
