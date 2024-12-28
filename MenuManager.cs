@@ -11,13 +11,14 @@ namespace TwitchChat
     {
         private static MenuManager? instance;
         private static GameObject? menuCanvas;
-        private bool isMenuVisible = false;
-        private bool isPaperVisible = true;
-        private bool isAttachedToStickyTape = false;
-        private bool isSettingsPanelVisible = false;
-        private bool isWaitingForLicense = true;
-        private GameObject? licenseObject;
-        private GameObject? stickyTapeBase;
+        private bool paper1Visible = true;
+        private bool attachedToStickyTape1 = false;
+        private GameObject? stickyTapeBase1;
+        private GameObject? licenseObject1;
+        private GameObject? licenseObject2;
+        private GameObject? licenseObject3;
+        private GameObject? licenseObject4;
+        private GameObject? licenseObject5;
 
         private MainMenu? mainMenu;
         private SettingsMenu? settingsMenu;
@@ -42,28 +43,17 @@ namespace TwitchChat
             }
         }
 
-        private void Start()
-        {
-            string methodName = MethodBase.GetCurrentMethod().Name;
-            Main.LogEntry(methodName, "Initializing MenuManager");
-            CreateCanvas();
-        }
-
         private void Update()
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
 
-            HandleVRInput();
+            // HandleVRInput();
 
-            if (isWaitingForLicense)
+            if (licenseObject1 == null)
             {
-                licenseObject = GameObject.Find("LicenseTrainDriver");
-                if (licenseObject != null)
+                licenseObject1 = GameObject.Find("LicenseTrainDriver");
+                if (licenseObject1 != null)
                 {
-                    isWaitingForLicense = false;
-
-                    isMenuVisible = true;
-
                     Main.LogEntry(methodName, "Attaching menu to license");
             
                     if (menuCanvas == null)
@@ -75,21 +65,19 @@ namespace TwitchChat
                     menuCanvas!.SetActive(true);
 
                     mainMenu?.Show();
-                    settingsMenu?.Hide();
-                    isSettingsPanelVisible = false;
                 }
             }
             
-            if (isMenuVisible && licenseObject != null && settingsMenu != null)
+            if (licenseObject1 != null)
             {
-                settingsMenu.UpdateDisplayedValues(
+                settingsMenu?.UpdateDisplayedValues(
                     Settings.Instance.twitchUsername,
                     Settings.Instance.messageDuration,
                     WebSocketManager.LastChatMessage
                 );
 
                 // Check if attached to sticky tape
-                Transform current = licenseObject.transform;
+                Transform current = licenseObject1.transform;
                 bool currentlyAttached = false;
                 GameObject? newStickyTapeBase = null;
                 
@@ -109,46 +97,43 @@ namespace TwitchChat
                     current = current.parent;
                 }
 
-                if (currentlyAttached != isAttachedToStickyTape)
+                if (currentlyAttached != attachedToStickyTape1)
                 {
-                    isAttachedToStickyTape = currentlyAttached;
-                    Main.LogEntry(methodName, $"License attachment to sticky tape changed: {isAttachedToStickyTape}");
+                    attachedToStickyTape1 = currentlyAttached;
+                    Main.LogEntry(methodName, $"License attachment to sticky tape changed: {attachedToStickyTape1}");
                     
                     // Handle sticky tape visibility
-                    if (isAttachedToStickyTape && newStickyTapeBase != null)
+                    if (attachedToStickyTape1 && newStickyTapeBase != null)
                     {
-                        stickyTapeBase = newStickyTapeBase;
-                        stickyTapeBase.SetActive(false);
+                        stickyTapeBase1 = newStickyTapeBase;
+                        stickyTapeBase1.SetActive(false);
                     }
-                    else if (!isAttachedToStickyTape && stickyTapeBase != null)
+                    else if (!attachedToStickyTape1 && stickyTapeBase1 != null)
                     {
-                        stickyTapeBase.SetActive(true);
-                        stickyTapeBase = null;
+                        stickyTapeBase1.SetActive(true);
+                        stickyTapeBase1 = null;
+                    }
+                }
+
+                if (paper1Visible)
+                {
+                    Transform paperTransform = licenseObject1.transform.Find("Pivot/TempPaper(Clone)(Clone) 0/Paper");
+                    if (paperTransform != null)
+                    {
+                        paperTransform.gameObject.SetActive(false);
+                        paper1Visible = false;
                     }
                 }
 
                 // LogGameObjectHierarchy(licenseObject);
             }
-
-            if (isPaperVisible)
-            {
-                if (licenseObject != null)
-                {
-                    Transform paperTransform = licenseObject.transform.Find("Pivot/TempPaper(Clone)(Clone) 0/Paper");
-                    if (paperTransform != null)
-                    {
-                        paperTransform.gameObject.SetActive(false);
-                        isPaperVisible = false;
-                    }
-                }
-            }
         }
 
         private void LateUpdate()
         {
-            if (isMenuVisible)
+            if (licenseObject1 != null)
             {
-                PositionNearObject();
+                PositionNearObject(licenseObject1);
             }
         }
 
@@ -251,27 +236,7 @@ namespace TwitchChat
             }
         }
 
-        // private void ToggleSettingsPanel()
-        // {
-        //     isSettingsPanelVisible = !isSettingsPanelVisible;
-        //     if (isSettingsPanelVisible)
-        //     {
-        //         mainMenu?.Hide();
-        //         settingsMenu?.Show();
-        //         settingsMenu?.UpdateDisplayedValues(
-        //             Settings.Instance.twitchUsername,
-        //             Settings.Instance.messageDuration,
-        //             WebSocketManager.LastChatMessage
-        //         );
-        //     }
-        //     else
-        //     {
-        //         settingsMenu?.Hide();
-        //         mainMenu?.Show();
-        //     }
-        // }
-
-        private void PositionNearObject()
+        private void PositionNearObject(GameObject licenseObject)
         {
             if (menuCanvas == null)
             {
@@ -290,23 +255,23 @@ namespace TwitchChat
             menuCanvas.transform.rotation = licenseObject.transform.rotation * Quaternion.Euler(90f, 180f, 0f);
         }
 
-        private void HandleVRInput()
-        {
-            if (XRDevice.isPresent)
-            {
-                Ray ray = new Ray(Camera.main.transform.position, Camera.main.transform.forward);
-                if (Physics.Raycast(ray, out RaycastHit hit))
-                {
-                    if (hit.collider != null && Input.GetButtonDown("Fire1"))
-                    {
-                        var button = hit.collider.GetComponent<Button>();
-                        if (button != null)
-                        {
-                            button.onClick.Invoke();
-                        }
-                    }
-                }
-            }
-        }
+        // private void HandleVRInput()
+        // {
+        //     if (XRDevice.isPresent)
+        //     {
+        //         Ray ray = new Ray(Camera.main.transform.position, Camera.main.transform.forward);
+        //         if (Physics.Raycast(ray, out RaycastHit hit))
+        //         {
+        //             if (hit.collider != null && Input.GetButtonDown("Fire1"))
+        //             {
+        //                 var button = hit.collider.GetComponent<Button>();
+        //                 if (button != null)
+        //                 {
+        //                     button.onClick.Invoke();
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
     }
 }
