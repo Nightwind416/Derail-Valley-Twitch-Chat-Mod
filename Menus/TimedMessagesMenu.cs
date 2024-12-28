@@ -19,6 +19,7 @@ namespace TwitchChat.Menus
 
         private void CreateTimedMessagesMenu()
         {
+            // Title
             CreateTitle("Timed Messages", 24, Color.white, TextAnchor.UpperCenter);
 
             // System Toggle

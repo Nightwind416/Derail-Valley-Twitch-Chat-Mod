@@ -19,6 +19,7 @@ namespace TwitchChat.Menus
 
         private void CreateDebugMenu()
         {
+            // Title
             CreateTitle("Debug Menu", 24, Color.white, TextAnchor.UpperCenter);
 
             // Debug Level Selection

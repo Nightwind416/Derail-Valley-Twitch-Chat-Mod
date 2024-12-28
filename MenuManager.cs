@@ -251,25 +251,25 @@ namespace TwitchChat
             }
         }
 
-        private void ToggleSettingsPanel()
-        {
-            isSettingsPanelVisible = !isSettingsPanelVisible;
-            if (isSettingsPanelVisible)
-            {
-                mainMenu?.Hide();
-                settingsMenu?.Show();
-                settingsMenu?.UpdateDisplayedValues(
-                    Settings.Instance.twitchUsername,
-                    Settings.Instance.messageDuration,
-                    WebSocketManager.LastChatMessage
-                );
-            }
-            else
-            {
-                settingsMenu?.Hide();
-                mainMenu?.Show();
-            }
-        }
+        // private void ToggleSettingsPanel()
+        // {
+        //     isSettingsPanelVisible = !isSettingsPanelVisible;
+        //     if (isSettingsPanelVisible)
+        //     {
+        //         mainMenu?.Hide();
+        //         settingsMenu?.Show();
+        //         settingsMenu?.UpdateDisplayedValues(
+        //             Settings.Instance.twitchUsername,
+        //             Settings.Instance.messageDuration,
+        //             WebSocketManager.LastChatMessage
+        //         );
+        //     }
+        //     else
+        //     {
+        //         settingsMenu?.Hide();
+        //         mainMenu?.Show();
+        //     }
+        // }
 
         private void PositionNearObject()
         {

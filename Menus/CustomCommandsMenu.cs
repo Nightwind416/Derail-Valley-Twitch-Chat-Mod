@@ -16,6 +16,7 @@ namespace TwitchChat.Menus
 
         private void CreateCustomCommandsMenu()
         {
+            // Title
             CreateTitle("Custom Commands", 24, Color.white, TextAnchor.UpperCenter);
 
             // Custom Command 1
