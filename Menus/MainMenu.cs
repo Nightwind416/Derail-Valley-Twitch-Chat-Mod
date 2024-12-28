@@ -19,13 +19,14 @@ namespace TwitchChat.Menus
             CreateTitle("TwitchChatMod", 18, Color.white, TextAnchor.UpperCenter);
 
             // Menu buttons
-            CreateMenuButton("Settings", 0.8f);
-            CreateMenuButton("Standard Messages", 0.7f);
-            CreateMenuButton("Command Messages", 0.6f);
-            CreateMenuButton("Custom Commands", 0.5f);
-            CreateMenuButton("Timed Messages", 0.4f);
-            CreateMenuButton("Dispatcher Messages", 0.3f);
-            CreateMenuButton("Debug", 0.2f);
+            CreateMenuButton("Status", 0.8f);
+            CreateMenuButton("Settings", 0.7f);
+            CreateMenuButton("Standard Messages", 0.6f);
+            CreateMenuButton("Command Messages", 0.5f);
+            CreateMenuButton("Custom Commands", 0.4f);
+            CreateMenuButton("Timed Messages", 0.3f);
+            CreateMenuButton("Dispatcher Messages", 0.2f);
+            CreateMenuButton("Debug", 0.1f);
         }
 
         private void CreateMenuButton(string text, float verticalPosition)

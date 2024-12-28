@@ -1,8 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Reflection;
-using UnityEngine.EventSystems;
-using UnityEngine.XR;
 using TwitchChat.Menus;
 
 namespace TwitchChat
@@ -11,20 +9,21 @@ namespace TwitchChat
     {
         private static MenuManager? instance;
         private static GameObject?[] menuCanvases = new GameObject?[5];
-        private readonly bool[] paperVisible = new bool[] { true, true, true, true, true };
-        private readonly bool[] attachedToStickyTape = new bool[] { false, false, false, false, false };
+        private readonly bool[] paperVisible = [true, true, true, true, true];
+        private readonly bool[] attachedToStickyTape = [false, false, false, false, false];
         private readonly GameObject?[] stickyTapeBases = new GameObject?[5];
-        private readonly string[] licenseNames = new string[]
-        {
+        private readonly string[] licenseNames =
+        [
             "LicenseTrainDriver",
             "LicenseShunting",
             "LicenseLocomotiveDE2",
             "LicenseMuseumCitySouth",
             "LicenseFreightHaul"
-        };
+        ];
         private readonly GameObject?[] licenseObjects = new GameObject?[5];
 
         private MainMenu?[] mainMenus = new MainMenu?[5];
+        private StatusMenu?[] statusMenus = new StatusMenu?[5];
         private SettingsMenu?[] settingsMenus = new SettingsMenu?[5];
         private StandardMessagesMenu?[] standardMessagesMenus = new StandardMessagesMenu?[5];
         private CommandMessagesMenu?[] commandMessagesMenus = new CommandMessagesMenu?[5];
@@ -67,7 +66,6 @@ namespace TwitchChat
                         }
 
                         menuCanvases[i]!.SetActive(true);
-                        mainMenus[i]?.Show();
                     }
                 }
 
@@ -175,6 +173,7 @@ namespace TwitchChat
 
             // Create all menus for this instance
             mainMenus[index] = new MainMenu(menuCanvases[index]!.transform);
+            statusMenus[index] = new StatusMenu(menuCanvases[index]!.transform);
             settingsMenus[index] = new SettingsMenu(menuCanvases[index]!.transform);
             standardMessagesMenus[index] = new StandardMessagesMenu(menuCanvases[index]!.transform);
             commandMessagesMenus[index] = new CommandMessagesMenu(menuCanvases[index]!.transform);
@@ -183,8 +182,15 @@ namespace TwitchChat
             dispatcherMessagesMenus[index] = new DispatcherMessagesMenu(menuCanvases[index]!.transform);
             debugMenus[index] = new DebugMenu(menuCanvases[index]!.transform);
 
-            // Hide all menus immediately after creation
-            mainMenus[index]!.OnMenuButtonClicked += (menuName) => HandleMenuNavigation(menuName, index);
+            // Hide all menus first
+            HideAllMenus(index);
+            
+            // Show only the main menu
+            mainMenus[index]?.Show();
+
+            // Setup menu navigation events
+            mainMenus[index]!.OnMenuButtonClicked += (menuName) => ShowMenu(menuName, index);
+            statusMenus[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
             settingsMenus[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
             standardMessagesMenus[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
             commandMessagesMenus[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
@@ -193,17 +199,14 @@ namespace TwitchChat
             dispatcherMessagesMenus[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
             debugMenus[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
 
-            mainMenus[index]?.Show();
-        }
-
-        private void HandleMenuNavigation(string menuName, int index)
-        {
-            ShowMenu(menuName, index);
+            // Initially disable the canvas until the license is found
+            menuCanvases[index]!.SetActive(false);
         }
 
         private void HideAllMenus(int index)
         {
             mainMenus[index]?.Hide();
+            statusMenus[index]?.Hide();
             settingsMenus[index]?.Hide();
             standardMessagesMenus[index]?.Hide();
             commandMessagesMenus[index]?.Hide();
@@ -215,12 +218,18 @@ namespace TwitchChat
 
         private void ShowMenu(string menuName, int index)
         {
+            if (menuCanvases[index] == null || !menuCanvases[index]!.activeSelf)
+                return;
+
             HideAllMenus(index);
 
             switch (menuName)
             {
                 case "Main":
                     mainMenus[index]?.Show();
+                    break;
+                case "Status":
+                    statusMenus[index]?.Show();
                     break;
                 case "Settings":
                     settingsMenus[index]?.Show();
@@ -255,10 +264,9 @@ namespace TwitchChat
             }
 
             if (licenseObject == null) return;
+
             Vector3 targetPosition = licenseObject.transform.position;
-            // Vector3 offset = Vector3.forward * 0.001f;
             menuCanvas.transform.position = targetPosition;
-            // menuCanvas.transform.position += offset;
 
             menuCanvas.transform.rotation = licenseObject.transform.rotation * Quaternion.Euler(90f, 180f, 0f);
         }
