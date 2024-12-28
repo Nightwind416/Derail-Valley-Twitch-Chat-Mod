@@ -64,15 +64,15 @@ namespace TwitchChat
 
         private readonly Dictionary<MenuType, PanelConfig> menuConfigs = new()
         {
-            { MenuType.Main, new(new Vector2(400, 600), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
-            { MenuType.Status, new(new Vector2(500, 600), new Vector2(300, 300), new Vector2(0, 50), Vector3.zero) },
-            { MenuType.Settings, new(new Vector2(400, 700), new Vector2(200, 400), new Vector2(0, -50), Vector3.zero) },
-            { MenuType.StandardMessages, new(new Vector2(600, 800), new Vector2(400, 600), Vector2.zero, Vector3.zero) },
-            { MenuType.CommandMessages, new(new Vector2(600, 800), new Vector2(400, 600), Vector2.zero, Vector3.zero) },
-            { MenuType.CustomCommands, new(new Vector2(500, 700), new Vector2(300, 500), Vector2.zero, Vector3.zero) },
-            { MenuType.TimedMessages, new(new Vector2(400, 600), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
-            { MenuType.DispatcherMessages, new(new Vector2(600, 400), new Vector2(500, 200), Vector2.zero, Vector3.zero) },
-            { MenuType.Debug, new(new Vector2(400, 600), new Vector2(200, 300), Vector2.zero, Vector3.zero) }
+            { MenuType.Main, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
+            { MenuType.Status, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
+            { MenuType.Settings, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
+            { MenuType.StandardMessages, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
+            { MenuType.CommandMessages, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
+            { MenuType.CustomCommands, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
+            { MenuType.TimedMessages, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
+            { MenuType.DispatcherMessages, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
+            { MenuType.Debug, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) }
         };
 
         public static MenuManager Instance
