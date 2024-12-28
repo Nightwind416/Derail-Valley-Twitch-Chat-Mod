@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
-// using System;
 using System.Reflection;
+using System.Text;
 
 namespace TwitchChat
 {
@@ -10,9 +10,13 @@ namespace TwitchChat
         private static MenuManager? instance;
         private static GameObject? menuCanvas;
         private bool isMenuVisible = false;
+        private bool isPaperVisible = true;
+        private bool isAttachedToStickyTape = false;
         private bool isSettingsPanelVisible = false;
+        private bool isWaitingForLicense = true;
         private GameObject? mainPanel;
         private GameObject? settingsPanel;
+        private GameObject? licenseObject;
 
         private Text? usernameText;
         private Text? durationText;
@@ -24,7 +28,7 @@ namespace TwitchChat
             {
                 if (instance == null)
                 {
-                    GameObject go = new("CustomMenuManager");
+                    GameObject go = new("TwitchChatModMenuManager");
                     instance = go.AddComponent<MenuManager>();
                     DontDestroyOnLoad(go);
                 }
@@ -36,21 +40,76 @@ namespace TwitchChat
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
             Main.LogEntry(methodName, "Initializing MenuManager");
-            CreateMenu();
+            Panel();
         }
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.F7))
+            string methodName = MethodBase.GetCurrentMethod().Name;
+
+            if (isWaitingForLicense)
             {
-                string methodName = MethodBase.GetCurrentMethod().Name;
-                Main.LogEntry(methodName, "F7 key pressed - toggling menu");
-                ToggleMenu();
+                licenseObject = GameObject.Find("LicenseTrainDriver");
+                if (licenseObject != null)
+                {
+                    isWaitingForLicense = false;
+
+                    isMenuVisible = true;
+
+                    Main.LogEntry(methodName, "Attaching menu to license");
+            
+                    if (menuCanvas == null)
+                    {
+                        Main.LogEntry(methodName, "Menu canvas was null, recreating...");
+                        Panel();
+                    }
+
+                    menuCanvas!.SetActive(true);
+
+                    // Show main panel and hide settings panel
+                    mainPanel!.SetActive(true);
+                    settingsPanel!.SetActive(false);
+                    isSettingsPanelVisible = false;
+                }
             }
             
-            if (isMenuVisible)
+            if (isMenuVisible && licenseObject != null)
             {
                 UpdateDisplayedValues();
+
+                // Check if attached to sticky tape
+                Transform current = licenseObject.transform;
+                bool currentlyAttached = false;
+                while (current.parent != null)
+                {
+                    if (current.parent.name.Contains("StickyTape_Gadget"))
+                    {
+                        currentlyAttached = true;
+                        break;
+                    }
+                    current = current.parent;
+                }
+
+                if (currentlyAttached != isAttachedToStickyTape)
+                {
+                    isAttachedToStickyTape = currentlyAttached;
+                    Main.LogEntry(methodName, $"License attachment to sticky tape changed: {isAttachedToStickyTape}");
+                }
+
+                // LogGameObjectHierarchy(licenseObject);
+            }
+
+            if (isPaperVisible)
+            {
+                if (licenseObject != null)
+                {
+                    Transform paperTransform = licenseObject.transform.Find("Pivot/TempPaper(Clone)(Clone) 0/Paper");
+                    if (paperTransform != null)
+                    {
+                        paperTransform.gameObject.SetActive(false);
+                        isPaperVisible = false;
+                    }
+                }
             }
         }
 
@@ -58,11 +117,11 @@ namespace TwitchChat
         {
             if (isMenuVisible)
             {
-                PositionMenuNearObject();
+                PositionNearObject();
             }
         }
 
-        private void CreateMenu()
+        private void Panel()
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
             Main.LogEntry(methodName, "Creating menu UI elements");
@@ -74,7 +133,7 @@ namespace TwitchChat
             }
 
             // Create canvas and basic setup
-            menuCanvas = new GameObject("CustomMenuCanvas");
+            menuCanvas = new GameObject("MenuCanvas");
             Canvas canvas = menuCanvas.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.WorldSpace;
             canvas.sortingOrder = 1000;
@@ -86,8 +145,8 @@ namespace TwitchChat
             canvasRect.localScale = Vector3.one * 0.001f;
             
             // Create main panel and settings panel
-            mainPanel = CreateMainPanel();
-            settingsPanel = CreateSettingsPanel();
+            mainPanel = MainMenu();
+            settingsPanel = SettingsPanel();
 
             // Set initial panel states
             mainPanel.SetActive(true);
@@ -98,13 +157,13 @@ namespace TwitchChat
             Main.LogEntry(methodName, "Menu creation completed");
         }
 
-        private GameObject CreateMainPanel()
+        private GameObject MainMenu()
         {
             GameObject panel = new("MainPanel");
             panel.transform.SetParent(menuCanvas!.transform, false);
             
             Image panelImage = panel.AddComponent<Image>();
-            panelImage.color = new Color(0, 0, 0, 1f);
+            panelImage.color = new Color(0, 0, 0, 0.8f);
             
             RectTransform panelRect = panel.GetComponent<RectTransform>();
             panelRect.anchorMin = Vector2.zero;
@@ -128,13 +187,13 @@ namespace TwitchChat
             Text titleText = titleObj.AddComponent<Text>();
             titleText.text = "TwitchChatMod Main Menu";
             titleText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            titleText.fontSize = 24;  // Reduced from 36
+            titleText.fontSize = 24;
             titleText.alignment = TextAnchor.UpperCenter;
             titleText.color = Color.white;
             
             RectTransform titleRect = titleObj.GetComponent<RectTransform>();
-            titleRect.anchorMin = new Vector2(0, 0.9f);  // Adjusted from 0.85f
-            titleRect.anchorMax = new Vector2(1, 1f);    // Adjusted from 0.95f
+            titleRect.anchorMin = new Vector2(0, 0.9f);
+            titleRect.anchorMax = new Vector2(1, 1f);
             titleRect.offsetMin = new Vector2(10, 0);
             titleRect.offsetMax = new Vector2(-10, 0);
 
@@ -153,13 +212,13 @@ namespace TwitchChat
             Text buttonText = buttonTextObj.AddComponent<Text>();
             buttonText.text = "Settings";
             buttonText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            buttonText.fontSize = 18;  // Reduced from 24
+            buttonText.fontSize = 18;
             buttonText.alignment = TextAnchor.MiddleCenter;
             buttonText.color = Color.white;
             
             RectTransform buttonRect = buttonObj.GetComponent<RectTransform>();
-            buttonRect.anchorMin = new Vector2(0.3f, 0.8f);  // Adjusted from 0.4f, 0.7f
-            buttonRect.anchorMax = new Vector2(0.7f, 0.87f);  // Adjusted from 0.6f, 0.8f
+            buttonRect.anchorMin = new Vector2(0.3f, 0.8f);
+            buttonRect.anchorMax = new Vector2(0.7f, 0.87f);
             buttonRect.offsetMin = Vector2.zero;
             buttonRect.offsetMax = Vector2.zero;
             
@@ -179,13 +238,13 @@ namespace TwitchChat
             settingsPanel!.SetActive(isSettingsPanelVisible);
         }
 
-        private GameObject CreateSettingsPanel()
+        private GameObject SettingsPanel()
         {
             GameObject panel = new("SettingsPanel");
             panel.transform.SetParent(menuCanvas!.transform, false);
             
             Image panelImage = panel.AddComponent<Image>();
-            panelImage.color = new Color(0, 0, 0, 1f);
+            panelImage.color = new Color(0, 0, 0, 0.8f);
             
             RectTransform panelRect = panel.GetComponent<RectTransform>();
             panelRect.anchorMin = Vector2.zero;
@@ -194,7 +253,7 @@ namespace TwitchChat
             panelRect.offsetMax = Vector2.zero;
             panelRect.localScale = Vector3.one;
 
-            // Move all the settings UI elements creation here from CreateSettingsMenu()
+            // Settings UI elements creation
             GameObject uiContainer = new("UIContainer");
             uiContainer.transform.SetParent(panel.transform, false);
             RectTransform containerRect = uiContainer.AddComponent<RectTransform>();
@@ -210,13 +269,13 @@ namespace TwitchChat
             Text titleText = titleObj.AddComponent<Text>();
             titleText.text = "Settings Menu";
             titleText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            titleText.fontSize = 24;  // Reduced from 36
+            titleText.fontSize = 24;
             titleText.alignment = TextAnchor.UpperCenter;
             titleText.color = Color.white;
             
             RectTransform titleRect = titleObj.GetComponent<RectTransform>();
-            titleRect.anchorMin = new Vector2(0, 0.9f);  // Adjusted from 0.85f
-            titleRect.anchorMax = new Vector2(1, 1f);    // Adjusted from 0.95f
+            titleRect.anchorMin = new Vector2(0, 0.9f);
+            titleRect.anchorMax = new Vector2(1, 1f);
             titleRect.offsetMin = new Vector2(10, 0);
             titleRect.offsetMax = new Vector2(-10, 0);
             titleRect.localScale = Vector3.one;
@@ -226,13 +285,13 @@ namespace TwitchChat
             usernameObj.transform.SetParent(uiContainer.transform, false);
             usernameText = usernameObj.AddComponent<Text>();
             usernameText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            usernameText.fontSize = 16;  // Reduced from 28
+            usernameText.fontSize = 16;
             usernameText.alignment = TextAnchor.UpperLeft;
             usernameText.color = Color.white;
             
             RectTransform usernameRect = usernameObj.GetComponent<RectTransform>();
-            usernameRect.anchorMin = new Vector2(0, 0.75f);  // Adjusted from 0.7f
-            usernameRect.anchorMax = new Vector2(1, 0.85f);  // Adjusted from 0.8f
+            usernameRect.anchorMin = new Vector2(0, 0.75f);
+            usernameRect.anchorMax = new Vector2(1, 0.85f);  
             usernameRect.offsetMin = new Vector2(20, 0);
             usernameRect.offsetMax = new Vector2(-20, 0);
             usernameRect.localScale = Vector3.one;
@@ -242,13 +301,13 @@ namespace TwitchChat
             durationObj.transform.SetParent(uiContainer.transform, false);
             durationText = durationObj.AddComponent<Text>();
             durationText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            durationText.fontSize = 16;  // Reduced from 28
+            durationText.fontSize = 16;
             durationText.alignment = TextAnchor.UpperLeft;
             durationText.color = Color.white;
             
             RectTransform durationRect = durationObj.GetComponent<RectTransform>();
-            durationRect.anchorMin = new Vector2(0, 0.65f);  // Adjusted from 0.6f
-            durationRect.anchorMax = new Vector2(1, 0.75f);  // Adjusted from 0.7f
+            durationRect.anchorMin = new Vector2(0, 0.65f);
+            durationRect.anchorMax = new Vector2(1, 0.75f);
             durationRect.offsetMin = new Vector2(20, 0);
             durationRect.offsetMax = new Vector2(-20, 0);
             durationRect.localScale = Vector3.one;
@@ -258,20 +317,20 @@ namespace TwitchChat
             messageObj.transform.SetParent(uiContainer.transform, false);
             messageText = messageObj.AddComponent<Text>();
             messageText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            messageText.fontSize = 16;  // Reduced from 28
+            messageText.fontSize = 16;
             messageText.alignment = TextAnchor.UpperLeft;
             messageText.color = Color.white;
             
             RectTransform messageRect = messageObj.GetComponent<RectTransform>();
-            messageRect.anchorMin = new Vector2(0, 0.55f);  // Adjusted from 0.5f
-            messageRect.anchorMax = new Vector2(1, 0.65f);  // Adjusted from 0.6f
+            messageRect.anchorMin = new Vector2(0, 0.55f);
+            messageRect.anchorMax = new Vector2(1, 0.65f);
             messageRect.offsetMin = new Vector2(20, 0);
             messageRect.offsetMax = new Vector2(-20, 0);
             messageRect.localScale = Vector3.one;
 
             return panel;
         }
-        private void PositionMenuNearObject()
+        private void PositionNearObject()
         {
             if (menuCanvas == null)
             {
@@ -279,44 +338,15 @@ namespace TwitchChat
                 return;
             }
 
-            // Locate the LicenseTrainDriver GameObject
-            GameObject targetObject = GameObject.Find("LicenseTrainDriver");
-            if (targetObject == null)
-            {
-                Debug.LogWarning("LicenseTrainDriver GameObject not found in the scene.");
-                return;
-            }
-
             // Position the menu to hover in front of the target object
-            Vector3 targetPosition = targetObject.transform.position;
+            if (licenseObject == null) return;
+            Vector3 targetPosition = licenseObject.transform.position;
             Vector3 offset = Vector3.forward * 0.001f;
             menuCanvas.transform.position = targetPosition;
             menuCanvas.transform.position += offset;
 
             // Match the rotation of the target object and add 90 degrees X rotation
-            menuCanvas.transform.rotation = targetObject.transform.rotation * Quaternion.Euler(90f, 180f, 0f);
-        }
-        public void ToggleMenu()
-        {
-            string methodName = MethodBase.GetCurrentMethod().Name;
-            isMenuVisible = !isMenuVisible;
-            Main.LogEntry(methodName, $"Toggling menu visibility to: {isMenuVisible}");
-            
-            if (menuCanvas == null)
-            {
-                Main.LogEntry(methodName, "Menu canvas was null, recreating...");
-                CreateMenu();
-            }
-            
-            menuCanvas!.SetActive(isMenuVisible);
-            
-            // Always show main panel and hide settings panel when toggling menu
-            if (isMenuVisible)
-            {
-                mainPanel!.SetActive(true);
-                settingsPanel!.SetActive(false);
-                isSettingsPanelVisible = false;
-            }
+            menuCanvas.transform.rotation = licenseObject.transform.rotation * Quaternion.Euler(90f, 180f, 0f);
         }
         private void UpdateDisplayedValues()
         {
@@ -328,6 +358,23 @@ namespace TwitchChat
             
             if (messageText != null)
                 messageText.text = $"Message: {WebSocketManager.LastChatMessage}";
+        }
+
+        private void LogGameObjectHierarchy(GameObject obj)
+        {
+            string methodName = MethodBase.GetCurrentMethod().Name;
+            StringBuilder hierarchy = new StringBuilder();
+            Transform current = obj.transform;
+            
+            while (current != null)
+            {
+                hierarchy.Insert(0, current.name);
+                if (current.parent != null)
+                    hierarchy.Insert(0, " <- ");
+                current = current.parent!;
+            }
+            
+            Main.LogEntry(methodName, $"GameObject hierarchy: {hierarchy}");
         }
     }
 }
