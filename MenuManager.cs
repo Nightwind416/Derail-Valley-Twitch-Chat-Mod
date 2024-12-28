@@ -126,13 +126,13 @@ namespace TwitchChat
             Text titleText = titleObj.AddComponent<Text>();
             titleText.text = "TwitchChatMod Main Menu";
             titleText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            titleText.fontSize = 36;
+            titleText.fontSize = 24;  // Reduced from 36
             titleText.alignment = TextAnchor.UpperCenter;
             titleText.color = Color.white;
             
             RectTransform titleRect = titleObj.GetComponent<RectTransform>();
-            titleRect.anchorMin = new Vector2(0, 0.85f);
-            titleRect.anchorMax = new Vector2(1, 0.95f);
+            titleRect.anchorMin = new Vector2(0, 0.9f);  // Adjusted from 0.85f
+            titleRect.anchorMax = new Vector2(1, 1f);    // Adjusted from 0.95f
             titleRect.offsetMin = new Vector2(10, 0);
             titleRect.offsetMax = new Vector2(-10, 0);
 
@@ -151,13 +151,13 @@ namespace TwitchChat
             Text buttonText = buttonTextObj.AddComponent<Text>();
             buttonText.text = "Settings";
             buttonText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            buttonText.fontSize = 24;
+            buttonText.fontSize = 18;  // Reduced from 24
             buttonText.alignment = TextAnchor.MiddleCenter;
             buttonText.color = Color.white;
             
             RectTransform buttonRect = buttonObj.GetComponent<RectTransform>();
-            buttonRect.anchorMin = new Vector2(0.4f, 0.7f);
-            buttonRect.anchorMax = new Vector2(0.6f, 0.8f);
+            buttonRect.anchorMin = new Vector2(0.3f, 0.8f);  // Adjusted from 0.4f, 0.7f
+            buttonRect.anchorMax = new Vector2(0.7f, 0.87f);  // Adjusted from 0.6f, 0.8f
             buttonRect.offsetMin = Vector2.zero;
             buttonRect.offsetMax = Vector2.zero;
             
@@ -208,13 +208,13 @@ namespace TwitchChat
             Text titleText = titleObj.AddComponent<Text>();
             titleText.text = "Settings Menu";
             titleText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            titleText.fontSize = 36;
+            titleText.fontSize = 24;  // Reduced from 36
             titleText.alignment = TextAnchor.UpperCenter;
             titleText.color = Color.white;
             
             RectTransform titleRect = titleObj.GetComponent<RectTransform>();
-            titleRect.anchorMin = new Vector2(0, 0.85f);
-            titleRect.anchorMax = new Vector2(1, 0.95f);
+            titleRect.anchorMin = new Vector2(0, 0.9f);  // Adjusted from 0.85f
+            titleRect.anchorMax = new Vector2(1, 1f);    // Adjusted from 0.95f
             titleRect.offsetMin = new Vector2(10, 0);
             titleRect.offsetMax = new Vector2(-10, 0);
             titleRect.localScale = Vector3.one;
@@ -224,13 +224,13 @@ namespace TwitchChat
             usernameObj.transform.SetParent(uiContainer.transform, false);
             usernameText = usernameObj.AddComponent<Text>();
             usernameText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            usernameText.fontSize = 28;
+            usernameText.fontSize = 16;  // Reduced from 28
             usernameText.alignment = TextAnchor.UpperLeft;
             usernameText.color = Color.white;
             
             RectTransform usernameRect = usernameObj.GetComponent<RectTransform>();
-            usernameRect.anchorMin = new Vector2(0, 0.7f);
-            usernameRect.anchorMax = new Vector2(1, 0.8f);
+            usernameRect.anchorMin = new Vector2(0, 0.75f);  // Adjusted from 0.7f
+            usernameRect.anchorMax = new Vector2(1, 0.85f);  // Adjusted from 0.8f
             usernameRect.offsetMin = new Vector2(20, 0);
             usernameRect.offsetMax = new Vector2(-20, 0);
             usernameRect.localScale = Vector3.one;
@@ -240,13 +240,13 @@ namespace TwitchChat
             durationObj.transform.SetParent(uiContainer.transform, false);
             durationText = durationObj.AddComponent<Text>();
             durationText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            durationText.fontSize = 28;
+            durationText.fontSize = 16;  // Reduced from 28
             durationText.alignment = TextAnchor.UpperLeft;
             durationText.color = Color.white;
             
             RectTransform durationRect = durationObj.GetComponent<RectTransform>();
-            durationRect.anchorMin = new Vector2(0, 0.6f);
-            durationRect.anchorMax = new Vector2(1, 0.7f);
+            durationRect.anchorMin = new Vector2(0, 0.65f);  // Adjusted from 0.6f
+            durationRect.anchorMax = new Vector2(1, 0.75f);  // Adjusted from 0.7f
             durationRect.offsetMin = new Vector2(20, 0);
             durationRect.offsetMax = new Vector2(-20, 0);
             durationRect.localScale = Vector3.one;
@@ -256,13 +256,13 @@ namespace TwitchChat
             messageObj.transform.SetParent(uiContainer.transform, false);
             messageText = messageObj.AddComponent<Text>();
             messageText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            messageText.fontSize = 28;
+            messageText.fontSize = 16;  // Reduced from 28
             messageText.alignment = TextAnchor.UpperLeft;
             messageText.color = Color.white;
             
             RectTransform messageRect = messageObj.GetComponent<RectTransform>();
-            messageRect.anchorMin = new Vector2(0, 0.5f);
-            messageRect.anchorMax = new Vector2(1, 0.6f);
+            messageRect.anchorMin = new Vector2(0, 0.55f);  // Adjusted from 0.5f
+            messageRect.anchorMax = new Vector2(1, 0.65f);  // Adjusted from 0.6f
             messageRect.offsetMin = new Vector2(20, 0);
             messageRect.offsetMax = new Vector2(-20, 0);
             messageRect.localScale = Vector3.one;
