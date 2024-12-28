@@ -26,14 +26,10 @@ namespace TwitchChat.Menus
             CreateDebugLevelSelector();
 
             // Process Own Messages Toggle
-            GameObject toggleObj = new GameObject("ProcessOwnMessagesToggle");
-            toggleObj.transform.SetParent(menuObject.transform, false);
-            processOwnMessagesToggle = toggleObj.AddComponent<Toggle>();
-            processOwnMessagesToggle.isOn = Settings.Instance.processOwnMessages;
-            processOwnMessagesToggle.onValueChanged.AddListener(value => 
-                Settings.Instance.processOwnMessages = value);
+            processOwnMessagesToggle = CreateToggle("ProcessOwnMessagesToggle", Settings.Instance.processOwnMessages, 
+                value => Settings.Instance.processOwnMessages = value);
 
-            RectTransform toggleRect = toggleObj.GetComponent<RectTransform>();
+            RectTransform toggleRect = processOwnMessagesToggle.GetComponent<RectTransform>();
             toggleRect.anchorMin = new Vector2(0.1f, 0.6f);
             toggleRect.anchorMax = new Vector2(0.9f, 0.7f);
             
@@ -74,16 +70,15 @@ namespace TwitchChat.Menus
 
         private void CreateTestMessageSection()
         {
-            GameObject inputObj = new GameObject("TestMessageInput");
-            inputObj.transform.SetParent(menuObject.transform, false);
-            
-            testMessageInput = inputObj.AddComponent<InputField>();
-            testMessageInput.text = Settings.Instance.testMessage;
-            testMessageInput.onValueChanged.AddListener(value => 
-                Settings.Instance.testMessage = value);
+            testMessageInput = CreateInputField("TestMessageInput", Settings.Instance.testMessage, 
+                value => Settings.Instance.testMessage = value);
+
+            RectTransform inputRect = testMessageInput.GetComponent<RectTransform>();
+            inputRect.anchorMin = new Vector2(0.1f, 0.3f);
+            inputRect.anchorMax = new Vector2(0.9f, 0.4f);
 
             Button testButton = CreateButton("TestMessageButton", "Send Test Message",
-                new Vector2(0.1f, 0.3f), new Vector2(0.9f, 0.4f));
+                new Vector2(0.1f, 0.2f), new Vector2(0.9f, 0.3f));
             testButton.onClick.AddListener(() => {
                 MessageHandler.AttachNotification(Settings.Instance.testMessage, "DEBUG");
             });

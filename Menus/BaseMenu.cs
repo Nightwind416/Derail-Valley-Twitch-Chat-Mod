@@ -31,7 +31,7 @@ namespace TwitchChat.Menus
             rectTransform.offsetMax = Vector2.zero;
         }
 
-        protected Button CreateButton(string name, string text, Vector2 anchorMin, Vector2 anchorMax, int fontSize = 18, Color? textColor = null, TextAnchor alignment = TextAnchor.MiddleCenter)
+        protected Button CreateButton(string name, string text, Vector2 anchorMin, Vector2 anchorMax, int fontSize = 18, Color? textColor = null, TextAnchor alignment = TextAnchor.MiddleCenter, UnityAction onClick = null)
         {
             GameObject buttonObj = new GameObject(name);
             buttonObj.transform.SetParent(menuObject.transform, false);
@@ -40,6 +40,10 @@ namespace TwitchChat.Menus
             buttonImage.color = new Color(0.2f, 0.2f, 0.2f, 1f);
             
             Button button = buttonObj.AddComponent<Button>();
+            if (onClick != null)
+            {
+                button.onClick.AddListener(onClick);
+            }
             
             GameObject buttonTextObj = new GameObject("Text");
             buttonTextObj.transform.SetParent(buttonObj.transform, false);
