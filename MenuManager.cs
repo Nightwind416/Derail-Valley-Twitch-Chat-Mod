@@ -10,41 +10,28 @@ namespace TwitchChat
     public class MenuManager : MonoBehaviour
     {
         private static MenuManager? instance;
-        private static GameObject? menuCanvas;
-        private bool paper1Visible = true;
-        private bool paper2Visible = true;
-        private bool paper3Visible = true;
-        private bool paper4Visible = true;
-        private bool paper5Visible = true;
-        private bool attachedToStickyTape1 = false;
-        private bool attachedToStickyTape2 = false;
-        private bool attachedToStickyTape3 = false;
-        private bool attachedToStickyTape4 = false;
-        private bool attachedToStickyTape5 = false;
-        private GameObject? stickyTapeBase1;
-        private GameObject? stickyTapeBase2;
-        private GameObject? stickyTapeBase3;
-        private GameObject? stickyTapeBase4;
-        private GameObject? stickyTapeBase5;
-        private string licenseName1 = "LicenseTrainDriver";
-        private string licenseName2 = "LicenseShunting";
-        private string licenseName3 = "LicenseLocomotiveDE2";
-        private string licenseName4 = "LicenseMuseumCitySouth";
-        private string licenseName5 = "LicenseFreightHaul";
-        private GameObject? licenseObject1;
-        private GameObject? licenseObject2;
-        private GameObject? licenseObject3;
-        private GameObject? licenseObject4;
-        private GameObject? licenseObject5;
+        private static GameObject?[] menuCanvases = new GameObject?[5];
+        private readonly bool[] paperVisible = new bool[] { true, true, true, true, true };
+        private readonly bool[] attachedToStickyTape = new bool[] { false, false, false, false, false };
+        private readonly GameObject?[] stickyTapeBases = new GameObject?[5];
+        private readonly string[] licenseNames = new string[]
+        {
+            "LicenseTrainDriver",
+            "LicenseShunting",
+            "LicenseLocomotiveDE2",
+            "LicenseMuseumCitySouth",
+            "LicenseFreightHaul"
+        };
+        private readonly GameObject?[] licenseObjects = new GameObject?[5];
 
-        private MainMenu? mainMenu;
-        private SettingsMenu? settingsMenu;
-        private StandardMessagesMenu? standardMessagesMenu;
-        private CommandMessagesMenu? commandMessagesMenu;
-        private CustomCommandsMenu? customCommandsMenu;
-        private TimedMessagesMenu? timedMessagesMenu;
-        private DispatcherMessagesMenu? dispatcherMessagesMenu;
-        private DebugMenu? debugMenu;
+        private MainMenu?[] mainMenus = new MainMenu?[5];
+        private SettingsMenu?[] settingsMenus = new SettingsMenu?[5];
+        private StandardMessagesMenu?[] standardMessagesMenus = new StandardMessagesMenu?[5];
+        private CommandMessagesMenu?[] commandMessagesMenus = new CommandMessagesMenu?[5];
+        private CustomCommandsMenu?[] customCommandsMenus = new CustomCommandsMenu?[5];
+        private TimedMessagesMenu?[] timedMessagesMenus = new TimedMessagesMenu?[5];
+        private DispatcherMessagesMenu?[] dispatcherMessagesMenus = new DispatcherMessagesMenu?[5];
+        private DebugMenu?[] debugMenus = new DebugMenu?[5];
 
         public static MenuManager Instance
         {
@@ -64,196 +51,202 @@ namespace TwitchChat
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
 
-            // HandleVRInput();
-
-            if (licenseObject1 == null)
+            for (int i = 0; i < licenseObjects.Length; i++)
             {
-                licenseObject1 = GameObject.Find(licenseName1);
-                if (licenseObject1 != null)
+                if (licenseObjects[i] == null)
                 {
-                    Main.LogEntry(methodName, "Attaching menu to license");
-            
-                    if (menuCanvas == null)
+                    licenseObjects[i] = GameObject.Find(licenseNames[i]);
+                    if (licenseObjects[i] != null)
                     {
-                        Main.LogEntry(methodName, "Menu canvas was null, recreating...");
-                        CreateCanvas();
+                        Main.LogEntry(methodName, $"Attaching menu to license {i + 1}");
+                        
+                        if (menuCanvases[i] == null)
+                        {
+                            Main.LogEntry(methodName, $"Menu canvas {i + 1} was null, creating...");
+                            CreateCanvas(i);
+                        }
+
+                        menuCanvases[i]!.SetActive(true);
+                        mainMenus[i]?.Show();
                     }
+                }
 
-                    menuCanvas!.SetActive(true);
+                if (licenseObjects[i] != null)
+                {
+                    settingsMenus[i]?.UpdateDisplayedValues(
+                        Settings.Instance.twitchUsername,
+                        Settings.Instance.messageDuration,
+                        WebSocketManager.LastChatMessage
+                    );
 
-                    mainMenu?.Show();
+                    HandleLicenseAttachment(i);
+                    HandlePaperVisibility(i);
                 }
             }
+        }
+
+        private void HandleLicenseAttachment(int index)
+        {
+            Transform current = licenseObjects[index]!.transform;
+            bool currentlyAttached = false;
+            GameObject? newStickyTapeBase = null;
             
-            if (licenseObject1 != null)
+            while (current.parent != null)
             {
-                settingsMenu?.UpdateDisplayedValues(
-                    Settings.Instance.twitchUsername,
-                    Settings.Instance.messageDuration,
-                    WebSocketManager.LastChatMessage
-                );
+                if (current.parent.name.Contains("StickyTape_Gadget"))
+                {
+                    currentlyAttached = true;
+                    Transform baseTransform = current.parent.Find("LOD gadget_sticker_base");
+                    if (baseTransform != null)
+                    {
+                        newStickyTapeBase = baseTransform.gameObject;
+                    }
+                    break;
+                }
+                current = current.parent;
+            }
 
-                // Check if attached to sticky tape
-                Transform current = licenseObject1.transform;
-                bool currentlyAttached = false;
-                GameObject? newStickyTapeBase = null;
+            if (currentlyAttached != attachedToStickyTape[index])
+            {
+                attachedToStickyTape[index] = currentlyAttached;
+                Main.LogEntry("HandleLicenseAttachment", $"License {index + 1} attachment to sticky tape changed: {attachedToStickyTape[index]}");
                 
-                while (current.parent != null)
+                if (attachedToStickyTape[index] && newStickyTapeBase != null)
                 {
-                    if (current.parent.name.Contains("StickyTape_Gadget"))
-                    {
-                        currentlyAttached = true;
-                        // Find the base object when attached
-                        Transform baseTransform = current.parent.Find("LOD gadget_sticker_base");
-                        if (baseTransform != null)
-                        {
-                            newStickyTapeBase = baseTransform.gameObject;
-                        }
-                        break;
-                    }
-                    current = current.parent;
+                    stickyTapeBases[index] = newStickyTapeBase;
+                    stickyTapeBases[index]!.SetActive(false);
                 }
-
-                if (currentlyAttached != attachedToStickyTape1)
+                else if (!attachedToStickyTape[index] && stickyTapeBases[index] != null)
                 {
-                    attachedToStickyTape1 = currentlyAttached;
-                    Main.LogEntry(methodName, $"License attachment to sticky tape changed: {attachedToStickyTape1}");
-                    
-                    // Handle sticky tape visibility
-                    if (attachedToStickyTape1 && newStickyTapeBase != null)
-                    {
-                        stickyTapeBase1 = newStickyTapeBase;
-                        stickyTapeBase1.SetActive(false);
-                    }
-                    else if (!attachedToStickyTape1 && stickyTapeBase1 != null)
-                    {
-                        stickyTapeBase1.SetActive(true);
-                        stickyTapeBase1 = null;
-                    }
+                    stickyTapeBases[index]!.SetActive(true);
+                    stickyTapeBases[index] = null;
                 }
+            }
+        }
 
-                if (paper1Visible)
+        private void HandlePaperVisibility(int index)
+        {
+            if (paperVisible[index])
+            {
+                Transform paperTransform = licenseObjects[index]!.transform.Find("Pivot/TempPaper(Clone)(Clone) 0/Paper");
+                if (paperTransform != null)
                 {
-                    Transform paperTransform = licenseObject1.transform.Find("Pivot/TempPaper(Clone)(Clone) 0/Paper");
-                    if (paperTransform != null)
-                    {
-                        paperTransform.gameObject.SetActive(false);
-                        paper1Visible = false;
-                    }
+                    paperTransform.gameObject.SetActive(false);
+                    paperVisible[index] = false;
                 }
-
-                // LogGameObjectHierarchy(licenseObject);
             }
         }
 
         private void LateUpdate()
         {
-            if (licenseObject1 != null)
+            for (int i = 0; i < licenseObjects.Length; i++)
             {
-                PositionNearObject(licenseObject1);
+                if (licenseObjects[i] != null && menuCanvases[i] != null)
+                {
+                    PositionNearObject(licenseObjects[i], menuCanvases[i]);
+                }
             }
         }
 
-        private void CreateCanvas()
+        private void CreateCanvas(int index)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
-            Main.LogEntry(methodName, "Creating menu UI elements");
+            Main.LogEntry(methodName, $"Creating menu UI elements for license {index + 1}");
 
-            if (menuCanvas != null)
+            if (menuCanvases[index] != null)
             {
-                Main.LogEntry(methodName, "Menu already exists, destroying old instance");
-                Destroy(menuCanvas);
+                Main.LogEntry(methodName, $"Menu {index + 1} already exists, destroying old instance");
+                Destroy(menuCanvases[index]);
             }
 
-            menuCanvas = new GameObject("MenuCanvas");
-            Canvas canvas = menuCanvas.AddComponent<Canvas>();
+            menuCanvases[index] = new GameObject($"MenuCanvas_{index + 1}");
+            if (menuCanvases[index] == null)
+                throw new System.InvalidOperationException($"Menu canvas {index} is null after creation");
+
+            Canvas canvas = menuCanvases[index]!.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.WorldSpace;
             canvas.sortingOrder = 1000;
             
-            RectTransform canvasRect = menuCanvas.GetComponent<RectTransform>();
+            RectTransform canvasRect = menuCanvases[index]!.GetComponent<RectTransform>();
             canvasRect.sizeDelta = new Vector2(200, 300);
             canvasRect.localScale = Vector3.one * 0.001f;
 
-            menuCanvas.AddComponent<GraphicRaycaster>();
+            menuCanvases[index]!.AddComponent<GraphicRaycaster>();
 
-            // Create all menus
-            mainMenu = new MainMenu(menuCanvas.transform);
-            settingsMenu = new SettingsMenu(menuCanvas.transform);
-            standardMessagesMenu = new StandardMessagesMenu(menuCanvas.transform);
-            commandMessagesMenu = new CommandMessagesMenu(menuCanvas.transform);
-            customCommandsMenu = new CustomCommandsMenu(menuCanvas.transform);
-            timedMessagesMenu = new TimedMessagesMenu(menuCanvas.transform);
-            dispatcherMessagesMenu = new DispatcherMessagesMenu(menuCanvas.transform);
-            debugMenu = new DebugMenu(menuCanvas.transform);
+            // Create all menus for this instance
+            mainMenus[index] = new MainMenu(menuCanvases[index]!.transform);
+            settingsMenus[index] = new SettingsMenu(menuCanvases[index]!.transform);
+            standardMessagesMenus[index] = new StandardMessagesMenu(menuCanvases[index]!.transform);
+            commandMessagesMenus[index] = new CommandMessagesMenu(menuCanvases[index]!.transform);
+            customCommandsMenus[index] = new CustomCommandsMenu(menuCanvases[index]!.transform);
+            timedMessagesMenus[index] = new TimedMessagesMenu(menuCanvases[index]!.transform);
+            dispatcherMessagesMenus[index] = new DispatcherMessagesMenu(menuCanvases[index]!.transform);
+            debugMenus[index] = new DebugMenu(menuCanvases[index]!.transform);
 
-            // Hide all menus immediately after creation before setting up any events
-            HideAllMenus();
+            // Hide all menus immediately after creation
+            mainMenus[index]!.OnMenuButtonClicked += (menuName) => HandleMenuNavigation(menuName, index);
+            settingsMenus[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
+            standardMessagesMenus[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
+            commandMessagesMenus[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
+            customCommandsMenus[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
+            timedMessagesMenus[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
+            dispatcherMessagesMenus[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
+            debugMenus[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
 
-            // Setup navigation events
-            mainMenu.OnMenuButtonClicked += HandleMenuNavigation;
-            settingsMenu.OnBackButtonClicked += () => ShowMenu("Main");
-            standardMessagesMenu.OnBackButtonClicked += () => ShowMenu("Main");
-            commandMessagesMenu.OnBackButtonClicked += () => ShowMenu("Main");
-            customCommandsMenu.OnBackButtonClicked += () => ShowMenu("Main");
-            timedMessagesMenu.OnBackButtonClicked += () => ShowMenu("Main");
-            dispatcherMessagesMenu.OnBackButtonClicked += () => ShowMenu("Main");
-            debugMenu.OnBackButtonClicked += () => ShowMenu("Main");
-
-            // Show main menu last
-            mainMenu?.Show();
+            mainMenus[index]?.Show();
         }
 
-        private void HandleMenuNavigation(string menuName)
+        private void HandleMenuNavigation(string menuName, int index)
         {
-            ShowMenu(menuName);
+            ShowMenu(menuName, index);
         }
 
-        private void HideAllMenus()
+        private void HideAllMenus(int index)
         {
-            mainMenu?.Hide();
-            settingsMenu?.Hide();
-            standardMessagesMenu?.Hide();
-            commandMessagesMenu?.Hide();
-            customCommandsMenu?.Hide();
-            timedMessagesMenu?.Hide();
-            dispatcherMessagesMenu?.Hide();
-            debugMenu?.Hide();
+            mainMenus[index]?.Hide();
+            settingsMenus[index]?.Hide();
+            standardMessagesMenus[index]?.Hide();
+            commandMessagesMenus[index]?.Hide();
+            customCommandsMenus[index]?.Hide();
+            timedMessagesMenus[index]?.Hide();
+            dispatcherMessagesMenus[index]?.Hide();
+            debugMenus[index]?.Hide();
         }
 
-        private void ShowMenu(string menuName)
+        private void ShowMenu(string menuName, int index)
         {
-            HideAllMenus();
+            HideAllMenus(index);
 
             switch (menuName)
             {
                 case "Main":
-                    mainMenu?.Show();
+                    mainMenus[index]?.Show();
                     break;
                 case "Settings":
-                    settingsMenu?.Show();
+                    settingsMenus[index]?.Show();
                     break;
                 case "Standard Messages":
-                    standardMessagesMenu?.Show();
+                    standardMessagesMenus[index]?.Show();
                     break;
                 case "Command Messages":
-                    commandMessagesMenu?.Show();
+                    commandMessagesMenus[index]?.Show();
                     break;
                 case "Custom Commands":
-                    customCommandsMenu?.Show();
+                    customCommandsMenus[index]?.Show();
                     break;
                 case "Timed Messages":
-                    timedMessagesMenu?.Show();
+                    timedMessagesMenus[index]?.Show();
                     break;
                 case "Dispatcher Messages":
-                    dispatcherMessagesMenu?.Show();
+                    dispatcherMessagesMenus[index]?.Show();
                     break;
                 case "Debug":
-                    debugMenu?.Show();
+                    debugMenus[index]?.Show();
                     break;
             }
         }
 
-        private void PositionNearObject(GameObject licenseObject)
+        private void PositionNearObject(GameObject licenseObject, GameObject menuCanvas)
         {
             if (menuCanvas == null)
             {
@@ -261,34 +254,13 @@ namespace TwitchChat
                 return;
             }
 
-            // Position the menu to hover in front of the target object
             if (licenseObject == null) return;
             Vector3 targetPosition = licenseObject.transform.position;
-            Vector3 offset = Vector3.forward * 0.001f;
+            // Vector3 offset = Vector3.forward * 0.001f;
             menuCanvas.transform.position = targetPosition;
-            menuCanvas.transform.position += offset;
+            // menuCanvas.transform.position += offset;
 
-            // Match the rotation of the target object and add 90 degrees X rotation
             menuCanvas.transform.rotation = licenseObject.transform.rotation * Quaternion.Euler(90f, 180f, 0f);
         }
-
-        // private void HandleVRInput()
-        // {
-        //     if (XRDevice.isPresent)
-        //     {
-        //         Ray ray = new Ray(Camera.main.transform.position, Camera.main.transform.forward);
-        //         if (Physics.Raycast(ray, out RaycastHit hit))
-        //         {
-        //             if (hit.collider != null && Input.GetButtonDown("Fire1"))
-        //             {
-        //                 var button = hit.collider.GetComponent<Button>();
-        //                 if (button != null)
-        //                 {
-        //                     button.onClick.Invoke();
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
     }
 }
