@@ -22,7 +22,7 @@ namespace TwitchChat.Menus
         private void CreateCommandMessagesMenu()
         {
             // Title
-            CreateTitle("Command Messages", 24, Color.white, TextAnchor.UpperCenter);
+            CreateTitle("Command Messages", 18, Color.white, TextAnchor.UpperCenter);
 
             // Command Message
             CreateToggleWithInput("!commands Message", Settings.Instance.commandMessageActive, 

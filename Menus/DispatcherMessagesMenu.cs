@@ -20,7 +20,7 @@ namespace TwitchChat.Menus
         private void CreateDispatcherMessagesMenu()
         {
             // Title
-            CreateTitle("Dispatcher Messages", 24, Color.white, TextAnchor.UpperCenter);
+            CreateTitle("Dispatcher Messages", 18, Color.white, TextAnchor.UpperCenter);
 
             CreateToggleWithInput("Dispatcher Integration", Settings.Instance.dispatcherMessageActive,
                 Settings.Instance.dispatcherMessage, 0.7f,

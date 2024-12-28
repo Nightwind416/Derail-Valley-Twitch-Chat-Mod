@@ -20,7 +20,7 @@ namespace TwitchChat.Menus
         private void CreateSettingsMenu()
         {
             // Title
-            CreateTitle("Settings Menu", 24, Color.white, TextAnchor.UpperCenter);
+            CreateTitle("Settings Menu", 18, Color.white, TextAnchor.UpperCenter);
 
             CreateSettingsTexts();
             

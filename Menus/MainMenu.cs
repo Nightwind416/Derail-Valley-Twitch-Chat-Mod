@@ -16,7 +16,7 @@ namespace TwitchChat.Menus
         private void CreateMainMenu()
         {
             // Title
-            CreateTitle("TwitchChatMod", 24, Color.white, TextAnchor.UpperCenter);
+            CreateTitle("TwitchChatMod", 18, Color.white, TextAnchor.UpperCenter);
 
             // Menu buttons
             CreateMenuButton("Settings", 0.8f);

@@ -69,7 +69,7 @@ namespace TwitchChat.Menus
             return button;
         }
 
-        protected void CreateTitle(string titleText, int fontSize = 24, Color? textColor = null, TextAnchor alignment = TextAnchor.UpperCenter)
+        protected void CreateTitle(string titleText, int fontSize = 18, Color? textColor = null, TextAnchor alignment = TextAnchor.UpperCenter)
         {
             GameObject titleObj = new GameObject("Title");
             titleObj.transform.SetParent(menuObject.transform, false);

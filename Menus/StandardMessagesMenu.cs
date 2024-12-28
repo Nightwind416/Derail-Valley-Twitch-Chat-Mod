@@ -20,7 +20,7 @@ namespace TwitchChat.Menus
         private void CreateStandardMessagesMenu()
         {
             // Title
-            CreateTitle("Standard Messages", 24, Color.white, TextAnchor.UpperCenter);
+            CreateTitle("Standard Messages", 18, Color.white, TextAnchor.UpperCenter);
 
             // Welcome Message
             CreateInputField("Welcome Message", Settings.Instance.welcomeMessage, 0.8f, value => 
