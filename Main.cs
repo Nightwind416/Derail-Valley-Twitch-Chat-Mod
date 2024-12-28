@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using UnityEditor;
 using UnityEngine;
 using UnityModManagerNet;
 
@@ -31,47 +32,85 @@ namespace TwitchChat
         /// <returns>True if initialization was successful, false otherwise.</returns>
         private static bool Load(UnityModManager.ModEntry modEntry)
         {
-            string methodName = MethodBase.GetCurrentMethod().Name;
             ModEntry = modEntry;
-
             ModEntry.Logger.Log("[Load] Load method started.");
 
-            // Initialize UnityMainThreadDispatcher
-            GameObject dispatcherObject = new("UnityMainThreadDispatcher");
-            dispatcherObject.AddComponent<UnityMainThreadDispatcher>();
-            UnityEngine.Object.DontDestroyOnLoad(dispatcherObject);
-            ModEntry.Logger.Log("[Load] UnityMainThreadDispatcher initialized.");
-
-            // Check for RemoteDispatch Mod
-            var remoteDispatchMod = UnityModManager.modEntries.FirstOrDefault(mod => mod.Info.Id == "RemoteDispatch");
-            if (remoteDispatchMod != null)
+            try
             {
-                ModEntry.Logger.Log("[Load] RemoteDispatch Mod detected.");
-                _dispatcherModDetected = true;
+                // Initialize settings
+                Settings.Instance = UnityModManager.ModSettings.Load<Settings>(modEntry);
+                if (Settings.Instance == null)
+                {
+                    Settings.Instance = new Settings();
+                    Settings.Instance.debugLevel = DebugLevel.Minimal; // Set default debug level
+                }
+                Settings.Instance.authentication_status = "Unverified or not set";
+
+                // Begin using LogEntry
+                string methodName = MethodBase.GetCurrentMethod().Name;
+                LogEntry(methodName, "Load method started.");
+
+                // Initialize UnityMainThreadDispatcher Object
+                GameObject dispatcherObject = new("UnityMainThreadDispatcher");
+                dispatcherObject.AddComponent<UnityMainThreadDispatcher>();
+                UnityEngine.Object.DontDestroyOnLoad(dispatcherObject);
+                ModEntry.Logger.Log("[Load] UnityMainThreadDispatcher initialized.");
+                LogEntry(methodName, "UnityMainThreadDispatcher initialized successfully.");
+
+                // Initialize TwitchChat Menu Object
+                GameObject menuObject = new("TwitchChatMenu");
+                LogEntry(methodName, "TwitchChatMenu object created.");
+
+                // Check for RemoteDispatch Mod
+                var remoteDispatchMod = UnityModManager.modEntries.FirstOrDefault(mod => mod.Info.Id == "RemoteDispatch");
+                if (remoteDispatchMod != null)
+                {
+                    ModEntry.Logger.Log("[Load] RemoteDispatch Mod detected.");
+                    LogEntry(methodName, "RemoteDispatch Mod detected and verified.");
+                    _dispatcherModDetected = true;
+                }
+                else
+                {
+                    ModEntry.Logger.Log("[Load] RemoteDispatch Mod not detected.");
+                    LogEntry(methodName, "RemoteDispatch Mod not found - mod will operate in standalone mode.");
+                }
+
+                // Register the mod's toggle and update methods
+                ModEntry.OnToggle = OnToggle;
+                ModEntry.OnUpdate = OnUpdate;
+                LogEntry(methodName, "Registered mod toggle and update methods.");
+                
+                // Load the mod's settings
+                Settings.Instance = UnityModManager.ModSettings.Load<Settings>(modEntry);
+                Settings.Instance.authentication_status = "Unverified or not set";
+                LogEntry(methodName, "Settings loaded and initialized.");
+                
+                // Register the mod's GUI methods
+                modEntry.OnGUI = OnGUI;
+                modEntry.OnSaveGUI = OnSaveGUI;
+                LogEntry(methodName, "GUI methods registered.");
+
+                // Activate Menu Managers
+
+                MenuManager.Instance.gameObject.SetActive(true);
+                LogEntry(methodName, "Menu Manager activated.");
+
+                VRMenuManager.Instance.gameObject.SetActive(true);
+                LogEntry(methodName, "VR Menu Manager activated.");
+
+                // Initialize the log files
+                InitializeLogFiles();
+                LogEntry(methodName, "Log files initialized successfully.");
+
+                ModEntry.Logger.Log("[Load] Load method completed successfully.");
+                LogEntry(methodName, "Load method completed successfully.");
+                return true;
             }
-            else
+            catch (Exception ex)
             {
-                ModEntry.Logger.Log("[Load] RemoteDispatch Mod not detected.");
+                ModEntry.Logger.Log($"[Load] Critical error during mod initialization: {ex}");
+                return false;
             }
-
-            // Register the mod's toggle and update methods
-            ModEntry.OnToggle = OnToggle;
-            ModEntry.OnUpdate = OnUpdate;
-            
-            // Load the mod's settings
-            Settings.Instance = UnityModManager.ModSettings.Load<Settings>(modEntry);
-            Settings.Instance.authentication_status = "Unverified or not set";
-            
-            // Register the mod's GUI methods
-            modEntry.OnGUI = OnGUI;
-            modEntry.OnSaveGUI = OnSaveGUI;
-
-            // Initialize the log files
-            InitializeLogFiles();
-
-            ModEntry.Logger.Log("[Load] Load method completed successfully.");
-            LogEntry(methodName, "Load method completed successfullyy.");
-            return true;
         }
 
         /// <summary>
@@ -199,6 +238,13 @@ namespace TwitchChat
         /// <param name="message">The message to be logged.</param>
         public static void LogEntry(string source, string message)
         {
+            // Ensure Settings.Instance is initialized
+            if (Settings.Instance == null)
+            {
+                ModEntry?.Logger.Log($"[{source}] Cannot log: Settings.Instance is null");
+                return;
+            }
+
             string selected_log = (source == "ReceivedMessage" || source == "SentMessage") ? messageLog : debugLog;
 
             // Early return if this is a debug message and debug logging is off

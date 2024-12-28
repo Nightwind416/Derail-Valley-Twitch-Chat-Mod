@@ -28,7 +28,7 @@ namespace TwitchChat
         public static string LastMessageType => lastMessageType;
         public static string LastChatMessage => lastChatMessage;
 
-        private static readonly SemaphoreSlim reconnectLock = new SemaphoreSlim(1, 1);
+        private static readonly SemaphoreSlim reconnectLock = new(1, 1);
         private static int reconnectAttempts = 0;
         private static readonly int maxReconnectAttempts = 5;
         private static readonly TimeSpan reconnectDelay = TimeSpan.FromSeconds(5);
