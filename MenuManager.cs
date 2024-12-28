@@ -17,6 +17,7 @@ namespace TwitchChat
         private GameObject? mainPanel;
         private GameObject? settingsPanel;
         private GameObject? licenseObject;
+        private GameObject? stickyTapeBase;
 
         private Text? usernameText;
         private Text? durationText;
@@ -80,11 +81,19 @@ namespace TwitchChat
                 // Check if attached to sticky tape
                 Transform current = licenseObject.transform;
                 bool currentlyAttached = false;
+                GameObject? newStickyTapeBase = null;
+                
                 while (current.parent != null)
                 {
                     if (current.parent.name.Contains("StickyTape_Gadget"))
                     {
                         currentlyAttached = true;
+                        // Find the base object when attached
+                        Transform baseTransform = current.parent.Find("LOD gadget_sticker_base");
+                        if (baseTransform != null)
+                        {
+                            newStickyTapeBase = baseTransform.gameObject;
+                        }
                         break;
                     }
                     current = current.parent;
@@ -94,6 +103,18 @@ namespace TwitchChat
                 {
                     isAttachedToStickyTape = currentlyAttached;
                     Main.LogEntry(methodName, $"License attachment to sticky tape changed: {isAttachedToStickyTape}");
+                    
+                    // Handle sticky tape visibility
+                    if (isAttachedToStickyTape && newStickyTapeBase != null)
+                    {
+                        stickyTapeBase = newStickyTapeBase;
+                        stickyTapeBase.SetActive(false);
+                    }
+                    else if (!isAttachedToStickyTape && stickyTapeBase != null)
+                    {
+                        stickyTapeBase.SetActive(true);
+                        stickyTapeBase = null;
+                    }
                 }
 
                 // LogGameObjectHierarchy(licenseObject);
