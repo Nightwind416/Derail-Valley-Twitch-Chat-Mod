@@ -21,6 +21,12 @@ namespace TwitchChat
 
         private MainMenu? mainMenu;
         private SettingsMenu? settingsMenu;
+        private StandardMessagesMenu? standardMessagesMenu;
+        private CommandMessagesMenu? commandMessagesMenu;
+        private CustomCommandsMenu? customCommandsMenu;
+        private TimedMessagesMenu? timedMessagesMenu;
+        private DispatcherMessagesMenu? dispatcherMessagesMenu;
+        private DebugMenu? debugMenu;
 
         public static MenuManager Instance
         {
@@ -168,16 +174,81 @@ namespace TwitchChat
 
             menuCanvas.AddComponent<GraphicRaycaster>();
 
+            // Create all menus
             mainMenu = new MainMenu(menuCanvas.transform);
             settingsMenu = new SettingsMenu(menuCanvas.transform);
+            standardMessagesMenu = new StandardMessagesMenu(menuCanvas.transform);
+            commandMessagesMenu = new CommandMessagesMenu(menuCanvas.transform);
+            customCommandsMenu = new CustomCommandsMenu(menuCanvas.transform);
+            timedMessagesMenu = new TimedMessagesMenu(menuCanvas.transform);
+            dispatcherMessagesMenu = new DispatcherMessagesMenu(menuCanvas.transform);
+            debugMenu = new DebugMenu(menuCanvas.transform);
 
-            mainMenu.OnSettingsButtonClicked += ToggleSettingsPanel;
-            settingsMenu.OnBackButtonClicked += ToggleSettingsPanel;
+            // Hide all menus immediately after creation before setting up any events
+            HideAllMenus();
 
-            mainMenu.Show();
-            settingsMenu.Hide();
-            
-            menuCanvas.SetActive(isMenuVisible);
+            // Setup navigation events
+            mainMenu.OnMenuButtonClicked += HandleMenuNavigation;
+            settingsMenu.OnBackButtonClicked += () => ShowMenu("Main");
+            standardMessagesMenu.OnBackButtonClicked += () => ShowMenu("Main");
+            commandMessagesMenu.OnBackButtonClicked += () => ShowMenu("Main");
+            customCommandsMenu.OnBackButtonClicked += () => ShowMenu("Main");
+            timedMessagesMenu.OnBackButtonClicked += () => ShowMenu("Main");
+            dispatcherMessagesMenu.OnBackButtonClicked += () => ShowMenu("Main");
+            debugMenu.OnBackButtonClicked += () => ShowMenu("Main");
+
+            // Show main menu last
+            mainMenu?.Show();
+        }
+
+        private void HandleMenuNavigation(string menuName)
+        {
+            ShowMenu(menuName);
+        }
+
+        private void HideAllMenus()
+        {
+            mainMenu?.Hide();
+            settingsMenu?.Hide();
+            standardMessagesMenu?.Hide();
+            commandMessagesMenu?.Hide();
+            customCommandsMenu?.Hide();
+            timedMessagesMenu?.Hide();
+            dispatcherMessagesMenu?.Hide();
+            debugMenu?.Hide();
+        }
+
+        private void ShowMenu(string menuName)
+        {
+            HideAllMenus();
+
+            switch (menuName)
+            {
+                case "Main":
+                    mainMenu?.Show();
+                    break;
+                case "Settings":
+                    settingsMenu?.Show();
+                    break;
+                case "Standard Messages":
+                    standardMessagesMenu?.Show();
+                    break;
+                case "Command Messages":
+                    commandMessagesMenu?.Show();
+                    break;
+                case "Custom Commands":
+                    customCommandsMenu?.Show();
+                    break;
+                case "Timed Messages":
+                    timedMessagesMenu?.Show();
+                    break;
+                case "Dispatcher Messages":
+                    dispatcherMessagesMenu?.Show();
+                    break;
+                case "Debug":
+                    debugMenu?.Show();
+                    break;
+            }
         }
 
         private void ToggleSettingsPanel()
