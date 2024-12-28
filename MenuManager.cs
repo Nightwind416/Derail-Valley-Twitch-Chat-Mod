@@ -166,21 +166,31 @@ namespace TwitchChat
             canvas.sortingOrder = 1000;
             
             RectTransform canvasRect = menuCanvases[index]!.GetComponent<RectTransform>();
-            canvasRect.sizeDelta = new Vector2(200, 300);
+            canvasRect.sizeDelta = new Vector2(400, 600); // Increased canvas size
             canvasRect.localScale = Vector3.one * 0.001f;
 
             menuCanvases[index]!.AddComponent<GraphicRaycaster>();
 
-            // Create all menus for this instance
-            mainMenus[index] = new MainMenu(menuCanvases[index]!.transform);
-            statusMenus[index] = new StatusMenu(menuCanvases[index]!.transform);
-            settingsMenus[index] = new SettingsMenu(menuCanvases[index]!.transform);
-            standardMessagesMenus[index] = new StandardMessagesMenu(menuCanvases[index]!.transform);
-            commandMessagesMenus[index] = new CommandMessagesMenu(menuCanvases[index]!.transform);
-            customCommandsMenus[index] = new CustomCommandsMenu(menuCanvases[index]!.transform);
-            timedMessagesMenus[index] = new TimedMessagesMenu(menuCanvases[index]!.transform);
-            dispatcherMessagesMenus[index] = new DispatcherMessagesMenu(menuCanvases[index]!.transform);
-            debugMenus[index] = new DebugMenu(menuCanvases[index]!.transform);
+            // Create a panel to contain all menus
+            GameObject menuPanel = new GameObject("MenuPanel");
+            menuPanel.transform.SetParent(menuCanvases[index]!.transform, false);
+            RectTransform panelRect = menuPanel.AddComponent<RectTransform>();
+            panelRect.sizeDelta = new Vector2(200, 300); // Original size for menus
+            panelRect.anchorMin = new Vector2(0.5f, 0.5f);
+            panelRect.anchorMax = new Vector2(0.5f, 0.5f);
+            panelRect.pivot = new Vector2(0.5f, 0.5f);
+            panelRect.localPosition = Vector3.zero;
+
+            // Create all menus for this instance - now parenting to panel instead of canvas
+            mainMenus[index] = new MainMenu(menuPanel.transform);
+            statusMenus[index] = new StatusMenu(menuPanel.transform);
+            settingsMenus[index] = new SettingsMenu(menuPanel.transform);
+            standardMessagesMenus[index] = new StandardMessagesMenu(menuPanel.transform);
+            commandMessagesMenus[index] = new CommandMessagesMenu(menuPanel.transform);
+            customCommandsMenus[index] = new CustomCommandsMenu(menuPanel.transform);
+            timedMessagesMenus[index] = new TimedMessagesMenu(menuPanel.transform);
+            dispatcherMessagesMenus[index] = new DispatcherMessagesMenu(menuPanel.transform);
+            debugMenus[index] = new DebugMenu(menuPanel.transform);
 
             // Hide all menus first
             HideAllMenus(index);
