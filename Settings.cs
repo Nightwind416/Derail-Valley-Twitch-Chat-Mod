@@ -30,7 +30,7 @@ namespace TwitchChat
         public string authentication_status = "Unverified or not set";
         public int messageDuration = 20;
         public string EncodedOAuthToken = string.Empty;
-        public string testMessage = "Test message sent 'from' Derail Valley settings page. If you see this, your Authentication Token is working!";
+        public string testMessage = "Test message sent 'from' settings page. If you see this, your Authentication Token is working!";
         private bool getOAuthTokenFlag = false;
         private bool toggleWebSocketFlag = false;
         private bool connectionStatusFlag = false;
@@ -42,7 +42,7 @@ namespace TwitchChat
 
         // Standard Messages Settings
         public bool welcomeMessageActive = true;
-        public string welcomeMessage = "Welcome to my Derail Valley stream!";
+        public string welcomeMessage = "Welcome to my stream!";
         public bool newFollowerMessageActive = true;
         public string newFollowerMessage = "Welcome to the crew!";
         public bool newSubscriberMessageActive = true;
