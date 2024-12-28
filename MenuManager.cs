@@ -50,8 +50,14 @@ namespace TwitchChat
             
             if (isMenuVisible)
             {
-                // PositionMenuInVR();
                 UpdateDisplayedValues();
+            }
+        }
+
+        private void LateUpdate()
+        {
+            if (isMenuVisible)
+            {
                 PositionMenuNearObject();
             }
         }
@@ -59,16 +65,16 @@ namespace TwitchChat
         private void CreateMenu()
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
-            Main.LogEntry(methodName, "Creating VR menu UI elements");
+            Main.LogEntry(methodName, "Creating menu UI elements");
 
             if (menuCanvas != null)
             {
-                Main.LogEntry(methodName, "VR Menu already exists, destroying old instance");
+                Main.LogEntry(methodName, "Menu already exists, destroying old instance");
                 Destroy(menuCanvas);
             }
 
             // Create canvas and basic setup
-            menuCanvas = new GameObject("CustomVRMenuCanvas");
+            menuCanvas = new GameObject("CustomMenuCanvas");
             Canvas canvas = menuCanvas.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.WorldSpace;
             canvas.sortingOrder = 1000;
@@ -88,12 +94,8 @@ namespace TwitchChat
             settingsPanel.SetActive(false);
             isSettingsPanelVisible = false;
 
-            // PositionMenuInVR();
-            // PositionMenuNearObject();
             menuCanvas.SetActive(isMenuVisible);
             Main.LogEntry(methodName, "Menu creation completed");
-
-            // UpdateDisplayedValues(); // Initial update of values
         }
 
         private GameObject CreateMainPanel()
@@ -287,11 +289,9 @@ namespace TwitchChat
 
             // Position the menu to hover in front of the target object
             Vector3 targetPosition = targetObject.transform.position;
-            Vector3 offset1 = Vector3.forward * 0.001f;
-            // Vector3 offset2 = Vector3.up * 0.3f;
+            Vector3 offset = Vector3.forward * 0.001f;
             menuCanvas.transform.position = targetPosition;
-            menuCanvas.transform.position += offset1;
-            // menuCanvas.transform.position += offset2;
+            menuCanvas.transform.position += offset;
 
             // Match the rotation of the target object and add 90 degrees X rotation
             menuCanvas.transform.rotation = targetObject.transform.rotation * Quaternion.Euler(90f, 180f, 0f);
@@ -300,11 +300,11 @@ namespace TwitchChat
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
             isMenuVisible = !isMenuVisible;
-            Main.LogEntry(methodName, $"Toggling VR menu visibility to: {isMenuVisible}");
+            Main.LogEntry(methodName, $"Toggling menu visibility to: {isMenuVisible}");
             
             if (menuCanvas == null)
             {
-                Main.LogEntry(methodName, "VR Menu canvas was null, recreating...");
+                Main.LogEntry(methodName, "Menu canvas was null, recreating...");
                 CreateMenu();
             }
             
