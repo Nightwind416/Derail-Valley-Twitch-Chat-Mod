@@ -33,43 +33,35 @@ namespace TwitchChat.Menus
         private void CreateSettingsTexts()
         {
             // Username text
-            GameObject usernameObj = new GameObject("UsernameText");
-            usernameObj.transform.SetParent(menuObject.transform, false);
-            usernameText = CreateSettingsText(usernameObj, new Vector2(0, 0.75f), new Vector2(1, 0.85f));
+            usernameText = CreateTextElement("UsernameText", "", 16, Color.white, TextAnchor.UpperLeft, 1f, true);
+            RectTransform usernameRect = usernameText.GetComponent<RectTransform>();
+            usernameRect.anchorMin = new Vector2(0, 0.75f);
+            usernameRect.anchorMax = new Vector2(1, 0.85f);
+            usernameRect.offsetMin = new Vector2(20, 0);
+            usernameRect.offsetMax = new Vector2(-20, 0);
 
             // Duration text
-            GameObject durationObj = new GameObject("DurationText");
-            durationObj.transform.SetParent(menuObject.transform, false);
-            durationText = CreateSettingsText(durationObj, new Vector2(0, 0.65f), new Vector2(1, 0.75f));
+            durationText = CreateTextElement("DurationText", "", 16, Color.white, TextAnchor.UpperLeft, 1f, true);
+            RectTransform durationRect = durationText.GetComponent<RectTransform>();
+            durationRect.anchorMin = new Vector2(0, 0.65f);
+            durationRect.anchorMax = new Vector2(1, 0.75f);
+            durationRect.offsetMin = new Vector2(20, 0);
+            durationRect.offsetMax = new Vector2(-20, 0);
 
             // Message text
-            GameObject messageObj = new GameObject("MessageText");
-            messageObj.transform.SetParent(menuObject.transform, false);
-            messageText = CreateSettingsText(messageObj, new Vector2(0, 0.55f), new Vector2(1, 0.65f));
-        }
-
-        private Text CreateSettingsText(GameObject obj, Vector2 anchorMin, Vector2 anchorMax)
-        {
-            Text text = obj.AddComponent<Text>();
-            text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            text.fontSize = 16;
-            text.alignment = TextAnchor.UpperLeft;
-            text.color = Color.white;
-            
-            RectTransform rect = obj.GetComponent<RectTransform>();
-            rect.anchorMin = anchorMin;
-            rect.anchorMax = anchorMax;
-            rect.offsetMin = new Vector2(20, 0);
-            rect.offsetMax = new Vector2(-20, 0);
-
-            return text;
+            messageText = CreateTextElement("MessageText", "", 16, Color.white, TextAnchor.UpperLeft, 1f, true);
+            RectTransform messageRect = messageText.GetComponent<RectTransform>();
+            messageRect.anchorMin = new Vector2(0, 0.55f);
+            messageRect.anchorMax = new Vector2(1, 0.65f);
+            messageRect.offsetMin = new Vector2(20, 0);
+            messageRect.offsetMax = new Vector2(-20, 0);
         }
 
         public void UpdateDisplayedValues(string username, float duration, string lastMessage)
         {
-            usernameText.text = $"Twitch Username: {username}";
-            durationText.text = $"Message Duration: {duration} seconds";
-            messageText.text = $"Message: {lastMessage}";
+            UpdateTextElement("UsernameText", $"Twitch Username: {username}");
+            UpdateTextElement("DurationText", $"Message Duration: {duration} seconds");
+            UpdateTextElement("MessageText", $"Message: {lastMessage}");
         }
     }
 }

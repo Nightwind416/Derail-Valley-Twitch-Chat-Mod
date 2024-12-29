@@ -184,6 +184,42 @@ namespace TwitchChat.Menus
             return status;
         }
 
+        protected Text CreateTextElement(string name, string text, int fontSize = 16, Color? textColor = null, TextAnchor alignment = TextAnchor.MiddleLeft, float scaling = 1f, bool wrapping = true)
+        {
+            GameObject textObj = new GameObject(name);
+            textObj.transform.SetParent(menuObject.transform, false);
+            Text textComponent = textObj.AddComponent<Text>();
+            textComponent.text = text;
+            textComponent.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            textComponent.fontSize = fontSize;
+            textComponent.alignment = alignment;
+            textComponent.color = textColor ?? Color.white;
+            textComponent.transform.localScale = new Vector3(scaling, scaling, scaling);
+            textComponent.horizontalOverflow = wrapping ? HorizontalWrapMode.Wrap : HorizontalWrapMode.Overflow;
+            textComponent.verticalOverflow = wrapping ? VerticalWrapMode.Truncate : VerticalWrapMode.Overflow;
+
+            RectTransform rect = textObj.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0, 0);
+            rect.anchorMax = new Vector2(1, 1);
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+
+            return textComponent;
+        }
+
+        protected void UpdateTextElement(string name, string newText)
+        {
+            Transform textTransform = menuObject.transform.Find(name);
+            if (textTransform != null)
+            {
+                Text textComponent = textTransform.GetComponent<Text>();
+                if (textComponent != null)
+                {
+                    textComponent.text = newText;
+                }
+            }
+        }
+
         public virtual void Show() => menuObject.SetActive(true);
         public virtual void Hide() => menuObject.SetActive(false);
     }
