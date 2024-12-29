@@ -15,6 +15,8 @@ namespace TwitchChat.Menus
 
         private void CreateLargeDisplayBoard()
         {
+            // Dimensions - 1000x700
+            
             // Title
             CreateTitle("Large Display Board", 18, Color.white, TextAnchor.UpperCenter);
 
@@ -22,7 +24,7 @@ namespace TwitchChat.Menus
             // TODO: Complete Large Display Board
 
             // Back button
-            Button backButton = CreateButton("BackButton", "Back", new Vector2(0.3f, 0.05f), new Vector2(0.7f, 0.12f), 18, Color.white, TextAnchor.MiddleCenter, () => OnBackButtonClicked?.Invoke());
+            Button backButton = CreateButton("BackButton", "Back", 0, -400, 18, Color.white, TextAnchor.MiddleCenter, () => OnBackButtonClicked?.Invoke());
         }
     }
 }

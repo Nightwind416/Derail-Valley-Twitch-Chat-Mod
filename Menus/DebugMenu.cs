@@ -15,6 +15,8 @@ namespace TwitchChat.Menus
 
         private void CreateDebugMenu()
         {
+            // Dimensions - 200x300
+            
             // Title
             CreateTitle("Debug Menu", 18, Color.white, TextAnchor.UpperCenter);
 
@@ -22,7 +24,7 @@ namespace TwitchChat.Menus
             // TODO: Complete Debug Menu menu
 
             // Back button
-            Button backButton = CreateButton("BackButton", "Back", new Vector2(0.3f, 0.05f), new Vector2(0.7f, 0.12f), 18, Color.white, TextAnchor.MiddleCenter, () => OnBackButtonClicked?.Invoke());
+            Button backButton = CreateButton("BackButton", "Back", 0, -200, 18, Color.white, TextAnchor.MiddleCenter, () => OnBackButtonClicked?.Invoke());
         }
     }
 }

@@ -66,7 +66,7 @@ namespace TwitchChat
             { MenuType.Settings, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
             { MenuType.LargeDisplay, new(new Vector2(1000, 700), new Vector2(1000, 700), Vector2.zero, Vector3.zero) },
             { MenuType.MediumDisplay, new(new Vector2(500, 500), new Vector2(500, 500), Vector2.zero, Vector3.zero) },
-            { MenuType.WideDisplay, new(new Vector2(900, 400), new Vector2(900, 400), Vector2.zero, Vector3.zero) },
+            { MenuType.WideDisplay, new(new Vector2(800, 200), new Vector2(800, 200), Vector2.zero, Vector3.zero) },
             { MenuType.SmallDisplay, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
             { MenuType.Debug, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) }
         };

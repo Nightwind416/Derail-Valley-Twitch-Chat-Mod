@@ -19,13 +19,15 @@ namespace TwitchChat.Menus
 
         private void CreateSettingsMenu()
         {
+            // Dimensions - 200x300
+            
             // Title
             CreateTitle("Settings Menu", 18, Color.white, TextAnchor.UpperCenter);
 
             CreateSettingsTexts();
             
             // Back button
-            CreateButton("BackButton", "Back", new Vector2(0.3f, 0.1f), new Vector2(0.7f, 0.17f), 18, Color.white, TextAnchor.MiddleCenter, () => OnBackButtonClicked?.Invoke());
+            CreateButton("BackButton", "Back", 0, -200, 18, Color.white, TextAnchor.MiddleCenter, () => OnBackButtonClicked?.Invoke());
         }
 
         private void CreateSettingsTexts()
