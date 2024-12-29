@@ -137,10 +137,10 @@ namespace TwitchChat.Menus
             label.color = textColor ?? Color.white;
             
             RectTransform rect = labelObj.GetComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0, yPosition);
-            rect.anchorMax = new Vector2(0, yPosition);
-            rect.sizeDelta = new Vector2(textWidth + 10, 20); // Added small padding
-            rect.anchoredPosition = new Vector2(10, 0);
+            rect.anchorMin = new Vector2(0f, 0.5f);  // Left edge, vertically centered
+            rect.anchorMax = new Vector2(0f, 0.5f);  // Left edge, vertically centered
+            rect.sizeDelta = new Vector2(textWidth + 10, 20);
+            rect.anchoredPosition = new Vector2(x, y);  // x now represents distance from left edge
             
             return label;
         }
