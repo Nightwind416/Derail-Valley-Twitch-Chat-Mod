@@ -22,7 +22,7 @@ namespace TwitchChat.Menus
             menuObject.transform.SetParent(parent, false);
             
             Image panelImage = menuObject.AddComponent<Image>();
-            panelImage.color = new Color(0, 0, 0, 0.9f);
+            panelImage.color = new Color(0, 0, 0, 0.2f);
             
             rectTransform = menuObject.GetComponent<RectTransform>();
             rectTransform.anchorMin = Vector2.zero;
@@ -91,7 +91,7 @@ namespace TwitchChat.Menus
             title.color = textColor ?? Color.white;
             
             RectTransform titleRect = titleObj.GetComponent<RectTransform>();
-            titleRect.anchorMin = new Vector2(0, 0.9f);
+            titleRect.anchorMin = new Vector2(0, 0.85f);
             titleRect.anchorMax = new Vector2(1, 1f);
             titleRect.offsetMin = Vector2.zero;
             titleRect.offsetMax = Vector2.zero;

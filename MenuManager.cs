@@ -64,9 +64,9 @@ namespace TwitchChat
             { MenuType.Main, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
             { MenuType.Status, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
             { MenuType.Settings, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
-            { MenuType.LargeDisplay, new(new Vector2(1000, 700), new Vector2(1000, 700), Vector2.zero, Vector3.zero) },
+            { MenuType.LargeDisplay, new(new Vector2(1200, 650), new Vector2(1200, 650), Vector2.zero, Vector3.zero) },
             { MenuType.MediumDisplay, new(new Vector2(500, 500), new Vector2(500, 500), Vector2.zero, Vector3.zero) },
-            { MenuType.WideDisplay, new(new Vector2(800, 200), new Vector2(800, 200), Vector2.zero, Vector3.zero) },
+            { MenuType.WideDisplay, new(new Vector2(900, 200), new Vector2(900, 200), Vector2.zero, Vector3.zero) },
             { MenuType.SmallDisplay, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
             { MenuType.Debug, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) }
         };
@@ -124,7 +124,7 @@ namespace TwitchChat
                 }
             }
         }
-
+        // BUG: Sticky tape returns after away from loco, detact/reattach fixes it
         private void HandleLicenseAttachment(int index)
         {
             Transform current = licenseObjects[index]!.transform;
