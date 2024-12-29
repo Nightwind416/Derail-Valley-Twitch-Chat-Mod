@@ -9,7 +9,7 @@ namespace TwitchChat
     public class MenuManager : MonoBehaviour
     {
         private static MenuManager? instance;
-        private static GameObject?[] menuCanvases = new GameObject?[5];
+        public static GameObject?[] menuCanvases = new GameObject?[5];
         private readonly bool[] attachedToStickyTape = [false, false, false, false, false];
         private readonly GameObject?[] stickyTapeBases = new GameObject?[5];
         private readonly string[] licenseNames =

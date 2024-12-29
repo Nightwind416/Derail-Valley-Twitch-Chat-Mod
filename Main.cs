@@ -10,9 +10,6 @@ using UnityModManagerNet;
 
 namespace TwitchChat
 {
-    #if DEBUG
-    [EnableReloading]
-    #endif
 
     /// <summary>
     /// Core module for the Twitch Chat mod.
@@ -83,12 +80,6 @@ namespace TwitchChat
                 ModEntry.OnToggle = OnToggle;
                 ModEntry.OnUpdate = OnUpdate;
                 LogEntry(methodName, "Registered mod toggle and update methods.");
-
-                // Register the mod's unload method
-                #if DEBUG
-                modEntry.OnUnload = Unload;
-                LogEntry(methodName, "Registered mod unload method.");
-                #endif
                 
                 // Load the mod's settings
                 Settings.Instance = UnityModManager.ModSettings.Load<Settings>(modEntry);
@@ -122,23 +113,6 @@ namespace TwitchChat
                 return false;
             }
         }
-
-        #if DEBUG
-        static bool Unload(UnityModManager.ModEntry modEntry)
-        {
-            // Destroy all children recursively
-            foreach (Transform child in MenuManager.Instance.transform.GetComponentsInChildren<Transform>())
-            {
-                if (child != MenuManager.Instance.transform) // Skip destroying the parent
-                {
-                    GameObject.Destroy(child.gameObject);
-                }
-            }
-            GameObject.Destroy(MenuManager.Instance);
-            
-            return true;
-        }
-        #endif
 
         /// <summary>
         /// Handles the mod's GUI rendering in the Unity Mod Manager interface.
