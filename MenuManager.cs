@@ -110,14 +110,14 @@ namespace TwitchChat
 
                 if (licenseObjects[i] != null)
                 {
-                    settingsMenus[i]?.UpdateDisplayedValues(
+                    settingsMenus[i]?.UpdateSettingsMenuValues(
                         Settings.Instance.twitchUsername,
                         Settings.Instance.messageDuration,
                         WebSocketManager.LastChatMessage
                     );
                     
                     // Add this line to update the status menu
-                    statusMenus[i]?.Update();
+                    statusMenus[i]?.UpdateStatusMenuValues();
 
                     HandleLicenseAttachment(i);
                     HandlePaperVisibility(i);

@@ -8,6 +8,7 @@ namespace TwitchChat.Menus
     {
         protected GameObject menuObject;
         protected RectTransform rectTransform;
+        protected GameObject textInputField;
 
         public GameObject MenuObject => menuObject;
 
@@ -96,7 +97,7 @@ namespace TwitchChat.Menus
             titleRect.offsetMin = Vector2.zero;
             titleRect.offsetMax = Vector2.zero;
         }
-        protected GameObject CreateSection(string name, int yFromTop, int heightInPixels)
+        protected GameObject CreateSection(string name, int yFromTop, int heightInPixels, bool createLabel = true)
         {
             GameObject section = new GameObject(name);
             section.transform.SetParent(menuObject.transform, false);
@@ -127,12 +128,15 @@ namespace TwitchChat.Menus
             containerRect.sizeDelta = new Vector2(0, heightInPixels);
             containerRect.anchoredPosition = Vector2.zero;
             
-            CreateLabel(container.transform, name, 5, -5, Color.gray);
+            if (createLabel)
+            {
+                CreateLabel(container.transform, name, 5, -5, Color.gray);
+            }
             
             return container;
         }
 
-        protected Text CreateLabel(Transform parent, string text, int x, int y, Color? textColor = null)
+        protected Text CreateLabel(Transform parent, string text, float xPosition, float yPosition, Color? textColor = null)
         {
             GameObject labelObj = new GameObject($"{text}Label");
             labelObj.transform.SetParent(parent, false);
@@ -159,7 +163,7 @@ namespace TwitchChat.Menus
             rect.anchorMax = new Vector2(0f, 1f);  // Top-left anchor
             rect.pivot = new Vector2(0f, 1f);      // Top-left pivot
             rect.sizeDelta = new Vector2(textWidth + 10, 20);
-            rect.anchoredPosition = new Vector2(x, y);
+            rect.anchoredPosition = new Vector2(xPosition, yPosition);
             
             return label;
         }
@@ -184,7 +188,69 @@ namespace TwitchChat.Menus
             return status;
         }
 
-        protected Text CreateTextElement(string name, string text, int fontSize = 16, Color? textColor = null, TextAnchor alignment = TextAnchor.MiddleLeft, float scaling = 1f, bool wrapping = true)
+        protected void CreateTextInput(Transform parent, int xPosition, int yPosition, float width, string defaultText = "")
+        {
+            textInputField = new GameObject("TextInput");
+            textInputField.transform.SetParent(parent, false);
+            
+            var rectTransform = textInputField.AddComponent<RectTransform>();
+            rectTransform.anchoredPosition = new Vector2(xPosition, yPosition);
+            rectTransform.sizeDelta = new Vector2(width, 15f);
+
+            var inputField = textInputField.AddComponent<UnityEngine.UI.InputField>();
+            var image = textInputField.AddComponent<UnityEngine.UI.Image>();
+            image.color = new Color(0.2f, 0.2f, 0.2f, 1f);
+
+            // Create text component
+            var textGo = new GameObject("Text");
+            textGo.transform.SetParent(textInputField.transform, false);
+            var textRect = textGo.AddComponent<RectTransform>();
+            textRect.anchorMin = Vector2.zero;
+            textRect.anchorMax = Vector2.one;
+            textRect.offsetMin = new Vector2(10, 1);
+            textRect.offsetMax = new Vector2(-10, -1);
+
+            var text = textGo.AddComponent<UnityEngine.UI.Text>();
+            text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            text.fontSize = 12;
+            text.color = Color.white;
+            text.text = defaultText;
+            text.alignment = TextAnchor.MiddleLeft;
+
+            inputField.textComponent = text;
+        }
+
+        protected string GetTextInputValue()
+        {
+            if (textInputField == null) return string.Empty;
+            var inputField = textInputField.GetComponent<UnityEngine.UI.InputField>();
+            return inputField.text;
+        }
+
+        protected void SetTextInputValue(string value)
+        {
+            if (textInputField == null) return;
+            var inputField = textInputField.GetComponent<UnityEngine.UI.InputField>();
+            inputField.text = value;
+        }
+
+        protected void HideTextInput()
+        {
+            if (textInputField != null)
+            {
+                textInputField.SetActive(false);
+            }
+        }
+
+        protected void ShowTextInput()
+        {
+            if (textInputField != null)
+            {
+                textInputField.SetActive(true);
+            }
+        }
+
+        protected Text CreateTextElement(string name, string text, int fontSize = 12, Color? textColor = null, TextAnchor alignment = TextAnchor.UpperLeft, float scaling = 1f, bool wrapping = true)
         {
             GameObject textObj = new GameObject(name);
             textObj.transform.SetParent(menuObject.transform, false);

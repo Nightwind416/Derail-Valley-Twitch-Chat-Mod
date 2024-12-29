@@ -73,7 +73,7 @@ namespace TwitchChat.Menus
             Button backButton = CreateButton("Back", 0, -125, Color.white, () => OnBackButtonClicked?.Invoke());
         }
 
-        public void Update()
+        public void UpdateStatusMenuValues()
         {
             // Update authentication status
             string authText = string.IsNullOrEmpty(Settings.Instance.EncodedOAuthToken) 

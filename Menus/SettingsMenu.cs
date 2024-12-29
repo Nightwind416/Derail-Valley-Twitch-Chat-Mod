@@ -5,8 +5,8 @@ namespace TwitchChat.Menus
 {
     public class SettingsMenu : BaseMenu
     {
-        private Text usernameText;
-        private Text durationText;
+        private GameObject usernameInput;
+        private GameObject durationInput;
         private Text messageText;
 
         public delegate void OnBackButtonClickedHandler();
@@ -24,44 +24,62 @@ namespace TwitchChat.Menus
             // Title
             CreateTitle("Settings Menu", 18, Color.white, TextAnchor.UpperCenter);
 
-            CreateSettingsTexts();
+            // Settings Section
+            GameObject settingsSection = CreateSection("Settings", 25, 200, false);
+            RectTransform sectionRect = settingsSection.GetComponent<RectTransform>();
+
+            // Username Label
+            CreateLabel(settingsSection.transform, "Username:", 15, -10, Color.white);
             
+            // Username input field
+            CreateTextInput(settingsSection.transform, 5, 50, 100, "");
+            usernameInput = textInputField; // Store reference to current input field
+
+            // Duration Label
+            CreateLabel(settingsSection.transform, "Duration:", 15, -50, Color.white);
+            
+            // Duration input field
+            CreateTextInput(settingsSection.transform, 5, 10, 100, "");
+            durationInput = textInputField; // Store reference to current input field
+
+            // Message Label
+            CreateLabel(settingsSection.transform, "Last Message:", 15, -90, Color.white);
+
             // Back button
             CreateButton("Back", 0, -125, Color.white, () => OnBackButtonClicked?.Invoke());
         }
 
-        private void CreateSettingsTexts()
+        public void UpdateSettingsMenuValues(string username, float duration, string lastMessage)
         {
-            // Username text
-            usernameText = CreateTextElement("UsernameText", "", 16, Color.white, TextAnchor.UpperLeft, 1f, true);
-            RectTransform usernameRect = usernameText.GetComponent<RectTransform>();
-            usernameRect.anchorMin = new Vector2(0, 0.75f);
-            usernameRect.anchorMax = new Vector2(1, 0.85f);
-            usernameRect.offsetMin = new Vector2(20, 0);
-            usernameRect.offsetMax = new Vector2(-20, 0);
+            if (usernameInput != null)
+            {
+                usernameInput.GetComponent<UnityEngine.UI.InputField>().text = username;
+            }
+            
+            if (durationInput != null)
+            {
+                durationInput.GetComponent<UnityEngine.UI.InputField>().text = duration.ToString();
+            }
 
-            // Duration text
-            durationText = CreateTextElement("DurationText", "", 16, Color.white, TextAnchor.UpperLeft, 1f, true);
-            RectTransform durationRect = durationText.GetComponent<RectTransform>();
-            durationRect.anchorMin = new Vector2(0, 0.65f);
-            durationRect.anchorMax = new Vector2(1, 0.75f);
-            durationRect.offsetMin = new Vector2(20, 0);
-            durationRect.offsetMax = new Vector2(-20, 0);
-
-            // Message text
-            messageText = CreateTextElement("MessageText", "", 16, Color.white, TextAnchor.UpperLeft, 1f, true);
-            RectTransform messageRect = messageText.GetComponent<RectTransform>();
-            messageRect.anchorMin = new Vector2(0, 0.55f);
-            messageRect.anchorMax = new Vector2(1, 0.65f);
-            messageRect.offsetMin = new Vector2(20, 0);
-            messageRect.offsetMax = new Vector2(-20, 0);
+            if (messageText != null)
+            {
+                messageText.text = lastMessage;
+            }
         }
 
-        public void UpdateDisplayedValues(string username, float duration, string lastMessage)
+        public string GetUsername()
         {
-            UpdateTextElement("UsernameText", $"Twitch Username: {username}");
-            UpdateTextElement("DurationText", $"Message Duration: {duration} seconds");
-            UpdateTextElement("MessageText", $"Message: {lastMessage}");
+            return usernameInput?.GetComponent<UnityEngine.UI.InputField>().text ?? string.Empty;
+        }
+
+        public float GetDuration()
+        {
+            if (durationInput == null) return 0f;
+            if (float.TryParse(durationInput.GetComponent<UnityEngine.UI.InputField>().text, out float result))
+            {
+                return result;
+            }
+            return 0f;
         }
     }
 }
