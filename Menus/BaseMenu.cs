@@ -96,7 +96,6 @@ namespace TwitchChat.Menus
             titleRect.offsetMin = Vector2.zero;
             titleRect.offsetMax = Vector2.zero;
         }
-
         protected GameObject CreateSection(string name, int yFromTop, int heightInPixels)
         {
             GameObject section = new GameObject(name);
@@ -106,10 +105,21 @@ namespace TwitchChat.Menus
             sectionImage.color = new Color(0, 0, 0, 0.5f);
             
             RectTransform rect = section.GetComponent<RectTransform>();
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = new Vector2(20, -yFromTop);
-            rect.offsetMax = new Vector2(-20, -(yFromTop + heightInPixels));
+            // rect.anchorMin = Vector2.zero;
+            // rect.anchorMax = Vector2.one;
+            // rect.offsetMin = new Vector2(20, -yFromTop);
+            // rect.offsetMax = new Vector2(-20, -(yFromTop + heightInPixels));
+
+            float parentHeight = menuObject.GetComponent<RectTransform>().rect.height;
+            if (parentHeight <= 0) parentHeight = 200f; // Fallback value if parent height is invalid
+            
+            float topAnchor = 1f - (yFromTop / parentHeight);
+            float bottomAnchor = 1f - ((yFromTop + heightInPixels) / parentHeight);
+            
+            rect.anchorMin = new Vector2(0, bottomAnchor);
+            rect.anchorMax = new Vector2(1, topAnchor);
+            rect.offsetMin = new Vector2(20, 0);
+            rect.offsetMax = new Vector2(-20, 0);
             
             CreateLabel(section.transform, name, 0, 0, Color.gray);
             
