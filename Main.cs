@@ -126,6 +126,14 @@ namespace TwitchChat
         #if DEBUG
         static bool Unload(UnityModManager.ModEntry modEntry)
         {
+            // Destroy all children recursively
+            foreach (Transform child in MenuManager.Instance.transform.GetComponentsInChildren<Transform>())
+            {
+                if (child != MenuManager.Instance.transform) // Skip destroying the parent
+                {
+                    GameObject.Destroy(child.gameObject);
+                }
+            }
             GameObject.Destroy(MenuManager.Instance);
             
             return true;

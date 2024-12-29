@@ -106,10 +106,12 @@ namespace TwitchChat.Menus
             sectionImage.color = new Color(0, 0, 0, 0.5f);
             
             RectTransform rect = section.GetComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0.05f, 0.5f);  // Center vertically
-            rect.anchorMax = new Vector2(0.95f, 0.5f);  // Center vertically
-            rect.sizeDelta = new Vector2(0, height);    // Set explicit height
-            rect.anchoredPosition = new Vector2(0, y);  // Set y position in pixels
+            rect.anchorMin = new Vector2(0.05f, 0.5f);
+            rect.anchorMax = new Vector2(0.95f, 0.5f);
+            rect.sizeDelta = new Vector2(0, height);
+            rect.anchoredPosition = new Vector2(0, y);
+
+            CreateLabel(section.transform, name, 0, 0, Color.gray);
             
             return section;
         }
@@ -137,10 +139,10 @@ namespace TwitchChat.Menus
             label.color = textColor ?? Color.white;
             
             RectTransform rect = labelObj.GetComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0f, 0.5f);  // Left edge, vertically centered
-            rect.anchorMax = new Vector2(0f, 0.5f);  // Left edge, vertically centered
+            rect.anchorMin = new Vector2(0f, 0.5f);
+            rect.anchorMax = new Vector2(0f, 0.5f);
             rect.sizeDelta = new Vector2(textWidth + 10, 20);
-            rect.anchoredPosition = new Vector2(x, y);  // x now represents distance from left edge
+            rect.anchoredPosition = new Vector2(x, y);
             
             return label;
         }
