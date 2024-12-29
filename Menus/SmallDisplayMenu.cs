@@ -20,6 +20,9 @@ namespace TwitchChat.Menus
             // Title
             CreateTitle("Small Display Board", 18, Color.white, TextAnchor.UpperCenter);
 
+            // Message Section
+            GameObject messageSection = CreateSection("Message", 25, 100);
+            
             // Add SmallDisplayBoard items here
             // TODO: Complete SmallDisplayBoard
 

@@ -26,11 +26,11 @@ namespace TwitchChat.Menus
             CreateTitle("Status Menu", 18, Color.white, TextAnchor.UpperCenter);
 
             // Authentication Section
-            GameObject authSection = CreateSection("Authentication", 25, 100);
+            GameObject authSection = CreateSection("Authentication Status", 25, 100);
             
             authButton = CreateButton(
             string.IsNullOrEmpty(Settings.Instance.EncodedOAuthToken) ? "Request Authorization Token" : "Validate Token",
-            0, 0,
+            0, 10,
             Color.white,
             () => {
                 if (string.IsNullOrEmpty(Settings.Instance.EncodedOAuthToken))
@@ -41,14 +41,14 @@ namespace TwitchChat.Menus
             );
             authButton.transform.SetParent(authSection.transform, false);
             
-            authStatus = CreateStatusIndicator(authSection.transform, Settings.Instance.authentication_status, 0.8f, 80f);
+            authStatus = CreateStatusIndicator(authSection.transform, Settings.Instance.authentication_status, 0.75f, 40f);
 
             // WebSocket Section
-            GameObject wsSection = CreateSection("WebSocket Status", 150, 180);
+            GameObject wsSection = CreateSection("WebSocket Status", 150, 120);
             
             connectButton = CreateButton(
             WebSocketManager.IsConnectionHealthy ? "Disconnect" : "Connect",
-            -0, 0,
+            0, -25,
             Color.white,
             () => {
                 if (WebSocketManager.IsConnectionHealthy)
@@ -59,15 +59,15 @@ namespace TwitchChat.Menus
             );
             connectButton.transform.SetParent(wsSection.transform, false);
 
-            CreateLabel(wsSection.transform, "Connection Status:", 10, 50);
+            CreateLabel(wsSection.transform, "Connection Status:", 10, -50);
             connectionIndicator = CreateStatusIndicator(wsSection.transform, "■", 0.5f);
             connectionStatus = CreateStatusIndicator(wsSection.transform, 
             WebSocketManager.IsConnectionHealthy ? "Connected" : "Disconnected", 0.5f, 155f);
 
-            CreateLabel(wsSection.transform, "Last Message Type:", 10, 30);
+            CreateLabel(wsSection.transform, "Last Message Type:", 10, -80);
             lastMessageType = CreateStatusIndicator(wsSection.transform, WebSocketManager.LastMessageType, 0.3f);
 
-            CreateLabel(wsSection.transform, "Last Chat Message:", 10, 10);
+            CreateLabel(wsSection.transform, "Last Chat Message:", 10, -100);
             lastChatMessage = CreateStatusIndicator(wsSection.transform, WebSocketManager.LastChatMessage, 0.1f);
 
             Button backButton = CreateButton("Back", 0, -125, Color.white, () => OnBackButtonClicked?.Invoke());

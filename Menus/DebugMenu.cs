@@ -20,6 +20,9 @@ namespace TwitchChat.Menus
             // Title
             CreateTitle("Debug Menu", 18, Color.white, TextAnchor.UpperCenter);
 
+            // Debug Section
+            GameObject debugSection = CreateSection("Debug", 25, 100);
+
             // Add Debug Menu menu items here
             // TODO: Complete Debug Menu menu
 

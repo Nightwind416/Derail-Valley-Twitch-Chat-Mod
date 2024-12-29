@@ -20,6 +20,9 @@ namespace TwitchChat.Menus
             // Title
             CreateTitle("Wide Display Board", 18, Color.white, TextAnchor.UpperCenter);
 
+            // Message Section
+            GameObject messageSection = CreateSection("Message", 25, 100);
+
             // Add WideDisplayBoard items here
             // TODO: Complete WideDisplayBoard
 

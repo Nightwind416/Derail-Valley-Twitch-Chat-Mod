@@ -91,7 +91,7 @@ namespace TwitchChat.Menus
             title.color = textColor ?? Color.white;
             
             RectTransform titleRect = titleObj.GetComponent<RectTransform>();
-            titleRect.anchorMin = new Vector2(0, 0.85f);
+            titleRect.anchorMin = new Vector2(0, 0.80f);
             titleRect.anchorMax = new Vector2(1, 1f);
             titleRect.offsetMin = Vector2.zero;
             titleRect.offsetMax = Vector2.zero;
@@ -105,10 +105,6 @@ namespace TwitchChat.Menus
             sectionImage.color = new Color(0, 0, 0, 0.5f);
             
             RectTransform rect = section.GetComponent<RectTransform>();
-            // rect.anchorMin = Vector2.zero;
-            // rect.anchorMax = Vector2.one;
-            // rect.offsetMin = new Vector2(20, -yFromTop);
-            // rect.offsetMax = new Vector2(-20, -(yFromTop + heightInPixels));
 
             float parentHeight = menuObject.GetComponent<RectTransform>().rect.height;
             if (parentHeight <= 0) parentHeight = 200f; // Fallback value if parent height is invalid
@@ -118,12 +114,22 @@ namespace TwitchChat.Menus
             
             rect.anchorMin = new Vector2(0, bottomAnchor);
             rect.anchorMax = new Vector2(1, topAnchor);
-            rect.offsetMin = new Vector2(20, 0);
-            rect.offsetMax = new Vector2(-20, 0);
+            rect.offsetMin = new Vector2(10, 0);
+            rect.offsetMax = new Vector2(-10, 0);
+
+            // Create a container for proper child positioning
+            GameObject container = new GameObject("Container");
+            container.transform.SetParent(section.transform, false);
+            RectTransform containerRect = container.AddComponent<RectTransform>();
+            containerRect.anchorMin = new Vector2(0, 1); // Top-left anchor
+            containerRect.anchorMax = new Vector2(1, 1);
+            containerRect.pivot = new Vector2(0, 1);     // Top-left pivot
+            containerRect.sizeDelta = new Vector2(0, heightInPixels);
+            containerRect.anchoredPosition = Vector2.zero;
             
-            CreateLabel(section.transform, name, 0, 0, Color.gray);
+            CreateLabel(container.transform, name, 5, -5, Color.gray);
             
-            return section;
+            return container;
         }
 
         protected Text CreateLabel(Transform parent, string text, int x, int y, Color? textColor = null)
@@ -145,12 +151,13 @@ namespace TwitchChat.Menus
             label.text = text;
             label.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
             label.fontSize = 14;
-            label.alignment = TextAnchor.MiddleLeft;
+            label.alignment = TextAnchor.UpperLeft;
             label.color = textColor ?? Color.white;
             
             RectTransform rect = labelObj.GetComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0f, 0.5f);
-            rect.anchorMax = new Vector2(0f, 0.5f);
+            rect.anchorMin = new Vector2(0f, 1f);  // Top-left anchor
+            rect.anchorMax = new Vector2(0f, 1f);  // Top-left anchor
+            rect.pivot = new Vector2(0f, 1f);      // Top-left pivot
             rect.sizeDelta = new Vector2(textWidth + 10, 20);
             rect.anchoredPosition = new Vector2(x, y);
             
