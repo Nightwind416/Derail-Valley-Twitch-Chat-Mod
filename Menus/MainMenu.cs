@@ -29,9 +29,10 @@ namespace TwitchChat.Menus
             CreateMenuButton("Status", 0.8f);
             CreateMenuButton("Settings", 0.7f);
             CreateMenuButton("Large Display", 0.6f);
-            CreateMenuButton("Medium Display", 0.5f);
-            CreateMenuButton("Small Display", 0.4f);
-            CreateMenuButton("Debug", 0.3f);
+            CreateMenuButton("Wide Display", 0.5f);
+            CreateMenuButton("Medium Display", 0.4f);
+            CreateMenuButton("Small Display", 0.3f);
+            CreateMenuButton("Debug", 0.2f);
             Main.LogEntry(methodName, "Main menu creation completed");
         }
 
