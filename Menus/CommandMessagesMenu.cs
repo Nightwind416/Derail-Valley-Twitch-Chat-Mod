@@ -78,13 +78,13 @@ namespace TwitchChat.Menus
             toggle.graphic = checkmarkImage;
 
             // Label
-            GameObject labelObj = new GameObject("Label");
-            labelObj.transform.SetParent(container.transform, false);
-            Text labelComponent = labelObj.AddComponent<Text>();
-            labelComponent.text = label;
-            labelComponent.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            labelComponent.fontSize = 16;
-            labelComponent.color = Color.white;
+            CreateTextElement("Label", label, 16, Color.white, TextAnchor.UpperLeft, 1f, true);
+
+            RectTransform labelRect = menuObject.transform.Find("Label").GetComponent<RectTransform>();
+            labelRect.anchorMin = new Vector2(0.12f, 0.5f);
+            labelRect.anchorMax = new Vector2(1, 1f);
+            labelRect.offsetMin = Vector2.zero;
+            labelRect.offsetMax = Vector2.zero;
 
             // Input Field
             GameObject inputObj = new GameObject("InputField");
@@ -104,12 +104,6 @@ namespace TwitchChat.Menus
             toggleRect.anchorMax = new Vector2(0.1f, 1f);
             toggleRect.offsetMin = Vector2.zero;
             toggleRect.offsetMax = Vector2.zero;
-
-            RectTransform labelRect = labelObj.GetComponent<RectTransform>();
-            labelRect.anchorMin = new Vector2(0.12f, 0.5f);
-            labelRect.anchorMax = new Vector2(1, 1f);
-            labelRect.offsetMin = Vector2.zero;
-            labelRect.offsetMax = Vector2.zero;
 
             RectTransform inputRect = inputObj.GetComponent<RectTransform>();
             inputRect.anchorMin = new Vector2(0, 0);

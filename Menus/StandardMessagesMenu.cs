@@ -51,15 +51,9 @@ namespace TwitchChat.Menus
             containerRect.offsetMax = Vector2.zero;
 
             // Label
-            GameObject labelObj = new GameObject("Label");
-            labelObj.transform.SetParent(container.transform, false);
-            Text labelComponent = labelObj.AddComponent<Text>();
-            labelComponent.text = label;
-            labelComponent.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            labelComponent.fontSize = 16;
-            labelComponent.color = Color.white;
+            CreateTextElement("Label", label, 16, Color.white, TextAnchor.UpperLeft, 1f, true);
 
-            RectTransform labelRect = labelObj.GetComponent<RectTransform>();
+            RectTransform labelRect = menuObject.transform.Find("Label").GetComponent<RectTransform>();
             labelRect.anchorMin = new Vector2(0, 0.5f);
             labelRect.anchorMax = new Vector2(1, 1);
             labelRect.offsetMin = Vector2.zero;

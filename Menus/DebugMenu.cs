@@ -37,15 +37,9 @@ namespace TwitchChat.Menus
             CreateTestMessageSection();
 
             // Warning Text
-            GameObject warningObj = new GameObject("WarningText");
-            warningObj.transform.SetParent(menuObject.transform, false);
-            Text warningText = warningObj.AddComponent<Text>();
-            warningText.text = "⚠️ Warning: Process Own Messages should only be enabled during testing!";
-            warningText.color = Color.yellow;
-            warningText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            warningText.fontSize = 14;
-            
-            RectTransform warningRect = warningObj.GetComponent<RectTransform>();
+            CreateTextElement("WarningText", "⚠️ Warning: Process Own Messages should only be enabled during testing!", 14, Color.yellow, TextAnchor.MiddleCenter, 1f, true);
+
+            RectTransform warningRect = menuObject.transform.Find("WarningText").GetComponent<RectTransform>();
             warningRect.anchorMin = new Vector2(0.1f, 0.5f);
             warningRect.anchorMax = new Vector2(0.9f, 0.6f);
 

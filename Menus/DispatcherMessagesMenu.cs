@@ -29,20 +29,11 @@ namespace TwitchChat.Menus
                 out dispatcherMessageToggle, out messageInput);
 
             // Warning Text
-            GameObject warningObj = new GameObject("WarningText");
-            warningObj.transform.SetParent(menuObject.transform, false);
-            Text warningText = warningObj.AddComponent<Text>();
-            warningText.text = "Integration with Dispatcher Mod coming soon!";
-            warningText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            warningText.fontSize = 16;
-            warningText.color = Color.yellow;
-            warningText.alignment = TextAnchor.MiddleCenter;
+            CreateTextElement("WarningText", "Integration with Dispatcher Mod coming soon!", 16, Color.yellow, TextAnchor.MiddleCenter, 1f, true);
 
-            RectTransform warningRect = warningObj.GetComponent<RectTransform>();
+            RectTransform warningRect = menuObject.transform.Find("WarningText").GetComponent<RectTransform>();
             warningRect.anchorMin = new Vector2(0.1f, 0.4f);
             warningRect.anchorMax = new Vector2(0.9f, 0.5f);
-            warningRect.offsetMin = Vector2.zero;
-            warningRect.offsetMax = Vector2.zero;
 
             Button backButton = CreateButton("BackButton", "Back", 
                 new Vector2(0.3f, 0.1f), new Vector2(0.7f, 0.17f), 18, Color.white, TextAnchor.MiddleCenter, () => OnBackButtonClicked?.Invoke());
