@@ -146,8 +146,15 @@
 	</Target>
 
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
-		<!-- Package after Release build -->
-		<Exec Condition="'$(ConfigurationName)' == 'Release' And '$(OS)' == 'Windows_NT'" Command="powershell -executionpolicy bypass -Command &quot;./package.ps1&quot;" />
-		<Exec Condition="'$(ConfigurationName)' == 'Release' And '$(OS)' != 'Windows_NT'" Command="pwsh -Command &quot;./package.ps1&quot;" />
+		 <!-- Copy to game mods folder -->
+        <PropertyGroup>
+            <ModOutputPath>D:\SteamLibrary\steamapps\common\Derail Valley\Mods\TwitchChatMod</ModOutputPath>
+        </PropertyGroup>
+        <MakeDir Directories="$(ModOutputPath)" />
+        <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll;$(OutputPath)info.json" DestinationFolder="$(ModOutputPath)" />
+        
+        <!-- Package after Release build -->
+        <Exec Condition="'$(ConfigurationName)' == 'Release' And '$(OS)' == 'Windows_NT'" Command="powershell -executionpolicy bypass -Command &quot;./package.ps1&quot;" />
+        <Exec Condition="'$(ConfigurationName)' == 'Release' And '$(OS)' != 'Windows_NT'" Command="pwsh -Command &quot;./package.ps1&quot;" />
 	</Target>
 </Project>

@@ -21,10 +21,10 @@ namespace TwitchChat.Menus
             CreateTitle("Large Display Board", 18, Color.white, TextAnchor.UpperCenter);
 
             // Status Section
-            GameObject statusSection = CreateSection("Status", 25, 75);
+            GameObject statusSection = CreateSection("Status", 20, 60);
             
             // Message Section
-            GameObject messageSection = CreateSection("Message", 100, 125);
+            GameObject messageSection = CreateSection("Message", 140, 120);
 
             // Add Large Display Board items here
             // TODO: Complete Large Display Board

@@ -30,7 +30,7 @@ namespace TwitchChat.Menus
             
             authButton = CreateButton(
             string.IsNullOrEmpty(Settings.Instance.EncodedOAuthToken) ? "Request Authorization Token" : "Validate Token",
-            0, 10,
+            0, -25,
             Color.white,
             () => {
                 if (string.IsNullOrEmpty(Settings.Instance.EncodedOAuthToken))
@@ -41,7 +41,7 @@ namespace TwitchChat.Menus
             );
             authButton.transform.SetParent(authSection.transform, false);
             
-            authStatus = CreateStatusIndicator(authSection.transform, Settings.Instance.authentication_status, 0.75f, 40f);
+            authStatus = CreateStatusIndicator(authSection.transform, Settings.Instance.authentication_status, 0.55f, 15f);
 
             // WebSocket Section
             GameObject wsSection = CreateSection("WebSocket Status", 150, 120);
