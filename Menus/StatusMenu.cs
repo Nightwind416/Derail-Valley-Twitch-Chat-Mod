@@ -30,15 +30,15 @@ namespace TwitchChat.Menus
             CreateLabel(authSection.transform, "Twitch Authorization", 0, 0);
             
             authButton = CreateButton(
-                string.IsNullOrEmpty(Settings.Instance.EncodedOAuthToken) ? "Request Authorization Token" : "Validate Token",
-                -60, 0,
-                Color.white,
-                () => {
-                    if (string.IsNullOrEmpty(Settings.Instance.EncodedOAuthToken))
-                        _ = OAuthTokenManager.GetOathToken();
-                    else
-                        _ = OAuthTokenManager.ValidateAuthToken();
-                }
+            string.IsNullOrEmpty(Settings.Instance.EncodedOAuthToken) ? "Request Authorization Token" : "Validate Token",
+            0, 0,
+            Color.white,
+            () => {
+                if (string.IsNullOrEmpty(Settings.Instance.EncodedOAuthToken))
+                _ = OAuthTokenManager.GetOathToken();
+                else
+                _ = OAuthTokenManager.ValidateAuthToken();
+            }
             );
             authButton.transform.SetParent(authSection.transform, false);
             
@@ -49,22 +49,22 @@ namespace TwitchChat.Menus
             CreateLabel(wsSection.transform, "Channel Connection", 0, 0);
             
             connectButton = CreateButton(
-                WebSocketManager.IsConnectionHealthy ? "Disconnect" : "Connect",
-                -60, 30,
-                Color.white,
-                () => {
-                    if (WebSocketManager.IsConnectionHealthy)
-                        _ = WebSocketManager.DisconnectFromoWebSocket();
-                    else
-                        _ = WebSocketManager.ConnectToWebSocket();
-                }
+            WebSocketManager.IsConnectionHealthy ? "Disconnect" : "Connect",
+            -0, 0,
+            Color.white,
+            () => {
+                if (WebSocketManager.IsConnectionHealthy)
+                _ = WebSocketManager.DisconnectFromoWebSocket();
+                else
+                _ = WebSocketManager.ConnectToWebSocket();
+            }
             );
             connectButton.transform.SetParent(wsSection.transform, false);
 
             CreateLabel(wsSection.transform, "Connection Status:", 10, 50);
             connectionIndicator = CreateStatusIndicator(wsSection.transform, "■", 0.5f);
             connectionStatus = CreateStatusIndicator(wsSection.transform, 
-                WebSocketManager.IsConnectionHealthy ? "Connected" : "Disconnected", 0.5f, 155f);
+            WebSocketManager.IsConnectionHealthy ? "Connected" : "Disconnected", 0.5f, 155f);
 
             CreateLabel(wsSection.transform, "Last Message Type:", 10, 30);
             lastMessageType = CreateStatusIndicator(wsSection.transform, WebSocketManager.LastMessageType, 0.3f);
