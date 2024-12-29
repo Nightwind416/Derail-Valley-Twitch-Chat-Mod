@@ -114,10 +114,10 @@ namespace TwitchChat.Menus
             return section;
         }
 
-        protected Text CreateLabel(Transform parent, string text, float yPosition, float width = 125f, Color? textColor = null)
+        protected Text CreateLabel(Transform parent, string text, int x, int y, Color? textColor = null)
         {
             GameObject labelObj = new GameObject($"{text}Label");
-            labelObj.transform.SetParent(menuObject.transform, false);
+            labelObj.transform.SetParent(parent, false);
             
             // Create temporary text to measure width
             GameObject tempTextObj = new GameObject("TempText");

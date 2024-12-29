@@ -27,7 +27,7 @@ namespace TwitchChat.Menus
 
             // Authentication Section
             GameObject authSection = CreateSection("AuthSection", 0.7f, 0.2f);
-            CreateLabel(authSection.transform, "Twitch Authorization", 0.8f, 200f);
+            CreateLabel(authSection.transform, "Twitch Authorization", 0, 0);
             
             authButton = CreateButton(
                 string.IsNullOrEmpty(Settings.Instance.EncodedOAuthToken) ? "Request Authorization Token" : "Validate Token",
@@ -46,7 +46,7 @@ namespace TwitchChat.Menus
 
             // WebSocket Section
             GameObject wsSection = CreateSection("WebSocketSection", 0.3f, 0.35f);
-            CreateLabel(wsSection.transform, "Channel Connection", 0.8f, 200f);
+            CreateLabel(wsSection.transform, "Channel Connection", 0, 0);
             
             connectButton = CreateButton(
                 WebSocketManager.IsConnectionHealthy ? "Disconnect" : "Connect",
@@ -61,15 +61,15 @@ namespace TwitchChat.Menus
             );
             connectButton.transform.SetParent(wsSection.transform, false);
 
-            CreateLabel(wsSection.transform, "Connection Status:", 0.5f);
+            CreateLabel(wsSection.transform, "Connection Status:", 10, 50);
             connectionIndicator = CreateStatusIndicator(wsSection.transform, "■", 0.5f);
             connectionStatus = CreateStatusIndicator(wsSection.transform, 
                 WebSocketManager.IsConnectionHealthy ? "Connected" : "Disconnected", 0.5f, 155f);
 
-            CreateLabel(wsSection.transform, "Last Message Type:", 0.3f);
+            CreateLabel(wsSection.transform, "Last Message Type:", 10, 30);
             lastMessageType = CreateStatusIndicator(wsSection.transform, WebSocketManager.LastMessageType, 0.3f);
 
-            CreateLabel(wsSection.transform, "Last Chat Message:", 0.1f);
+            CreateLabel(wsSection.transform, "Last Chat Message:", 10, 10);
             lastChatMessage = CreateStatusIndicator(wsSection.transform, WebSocketManager.LastChatMessage, 0.1f);
 
             Button backButton = CreateButton("Back", 0, -125, Color.white, () => OnBackButtonClicked?.Invoke());
