@@ -97,7 +97,7 @@ namespace TwitchChat.Menus
             titleRect.offsetMax = Vector2.zero;
         }
 
-        protected GameObject CreateSection(string name, float yPosition, float height)
+        protected GameObject CreateSection(string name, int y, int height)
         {
             GameObject section = new GameObject(name);
             section.transform.SetParent(menuObject.transform, false);
@@ -106,10 +106,10 @@ namespace TwitchChat.Menus
             sectionImage.color = new Color(0.2f, 0.2f, 0.2f, 0.4f);
             
             RectTransform rect = section.GetComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0.05f, yPosition);
-            rect.anchorMax = new Vector2(0.95f, yPosition + height);
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
+            rect.anchorMin = new Vector2(0.05f, 0.5f);  // Center vertically
+            rect.anchorMax = new Vector2(0.95f, 0.5f);  // Center vertically
+            rect.sizeDelta = new Vector2(0, height);    // Set explicit height
+            rect.anchoredPosition = new Vector2(0, y);  // Set y position in pixels
             
             return section;
         }
