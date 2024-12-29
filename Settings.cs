@@ -111,20 +111,7 @@ namespace TwitchChat
         private int message4ColorIndex = 0;
         private int message5ColorIndex = 0;
 
-        // Method to get announcement type by message number
-        // public string GetAnnouncementType(int messageNumber)
-        // {
-        //     int colorIndex = messageNumber switch
-        //     {
-        //         1 => message1ColorIndex,
-        //         2 => message2ColorIndex,
-        //         3 => message3ColorIndex,
-        //         4 => message4ColorIndex,
-        //         5 => message5ColorIndex,
-        //         _ => 0
-        //     };
-        //     return ColorOptions[colorIndex];
-        // }
+        public string[] activeMenus = ["Main", "Main", "Main", "Main", "Main"];
 
         private void CycleColor(ref int colorIndex) {
             colorIndex = (colorIndex + 1) % ColorOptions.Length;
@@ -146,6 +133,11 @@ namespace TwitchChat
         // Add this field near the other private fields at the top of the Settings class
         private bool debugSectionExpanded = false;
         public bool processOwnMessages = false;  // Add this new property
+
+        private void SetDefaults()
+        {
+            activeMenus = ["Main", "Main", "Main", "Main", "Main"];
+        }
 
         /// <summary>
         /// Draws the mod configuration UI using Unity's IMGUI system.

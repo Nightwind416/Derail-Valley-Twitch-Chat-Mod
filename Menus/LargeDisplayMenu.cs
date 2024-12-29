@@ -3,23 +3,23 @@ using UnityEngine.UI;
 
 namespace TwitchChat.Menus
 {
-    public class CustomCommandsMenu : BaseMenu
+    public class LargeDisplayBoard : BaseMenu
     {
         public delegate void OnBackButtonClickedHandler();
         public event OnBackButtonClickedHandler OnBackButtonClicked;
 
-        public CustomCommandsMenu(Transform parent) : base(parent)
+        public LargeDisplayBoard(Transform parent) : base(parent)
         {
-            CreateCustomCommandsMenu();
+            CreateLargeDisplayBoard();
         }
 
-        private void CreateCustomCommandsMenu()
+        private void CreateLargeDisplayBoard()
         {
             // Title
-            CreateTitle("Custom Commands", 18, Color.white, TextAnchor.UpperCenter);
+            CreateTitle("Large Display Board", 18, Color.white, TextAnchor.UpperCenter);
 
-            // Add Custom Commands menu items here
-            // TODO: Complete Custom Commands menu
+            // Add Large Display Board items here
+            // TODO: Complete Large Display Board
 
             // Back button
             Button backButton = CreateButton("BackButton", "Back", new Vector2(0.3f, 0.05f), new Vector2(0.7f, 0.12f), 18, Color.white, TextAnchor.MiddleCenter, () => OnBackButtonClicked?.Invoke());
