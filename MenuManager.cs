@@ -226,8 +226,8 @@ namespace TwitchChat
             // Change anchor points to top-left (0,1)
             panelRect.anchorMin = new Vector2(0f, 1f);
             panelRect.anchorMax = new Vector2(0f, 1f);
-            // Change pivot to top-left (0,1)
-            panelRect.pivot = new Vector2(0f, 1f);
+            // Keep pivot in center (0.5,0.5) for rotation around center
+            panelRect.pivot = new Vector2(0.5f, 0.5f);
             panelRect.localPosition = menuConfigs[MenuType.Main].PanelPosition;
             panelRect.localRotation = Quaternion.Euler(menuConfigs[MenuType.Main].PanelRotationOffset);
 

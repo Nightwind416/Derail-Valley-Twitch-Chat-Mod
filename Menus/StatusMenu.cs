@@ -26,7 +26,7 @@ namespace TwitchChat.Menus
             CreateTitle("Status Menu", 18, Color.white, TextAnchor.UpperCenter);
 
             // Authentication Section
-            GameObject authSection = CreateSection("AuthSection", 0.7f, 0.2f);
+            GameObject authSection = CreateSection("AuthSection", 150, 80);
             CreateLabel(authSection.transform, "Twitch Authorization", 0, 0);
             
             authButton = CreateButton(
@@ -45,7 +45,7 @@ namespace TwitchChat.Menus
             authStatus = CreateStatusIndicator(authSection.transform, Settings.Instance.authentication_status, 0.2f);
 
             // WebSocket Section
-            GameObject wsSection = CreateSection("WebSocketSection", 0.3f, 0.35f);
+            GameObject wsSection = CreateSection("WebSocketSection", -100, 200);
             CreateLabel(wsSection.transform, "Channel Connection", 0, 0);
             
             connectButton = CreateButton(

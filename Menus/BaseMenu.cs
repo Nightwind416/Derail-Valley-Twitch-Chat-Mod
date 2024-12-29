@@ -22,7 +22,7 @@ namespace TwitchChat.Menus
             menuObject.transform.SetParent(parent, false);
             
             Image panelImage = menuObject.AddComponent<Image>();
-            panelImage.color = new Color(0, 0, 0, 0.2f);
+            panelImage.color = new Color(0, 0, 0, 0.3f);
             
             rectTransform = menuObject.GetComponent<RectTransform>();
             rectTransform.anchorMin = Vector2.zero;
@@ -47,7 +47,7 @@ namespace TwitchChat.Menus
             GameObject.Destroy(tempTextObj);
             
             Image buttonImage = buttonObj.AddComponent<Image>();
-            buttonImage.color = new Color(0.2f, 0.2f, 0.2f, 0.6f);
+            buttonImage.color = new Color(0, 0, 0, 0.75f);
             
             Button button = buttonObj.AddComponent<Button>();
             if (onClick != null)
@@ -103,7 +103,7 @@ namespace TwitchChat.Menus
             section.transform.SetParent(menuObject.transform, false);
             
             Image sectionImage = section.AddComponent<Image>();
-            sectionImage.color = new Color(0.2f, 0.2f, 0.2f, 0.4f);
+            sectionImage.color = new Color(0, 0, 0, 0.5f);
             
             RectTransform rect = section.GetComponent<RectTransform>();
             rect.anchorMin = new Vector2(0.05f, 0.5f);  // Center vertically
