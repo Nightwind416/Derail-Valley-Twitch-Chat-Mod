@@ -223,10 +223,12 @@ namespace TwitchChat
             menuPanel.transform.SetParent(menuCanvases[index]!.transform, false);
             RectTransform panelRect = menuPanel.AddComponent<RectTransform>();
             panelRect.sizeDelta = menuConfigs[MenuType.Main].PanelSize;
-            panelRect.anchorMin = new Vector2(0.5f, 0.5f);
-            panelRect.anchorMax = new Vector2(0.5f, 0.5f);
-            panelRect.pivot = new Vector2(0.5f, 0.5f);
-            panelRect.localPosition = menuConfigs[MenuType.Main].PanelPosition + new Vector2(0, -0.1f);
+            // Change anchor points to top-left (0,1)
+            panelRect.anchorMin = new Vector2(0f, 1f);
+            panelRect.anchorMax = new Vector2(0f, 1f);
+            // Change pivot to top-left (0,1)
+            panelRect.pivot = new Vector2(0f, 1f);
+            panelRect.localPosition = menuConfigs[MenuType.Main].PanelPosition;
             panelRect.localRotation = Quaternion.Euler(menuConfigs[MenuType.Main].PanelRotationOffset);
 
             // Create all menus for this instance - now parenting to panel instead of canvas
