@@ -24,7 +24,7 @@ namespace TwitchChat.Menus
             // TODO: Complete SmallDisplayBoard
 
             // Back button
-            Button backButton = CreateButton("BackButton", "Back", 0, -200, 18, Color.white, TextAnchor.MiddleCenter, () => OnBackButtonClicked?.Invoke());
+            Button backButton = CreateButton("Back", 0, -125, Color.white, () => OnBackButtonClicked?.Invoke());
         }
     }
 }

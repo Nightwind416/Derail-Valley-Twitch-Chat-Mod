@@ -27,7 +27,7 @@ namespace TwitchChat.Menus
             CreateSettingsTexts();
             
             // Back button
-            CreateButton("BackButton", "Back", 0, -200, 18, Color.white, TextAnchor.MiddleCenter, () => OnBackButtonClicked?.Invoke());
+            CreateButton("Back", 0, -125, Color.white, () => OnBackButtonClicked?.Invoke());
         }
 
         private void CreateSettingsTexts()

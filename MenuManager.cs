@@ -115,6 +115,9 @@ namespace TwitchChat
                         Settings.Instance.messageDuration,
                         WebSocketManager.LastChatMessage
                     );
+                    
+                    // Add this line to update the status menu
+                    statusMenus[i]?.Update();
 
                     HandleLicenseAttachment(i);
                     HandlePaperVisibility(i);

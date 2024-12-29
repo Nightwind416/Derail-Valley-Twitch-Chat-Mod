@@ -31,13 +31,23 @@ namespace TwitchChat.Menus
             rectTransform.offsetMax = Vector2.zero;
         }
 
-        protected Button CreateButton(string name, string text, int x, int y, int fontSize = 18, Color? textColor = null, TextAnchor alignment = TextAnchor.MiddleCenter, UnityAction onClick = null)
+        protected Button CreateButton(string text, int x, int y, Color? textColor = null, UnityAction onClick = null)
         {
-            GameObject buttonObj = new GameObject(name);
+            GameObject buttonObj = new GameObject($"{text}Button");
             buttonObj.transform.SetParent(menuObject.transform, false);
             
+            // Create temporary text to measure width
+            GameObject tempTextObj = new GameObject("TempText");
+            Text tempText = tempTextObj.AddComponent<Text>();
+            tempText.text = text;
+            tempText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            tempText.fontSize = 18;
+            tempText.cachedTextGenerator.Populate(text, tempText.GetGenerationSettings(Vector2.zero));
+            float textWidth = tempText.cachedTextGenerator.GetPreferredWidth(text, tempText.GetGenerationSettings(Vector2.zero));
+            GameObject.Destroy(tempTextObj);
+            
             Image buttonImage = buttonObj.AddComponent<Image>();
-            buttonImage.color = new Color(0.2f, 0.2f, 0.2f, 1f);
+            buttonImage.color = new Color(0.2f, 0.2f, 0.2f, 0.8f);
             
             Button button = buttonObj.AddComponent<Button>();
             if (onClick != null)
@@ -50,15 +60,15 @@ namespace TwitchChat.Menus
             Text buttonText = buttonTextObj.AddComponent<Text>();
             buttonText.text = text;
             buttonText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            buttonText.fontSize = fontSize;
-            buttonText.alignment = alignment;
+            buttonText.fontSize = 18;
+            buttonText.alignment = TextAnchor.MiddleCenter;
             buttonText.color = textColor ?? Color.white;
             
             RectTransform buttonRect = buttonObj.GetComponent<RectTransform>();
             buttonRect.anchorMin = new Vector2(0.5f, 0.5f);
             buttonRect.anchorMax = new Vector2(0.5f, 0.5f);
-            buttonRect.sizeDelta = new Vector2(100, 50); // Fixed size
-            buttonRect.anchoredPosition = new Vector2(x, y); // Direct position
+            buttonRect.sizeDelta = new Vector2(textWidth + 20, 30); // 20 pixels padding around text
+            buttonRect.anchoredPosition = new Vector2(x, y);
             
             RectTransform textRect = buttonTextObj.GetComponent<RectTransform>();
             textRect.anchorMin = Vector2.zero;
@@ -185,6 +195,64 @@ namespace TwitchChat.Menus
             rect.offsetMax = Vector2.zero;
             
             return text;
+        }
+
+        protected GameObject CreateSection(string name, float yPosition, float height)
+        {
+            GameObject section = new GameObject(name);
+            section.transform.SetParent(menuObject.transform, false);
+            
+            Image sectionImage = section.AddComponent<Image>();
+            sectionImage.color = new Color(0.2f, 0.2f, 0.2f, 0.8f);
+            
+            RectTransform rect = section.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.1f, yPosition);
+            rect.anchorMax = new Vector2(0.9f, yPosition + height);
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+            
+            return section;
+        }
+
+        protected Text CreateLabel(Transform parent, string text, float yPosition, float width = 125f, Color? textColor = null)
+        {
+            GameObject labelObj = new GameObject($"{text}Label");
+            labelObj.transform.SetParent(parent, false);
+            
+            Text label = labelObj.AddComponent<Text>();
+            label.text = text;
+            label.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            label.fontSize = 14;
+            label.alignment = TextAnchor.MiddleLeft;
+            label.color = textColor ?? Color.white;
+            
+            RectTransform rect = labelObj.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0, yPosition);
+            rect.anchorMax = new Vector2(0, yPosition);
+            rect.sizeDelta = new Vector2(width, 20);
+            rect.anchoredPosition = new Vector2(10, 0);
+            
+            return label;
+        }
+
+        protected Text CreateStatusIndicator(Transform parent, string text, float yPosition, float xOffset = 135f)
+        {
+            GameObject statusObj = new GameObject($"{text}Status");
+            statusObj.transform.SetParent(parent, false);
+            
+            Text status = statusObj.AddComponent<Text>();
+            status.text = text;
+            status.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            status.fontSize = 14;
+            status.alignment = TextAnchor.MiddleLeft;
+            
+            RectTransform rect = statusObj.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0, yPosition);
+            rect.anchorMax = new Vector2(1, yPosition);
+            rect.sizeDelta = new Vector2(0, 20);
+            rect.anchoredPosition = new Vector2(xOffset, 0);
+            
+            return status;
         }
 
         public virtual void Show() => menuObject.SetActive(true);
