@@ -7,7 +7,6 @@ namespace TwitchChat.Menus
     {
         private GameObject usernameInput;
         private GameObject durationInput;
-        private Text messageText;
 
         public delegate void OnBackButtonClickedHandler();
         public event OnBackButtonClickedHandler OnBackButtonClicked;
@@ -24,29 +23,30 @@ namespace TwitchChat.Menus
             // Title
             CreateTitle("Settings Menu", 18, Color.white, TextAnchor.UpperCenter);
 
-            // Settings Section
-            GameObject settingsSection = CreateSection("Settings", 25, 200, false);
-            RectTransform sectionRect = settingsSection.GetComponent<RectTransform>();
+            // Back button
+            Button backButton = CreateButton(menuObject.transform, " X ", 190, 10, Color.white, () => OnBackButtonClicked?.Invoke());
+
+            // Setup Section
+            GameObject settingsSection = CreateSection("Setup", 25, 80);
+            RectTransform settingsSectionRect = settingsSection.GetComponent<RectTransform>();
 
             // Username Label
-            CreateLabel(settingsSection.transform, "Username:", 15, -10, Color.white);
+            CreateLabel(settingsSection.transform, "Username:", 10, 30, Color.white);
             
-            // Username input field
-            CreateTextInput(settingsSection.transform, 5, 50, 100, "");
-            usernameInput = textInputField; // Store reference to current input field
+            // Username input
+            CreateTextInput(settingsSection.transform, 20, 50, 140, "");
+            usernameInput = textInputField;
 
+            // Notifications Section
+            GameObject notificationSection = CreateSection("Notifications", 125, 80);
+            RectTransform notificationSectionRect = notificationSection.GetComponent<RectTransform>();
+            
             // Duration Label
-            CreateLabel(settingsSection.transform, "Duration:", 15, -50, Color.white);
+            CreateLabel(notificationSection.transform, "Duration:", 10, 30, Color.white);
             
-            // Duration input field
-            CreateTextInput(settingsSection.transform, 5, 10, 100, "");
-            durationInput = textInputField; // Store reference to current input field
-
-            // Message Label
-            CreateLabel(settingsSection.transform, "Last Message:", 15, -90, Color.white);
-
-            // Back button
-            CreateButton("Back", 0, -125, Color.white, () => OnBackButtonClicked?.Invoke());
+            // Duration input
+            CreateTextInput(notificationSection.transform, 20, 50, 50, "");
+            durationInput = textInputField;
         }
 
         public void UpdateSettingsMenuValues(string username, float duration, string lastMessage)
@@ -59,11 +59,6 @@ namespace TwitchChat.Menus
             if (durationInput != null)
             {
                 durationInput.GetComponent<UnityEngine.UI.InputField>().text = duration.ToString();
-            }
-
-            if (messageText != null)
-            {
-                messageText.text = lastMessage;
             }
         }
 

@@ -17,6 +17,9 @@ namespace TwitchChat.Menus
         {
             // Dimensions - 200x300
             
+            // Back button
+            Button backButton = CreateButton(menuObject.transform, " X ", 190, 10, Color.white, () => OnBackButtonClicked?.Invoke());
+            
             // Title
             CreateTitle("Small Display Board", 18, Color.white, TextAnchor.UpperCenter);
 
@@ -25,9 +28,6 @@ namespace TwitchChat.Menus
             
             // Add SmallDisplayBoard items here
             // TODO: Complete SmallDisplayBoard
-
-            // Back button
-            Button backButton = CreateButton("Back", 0, -125, Color.white, () => OnBackButtonClicked?.Invoke());
         }
     }
 }

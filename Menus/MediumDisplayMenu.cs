@@ -20,6 +20,9 @@ namespace TwitchChat.Menus
             // Title
             CreateTitle("Medium Display Board", 18, Color.white, TextAnchor.UpperCenter);
 
+            // Back button
+            Button backButton = CreateButton(menuObject.transform, " X ", 490, 10, Color.white, () => OnBackButtonClicked?.Invoke());
+
             // Status Section
             GameObject statusSection = CreateSection("Status", 20, 80);
             
@@ -28,9 +31,6 @@ namespace TwitchChat.Menus
             
             // Add Medium Display Board items here
             // TODO: Complete Medium Display Board
-
-            // Back button
-            Button backButton = CreateButton("Back", 0, -225, Color.white, () => OnBackButtonClicked?.Invoke());
         }
     }
 }

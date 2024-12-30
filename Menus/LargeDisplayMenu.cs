@@ -20,6 +20,9 @@ namespace TwitchChat.Menus
             // Title
             CreateTitle("Large Display Board", 18, Color.white, TextAnchor.UpperCenter);
 
+            // Back button
+            Button backButton = CreateButton(menuObject.transform, " X ", 990, 10, Color.white, () => OnBackButtonClicked?.Invoke());
+
             // Status Section
             GameObject statusSection = CreateSection("Status", 20, 60);
             
@@ -28,9 +31,6 @@ namespace TwitchChat.Menus
 
             // Add Large Display Board items here
             // TODO: Complete Large Display Board
-
-            // Back button
-            Button backButton = CreateButton("Back", 0, -320, Color.white, () => OnBackButtonClicked?.Invoke());
         }
     }
 }

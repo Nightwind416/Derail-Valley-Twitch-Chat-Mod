@@ -23,14 +23,24 @@ namespace TwitchChat.Menus
 
         private void CreateStatusMenu()
         {
+            // Dimensions - 200x300
+
+            // Title
             CreateTitle("Status Menu", 18, Color.white, TextAnchor.UpperCenter);
+
+            // Back button
+            Button backButton = CreateButton(menuObject.transform, " X ", 190, 10, Color.white, () => OnBackButtonClicked?.Invoke());
 
             // Authentication Section
             GameObject authSection = CreateSection("Authentication Status", 25, 100);
+
+            // Authentication Status Message
+            authStatus = CreateMessageDisplay(authSection.transform, Settings.Instance.authentication_status, 25, 35);
             
-            authButton = CreateButton(
+            // Authentication Button
+            authButton = CreateButton(authSection.transform,
             string.IsNullOrEmpty(Settings.Instance.EncodedOAuthToken) ? "Request Authorization Token" : "Validate Token",
-            0, -25,
+            100, 75,
             Color.white,
             () => {
                 if (string.IsNullOrEmpty(Settings.Instance.EncodedOAuthToken))
@@ -39,16 +49,22 @@ namespace TwitchChat.Menus
                 _ = OAuthTokenManager.ValidateAuthToken();
             }
             );
-            authButton.transform.SetParent(authSection.transform, false);
-            
-            authStatus = CreateStatusIndicator(authSection.transform, Settings.Instance.authentication_status, 0.55f, 15f);
+            // authButton.transform.SetParent(authSection.transform, false);
 
             // WebSocket Section
             GameObject wsSection = CreateSection("WebSocket Status", 150, 120);
             
-            connectButton = CreateButton(
+            // Connection Status Label
+            CreateLabel(wsSection.transform, "Connection Status:", 10, 50);
+
+            // Connection Status Indicator
+            connectionIndicator = CreateMessageDisplay(wsSection.transform, "■", 25, 60);
+            connectionStatus = CreateMessageDisplay(wsSection.transform, WebSocketManager.IsConnectionHealthy ? "Connected" : "Disconnected", 25, 80);
+            
+            // Connection Button
+            connectButton = CreateButton(wsSection.transform,
             WebSocketManager.IsConnectionHealthy ? "Disconnect" : "Connect",
-            0, -25,
+            50, 35,
             Color.white,
             () => {
                 if (WebSocketManager.IsConnectionHealthy)
@@ -59,18 +75,13 @@ namespace TwitchChat.Menus
             );
             connectButton.transform.SetParent(wsSection.transform, false);
 
-            CreateLabel(wsSection.transform, "Connection Status:", 10, -50);
-            connectionIndicator = CreateStatusIndicator(wsSection.transform, "■", 0.5f);
-            connectionStatus = CreateStatusIndicator(wsSection.transform, 
-            WebSocketManager.IsConnectionHealthy ? "Connected" : "Disconnected", 0.5f, 155f);
+            // Last Message Type
+            CreateLabel(wsSection.transform, "Last Message Type:", 10, 100);
+            lastMessageType = CreateMessageDisplay(wsSection.transform, WebSocketManager.LastMessageType, 25, 110);
 
-            CreateLabel(wsSection.transform, "Last Message Type:", 10, -80);
-            lastMessageType = CreateStatusIndicator(wsSection.transform, WebSocketManager.LastMessageType, 0.3f);
-
-            CreateLabel(wsSection.transform, "Last Chat Message:", 10, -100);
-            lastChatMessage = CreateStatusIndicator(wsSection.transform, WebSocketManager.LastChatMessage, 0.1f);
-
-            Button backButton = CreateButton("Back", 0, -125, Color.white, () => OnBackButtonClicked?.Invoke());
+            // Last Chat Message
+            CreateLabel(wsSection.transform, "Last Chat Message:", 10, 120);
+            lastChatMessage = CreateMessageDisplay(wsSection.transform, WebSocketManager.LastChatMessage, 25, 125);
         }
 
         public void UpdateStatusMenuValues()

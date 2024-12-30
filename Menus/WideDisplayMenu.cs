@@ -20,6 +20,9 @@ namespace TwitchChat.Menus
             // Title
             CreateTitle("Wide Display Board", 18, Color.white, TextAnchor.UpperCenter);
 
+            // Back button
+            Button backButton = CreateButton(menuObject.transform, " X ", 790, 10, Color.white, () => OnBackButtonClicked?.Invoke());
+
             // Message Section
             GameObject messageSection1 = CreateSection("Message", 20, 80);
             
@@ -28,9 +31,6 @@ namespace TwitchChat.Menus
 
             // Add WideDisplayBoard items here
             // TODO: Complete WideDisplayBoard
-
-            // Back button
-            Button backButton = CreateButton("Back", 0, -75, Color.white, () => OnBackButtonClicked?.Invoke());
         }
     }
 }

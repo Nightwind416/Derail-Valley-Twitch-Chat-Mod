@@ -26,16 +26,88 @@ namespace TwitchChat.Menus
             panelImage.color = new Color(0, 0, 0, 0.3f);
             
             rectTransform = menuObject.GetComponent<RectTransform>();
-            rectTransform.anchorMin = Vector2.zero;
-            rectTransform.anchorMax = Vector2.one;
+            rectTransform.anchorMin = new Vector2(0, 0);
+            rectTransform.anchorMax = new Vector2(1, 1);
             rectTransform.offsetMin = Vector2.zero;
             rectTransform.offsetMax = Vector2.zero;
+            rectTransform.pivot = new Vector2(0, 1);
+            rectTransform.anchoredPosition = Vector2.zero;
+        }
+        protected void CreateTitle(string titleText, int fontSize = 16, Color? textColor = null, TextAnchor textAlignment = TextAnchor.UpperCenter)
+        {
+            GameObject titleObj = new GameObject("Title");
+            titleObj.transform.SetParent(menuObject.transform, false);
+            Text title = titleObj.AddComponent<Text>();
+            title.text = titleText;
+            title.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            title.fontSize = fontSize;
+            title.alignment = textAlignment;
+            title.color = textColor ?? Color.white;
+            
+            RectTransform titleRect = titleObj.GetComponent<RectTransform>();
+            titleRect.anchorMin = new Vector2(0, 1);
+            titleRect.anchorMax = new Vector2(1, 1);
+            titleRect.offsetMin = new Vector2(0, -40);
+            titleRect.offsetMax = Vector2.zero;
         }
 
-        protected Button CreateButton(string text, int x, int y, Color? textColor = null, UnityAction onClick = null)
+        protected GameObject CreateSection(string name, int yPosition, int height, bool createLabel = true)
+        {
+            GameObject section = new GameObject(name);
+            section.transform.SetParent(menuObject.transform, false);
+            
+            Image sectionImage = section.AddComponent<Image>();
+            sectionImage.color = new Color(0, 0, 0, 0.5f);
+            
+            RectTransform rect = section.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0, 1);
+            rect.anchorMax = new Vector2(1, 1);
+            rect.pivot = new Vector2(0, 1);
+            rect.sizeDelta = new Vector2(0, height);
+            rect.anchoredPosition = new Vector2(10, -yPosition);
+            
+            if (createLabel)
+            {
+                CreateLabel(section.transform, name, 10, 10, Color.gray);
+            }
+            
+            return section;
+        }
+        protected Text CreateLabel(Transform parent, string text, int xPosition, int yPosition, Color? textColor = null)
+        {
+            GameObject labelObj = new GameObject($"{text}Label");
+            labelObj.transform.SetParent(parent, false);
+            
+            // Create temporary text to measure width
+            GameObject tempTextObj = new GameObject("TempText");
+            Text tempText = tempTextObj.AddComponent<Text>();
+            tempText.text = text;
+            tempText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            tempText.fontSize = 14;
+            tempText.cachedTextGenerator.Populate(text, tempText.GetGenerationSettings(Vector2.zero));
+            float textWidth = tempText.cachedTextGenerator.GetPreferredWidth(text, tempText.GetGenerationSettings(Vector2.zero));
+            GameObject.Destroy(tempTextObj);
+            
+            Text label = labelObj.AddComponent<Text>();
+            label.text = text;
+            label.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            label.fontSize = 14;
+            label.alignment = TextAnchor.UpperLeft;
+            label.color = textColor ?? Color.white;
+            
+            RectTransform rect = labelObj.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0, 1);
+            rect.anchorMax = new Vector2(0, 1);
+            rect.pivot = new Vector2(0, 1);
+            rect.sizeDelta = new Vector2(textWidth + 10, 20);
+            rect.anchoredPosition = new Vector2(xPosition, -yPosition);
+            
+            return label;
+        }
+        protected Button CreateButton(Transform parent, string text, int xPosition, int yPosition, Color? textColor = null, UnityAction onClick = null)
         {
             GameObject buttonObj = new GameObject($"{text}Button");
-            buttonObj.transform.SetParent(menuObject.transform, false);
+            buttonObj.transform.SetParent(parent, false);
             
             // Create temporary text to measure width
             GameObject tempTextObj = new GameObject("TempText");
@@ -66,10 +138,11 @@ namespace TwitchChat.Menus
             buttonText.color = textColor ?? Color.white;
             
             RectTransform buttonRect = buttonObj.GetComponent<RectTransform>();
-            buttonRect.anchorMin = new Vector2(0.5f, 0.5f);
-            buttonRect.anchorMax = new Vector2(0.5f, 0.5f);
+            buttonRect.anchorMin = new Vector2(0, 1);
+            buttonRect.anchorMax = new Vector2(0, 1);
             buttonRect.sizeDelta = new Vector2(textWidth + 10, 20);
-            buttonRect.anchoredPosition = new Vector2(x, y);
+            buttonRect.pivot = new Vector2(0.5f, 0.5f);
+            buttonRect.anchoredPosition = new Vector2(xPosition, -yPosition);
             
             RectTransform textRect = buttonTextObj.GetComponent<RectTransform>();
             textRect.anchorMin = Vector2.zero;
@@ -80,112 +153,25 @@ namespace TwitchChat.Menus
             return button;
         }
 
-        protected void CreateTitle(string titleText, int fontSize = 16, Color? textColor = null, TextAnchor alignment = TextAnchor.UpperCenter)
+        protected Text CreateMessageDisplay(Transform parent, string text, int xPosition, int yPosition)
         {
-            GameObject titleObj = new GameObject("Title");
-            titleObj.transform.SetParent(menuObject.transform, false);
-            Text title = titleObj.AddComponent<Text>();
-            title.text = titleText;
-            title.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            title.fontSize = fontSize;
-            title.alignment = alignment;
-            title.color = textColor ?? Color.white;
+            GameObject messageDisplayObj = new GameObject($"{text}Status");
+            messageDisplayObj.transform.SetParent(parent, false);
             
-            RectTransform titleRect = titleObj.GetComponent<RectTransform>();
-            titleRect.anchorMin = new Vector2(0, 0.80f);
-            titleRect.anchorMax = new Vector2(1, 1f);
-            titleRect.offsetMin = Vector2.zero;
-            titleRect.offsetMax = Vector2.zero;
-        }
-        protected GameObject CreateSection(string name, int yFromTop, int heightInPixels, bool createLabel = true)
-        {
-            GameObject section = new GameObject(name);
-            section.transform.SetParent(menuObject.transform, false);
+            Text message = messageDisplayObj.AddComponent<Text>();
+            message.text = text;
+            message.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            message.fontSize = 12;
+            message.alignment = TextAnchor.MiddleLeft;
             
-            Image sectionImage = section.AddComponent<Image>();
-            sectionImage.color = new Color(0, 0, 0, 0.5f);
+            RectTransform rect = messageDisplayObj.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0, 1);
+            rect.anchorMax = new Vector2(0, 1);
+            rect.pivot = new Vector2(0, 1);
+            rect.sizeDelta = new Vector2(100, 20);
+            rect.anchoredPosition = new Vector2(xPosition, -yPosition);
             
-            RectTransform rect = section.GetComponent<RectTransform>();
-
-            float parentHeight = menuObject.GetComponent<RectTransform>().rect.height;
-            if (parentHeight <= 0) parentHeight = 200f; // Fallback value if parent height is invalid
-            
-            float topAnchor = 1f - (yFromTop / parentHeight);
-            float bottomAnchor = 1f - ((yFromTop + heightInPixels) / parentHeight);
-            
-            rect.anchorMin = new Vector2(0, bottomAnchor);
-            rect.anchorMax = new Vector2(1, topAnchor);
-            rect.offsetMin = new Vector2(10, 0);
-            rect.offsetMax = new Vector2(-10, 0);
-
-            // Create a container for proper child positioning
-            GameObject container = new GameObject("Container");
-            container.transform.SetParent(section.transform, false);
-            RectTransform containerRect = container.AddComponent<RectTransform>();
-            containerRect.anchorMin = new Vector2(0, 1); // Top-left anchor
-            containerRect.anchorMax = new Vector2(1, 1);
-            containerRect.pivot = new Vector2(0, 1);     // Top-left pivot
-            containerRect.sizeDelta = new Vector2(0, heightInPixels);
-            containerRect.anchoredPosition = Vector2.zero;
-            
-            if (createLabel)
-            {
-                CreateLabel(container.transform, name, 5, -5, Color.gray);
-            }
-            
-            return container;
-        }
-
-        protected Text CreateLabel(Transform parent, string text, float xPosition, float yPosition, Color? textColor = null)
-        {
-            GameObject labelObj = new GameObject($"{text}Label");
-            labelObj.transform.SetParent(parent, false);
-            
-            // Create temporary text to measure width
-            GameObject tempTextObj = new GameObject("TempText");
-            Text tempText = tempTextObj.AddComponent<Text>();
-            tempText.text = text;
-            tempText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            tempText.fontSize = 14;
-            tempText.cachedTextGenerator.Populate(text, tempText.GetGenerationSettings(Vector2.zero));
-            float textWidth = tempText.cachedTextGenerator.GetPreferredWidth(text, tempText.GetGenerationSettings(Vector2.zero));
-            GameObject.Destroy(tempTextObj);
-            
-            Text label = labelObj.AddComponent<Text>();
-            label.text = text;
-            label.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            label.fontSize = 14;
-            label.alignment = TextAnchor.UpperLeft;
-            label.color = textColor ?? Color.white;
-            
-            RectTransform rect = labelObj.GetComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0f, 1f);  // Top-left anchor
-            rect.anchorMax = new Vector2(0f, 1f);  // Top-left anchor
-            rect.pivot = new Vector2(0f, 1f);      // Top-left pivot
-            rect.sizeDelta = new Vector2(textWidth + 10, 20);
-            rect.anchoredPosition = new Vector2(xPosition, yPosition);
-            
-            return label;
-        }
-
-        protected Text CreateStatusIndicator(Transform parent, string text, float yPosition, float xOffset = 135f)
-        {
-            GameObject statusObj = new GameObject($"{text}Status");
-            statusObj.transform.SetParent(parent, false);
-            
-            Text status = statusObj.AddComponent<Text>();
-            status.text = text;
-            status.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            status.fontSize = 12;
-            status.alignment = TextAnchor.MiddleLeft;
-            
-            RectTransform rect = statusObj.GetComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0, yPosition);
-            rect.anchorMax = new Vector2(1, yPosition);
-            rect.sizeDelta = new Vector2(0, 20);
-            rect.anchoredPosition = new Vector2(xOffset, 0);
-            
-            return status;
+            return message;
         }
 
         protected void CreateTextInput(Transform parent, int xPosition, int yPosition, float width, string defaultText = "")
@@ -218,72 +204,6 @@ namespace TwitchChat.Menus
             text.alignment = TextAnchor.MiddleLeft;
 
             inputField.textComponent = text;
-        }
-
-        protected string GetTextInputValue()
-        {
-            if (textInputField == null) return string.Empty;
-            var inputField = textInputField.GetComponent<UnityEngine.UI.InputField>();
-            return inputField.text;
-        }
-
-        protected void SetTextInputValue(string value)
-        {
-            if (textInputField == null) return;
-            var inputField = textInputField.GetComponent<UnityEngine.UI.InputField>();
-            inputField.text = value;
-        }
-
-        protected void HideTextInput()
-        {
-            if (textInputField != null)
-            {
-                textInputField.SetActive(false);
-            }
-        }
-
-        protected void ShowTextInput()
-        {
-            if (textInputField != null)
-            {
-                textInputField.SetActive(true);
-            }
-        }
-
-        protected Text CreateTextElement(string name, string text, int fontSize = 12, Color? textColor = null, TextAnchor alignment = TextAnchor.UpperLeft, float scaling = 1f, bool wrapping = true)
-        {
-            GameObject textObj = new GameObject(name);
-            textObj.transform.SetParent(menuObject.transform, false);
-            Text textComponent = textObj.AddComponent<Text>();
-            textComponent.text = text;
-            textComponent.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            textComponent.fontSize = fontSize;
-            textComponent.alignment = alignment;
-            textComponent.color = textColor ?? Color.white;
-            textComponent.transform.localScale = new Vector3(scaling, scaling, scaling);
-            textComponent.horizontalOverflow = wrapping ? HorizontalWrapMode.Wrap : HorizontalWrapMode.Overflow;
-            textComponent.verticalOverflow = wrapping ? VerticalWrapMode.Truncate : VerticalWrapMode.Overflow;
-
-            RectTransform rect = textObj.GetComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0, 0);
-            rect.anchorMax = new Vector2(1, 1);
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
-
-            return textComponent;
-        }
-
-        protected void UpdateTextElement(string name, string newText)
-        {
-            Transform textTransform = menuObject.transform.Find(name);
-            if (textTransform != null)
-            {
-                Text textComponent = textTransform.GetComponent<Text>();
-                if (textComponent != null)
-                {
-                    textComponent.text = newText;
-                }
-            }
         }
 
         public virtual void Show() => menuObject.SetActive(true);

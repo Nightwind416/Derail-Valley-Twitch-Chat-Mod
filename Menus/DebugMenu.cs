@@ -20,14 +20,14 @@ namespace TwitchChat.Menus
             // Title
             CreateTitle("Debug Menu", 18, Color.white, TextAnchor.UpperCenter);
 
+            // Back button
+            Button backButton = CreateButton(menuObject.transform, " X ", 190, 10, Color.white, () => OnBackButtonClicked?.Invoke());
+
             // Debug Section
             GameObject debugSection = CreateSection("Debug", 25, 100);
 
             // Add Debug Menu menu items here
             // TODO: Complete Debug Menu menu
-
-            // Back button
-            Button backButton = CreateButton("Back", 0, -125, Color.white, () => OnBackButtonClicked?.Invoke());
         }
     }
 }

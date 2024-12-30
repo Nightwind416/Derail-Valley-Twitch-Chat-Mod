@@ -28,13 +28,13 @@ namespace TwitchChat.Menus
             CreateTitle("TwitchChatMod", 18, Color.white, TextAnchor.UpperCenter);
 
             // Menu buttons
-            CreateMenuButton("Status", 85);
-            CreateMenuButton("Settings", 50);
-            CreateMenuButton("Large Display", 15);
-            CreateMenuButton("Wide Display", -20);
-            CreateMenuButton("Medium Display", -55);
-            CreateMenuButton("Small Display", -90);
-            CreateMenuButton("Debug", -125);
+            CreateMenuButton("Status", 75);
+            CreateMenuButton("Settings", 100);
+            CreateMenuButton("Large Display", 125);
+            CreateMenuButton("Wide Display", 150);
+            CreateMenuButton("Medium Display", 175);
+            CreateMenuButton("Small Display", 200);
+            CreateMenuButton("Debug", 225);
             Main.LogEntry(methodName, "Main menu creation completed");
         }
 
@@ -43,7 +43,7 @@ namespace TwitchChat.Menus
             string methodName = MethodBase.GetCurrentMethod().Name;
             
             Main.LogEntry(methodName, $"Creating button: {text}");
-            Button button = CreateButton(text, 0, verticalPosition);
+            Button button = CreateButton(menuObject.transform, text, 100, verticalPosition);
             button.onClick.AddListener(() => {
                 Main.LogEntry(methodName, $"Button clicked: {text}");
                 MenuManager.Instance.OnMenuButtonClicked(text, menuIndex);
