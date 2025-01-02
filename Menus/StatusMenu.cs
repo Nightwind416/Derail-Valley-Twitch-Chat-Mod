@@ -37,16 +37,18 @@ namespace TwitchChat.Menus
         }
         private void CreateAuthenticationSection()
         {
+            // Dimensions - Menu width minus 20
+
             // Authentication Section
-            GameObject authSection = CreateSection("Authentication Status", 25, 85);
+            GameObject authSection = CreateSection("Authentication Status", 25, 75);
 
             // Authentication Status Message
-            authStatus = CreateTextDisplay(authSection.transform, Settings.Instance.authentication_status, 15, 30);
+            authStatus = CreateTextDisplay(authSection.transform, Settings.Instance.authentication_status, 15, 25);
             
             // Authentication Button
             authButton = CreateButton(authSection.transform,
             string.IsNullOrEmpty(Settings.Instance.EncodedOAuthToken) ? "Request Authorization Token" : "Validate Token",
-            90, 65,
+            90, 55,
             Color.white,
             () => {
                 if (string.IsNullOrEmpty(Settings.Instance.EncodedOAuthToken))
@@ -58,17 +60,19 @@ namespace TwitchChat.Menus
         }
         private void CreateWebSocketSection()
         {
+            // Dimensions - Menu width minus 20
+
             // WebSocket Section
             GameObject wsSection = CreateSection("WebSocket Status", 120, 170);
 
             // Connection Status Indicator
-            connectionIndicator = CreateTextDisplay(wsSection.transform, "■", 25, 25);
-            connectionStatus = CreateTextDisplay(wsSection.transform, WebSocketManager.IsConnectionHealthy ? "Connected" : "Disconnected", 40, 25);
+            connectionIndicator = CreateTextDisplay(wsSection.transform, "■", 25, 20);
+            connectionStatus = CreateTextDisplay(wsSection.transform, WebSocketManager.IsConnectionHealthy ? "Connected" : "Disconnected", 40, 20);
             
             // Connection Button
             connectButton = CreateButton(wsSection.transform,
             WebSocketManager.IsConnectionHealthy ? "Disconnect" : "Connect",
-            90, 55,
+            90, 50,
             Color.white,
             () => {
                 if (WebSocketManager.IsConnectionHealthy)
@@ -85,7 +89,7 @@ namespace TwitchChat.Menus
 
             // Last Chat Message
             CreateLabel(wsSection.transform, "At time:", 15, 105);
-            lastTypeReceivedTime = CreateTextDisplay(wsSection.transform, WebSocketManager.lastTypeReceivedTime.ToString("h:mm:ss tt"), 70, 105);
+            lastTypeReceivedTime = CreateTextDisplay(wsSection.transform, WebSocketManager.lastTypeReceivedTime.ToString("h:mm:ss tt"), 60, 105);
 
             // Last Chat Message
             CreateLabel(wsSection.transform, "Last Keepalive Received", 15, 130);

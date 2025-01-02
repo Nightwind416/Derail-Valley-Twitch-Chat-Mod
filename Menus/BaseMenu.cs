@@ -70,7 +70,7 @@ namespace TwitchChat.Menus
             
             if (createLabel)
             {
-            CreateLabel(section.transform, name, 10, 10, Color.gray);
+            CreateLabel(section.transform, name, 5, 5, Color.gray);
             }
             
             return section;
@@ -85,7 +85,7 @@ namespace TwitchChat.Menus
             Text tempText = tempTextObj.AddComponent<Text>();
             tempText.text = text;
             tempText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            tempText.fontSize = 14;
+            tempText.fontSize = 12;
             tempText.cachedTextGenerator.Populate(text, tempText.GetGenerationSettings(Vector2.zero));
             float textWidth = tempText.cachedTextGenerator.GetPreferredWidth(text, tempText.GetGenerationSettings(Vector2.zero));
             GameObject.Destroy(tempTextObj);
@@ -93,7 +93,7 @@ namespace TwitchChat.Menus
             Text label = labelObj.AddComponent<Text>();
             label.text = text;
             label.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            label.fontSize = 14;
+            label.fontSize = 12;
             label.alignment = TextAnchor.UpperLeft;
             label.color = textColor ?? Color.white;
             
@@ -155,7 +155,7 @@ namespace TwitchChat.Menus
             return button;
         }
 
-        protected Text CreateTextDisplay(Transform parent, string text, int xPosition, int yPosition)
+        protected Text CreateTextDisplay(Transform parent, string text, int xPosition, int yPosition, int lines = 1)
         {
             GameObject messageDisplayObj = new GameObject($"{text}Status");
             messageDisplayObj.transform.SetParent(parent, false);
@@ -164,14 +164,23 @@ namespace TwitchChat.Menus
             message.text = text;
             message.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
             message.fontSize = 12;
-            message.alignment = TextAnchor.MiddleLeft;
+            message.alignment = TextAnchor.UpperLeft;
             
+            RectTransform parentRect = parent.GetComponent<RectTransform>();
             RectTransform rect = messageDisplayObj.GetComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0, 1);
-            rect.anchorMax = new Vector2(0, 1);
             rect.pivot = new Vector2(0, 1);
-            rect.sizeDelta = new Vector2(100, 20);
+
+            float width;
+
+            rect.anchorMin = new Vector2(0, 1);
+            rect.anchorMax = new Vector2(1, 1);
+            width = parentRect.rect.width - xPosition - 5f; // 5 units buffer from right edge
             rect.anchoredPosition = new Vector2(xPosition, -yPosition);
+
+            message.horizontalOverflow = HorizontalWrapMode.Wrap;
+            message.verticalOverflow = lines > 1 ? VerticalWrapMode.Overflow : VerticalWrapMode.Truncate;
+            
+            rect.sizeDelta = new Vector2(width, 20 * lines); // 20 units height per line
             
             return message;
         }
