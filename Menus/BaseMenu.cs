@@ -63,12 +63,14 @@ namespace TwitchChat.Menus
             rect.anchorMin = new Vector2(0, 1);
             rect.anchorMax = new Vector2(1, 1);
             rect.pivot = new Vector2(0, 1);
-            rect.sizeDelta = new Vector2(0, height);
+            rect.sizeDelta = new Vector2(-20, height); // Changed from 0 to -20 to account for 10 units on each side
             rect.anchoredPosition = new Vector2(10, -yPosition);
+            rect.offsetMin = new Vector2(10, rect.offsetMin.y);
+            rect.offsetMax = new Vector2(-10, rect.offsetMax.y);
             
             if (createLabel)
             {
-                CreateLabel(section.transform, name, 10, 10, Color.gray);
+            CreateLabel(section.transform, name, 10, 10, Color.gray);
             }
             
             return section;
@@ -104,7 +106,7 @@ namespace TwitchChat.Menus
             
             return label;
         }
-        protected Button CreateButton(Transform parent, string text, int xPosition, int yPosition, Color? textColor = null, UnityAction onClick = null)
+        protected Button CreateButton(Transform parent, string text, int xPosition, int yPosition, Color? textColor = null, UnityAction onClick = null, int? width = null)
         {
             GameObject buttonObj = new GameObject($"{text}Button");
             buttonObj.transform.SetParent(parent, false);
@@ -116,7 +118,7 @@ namespace TwitchChat.Menus
             tempText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
             tempText.fontSize = 12;
             tempText.cachedTextGenerator.Populate(text, tempText.GetGenerationSettings(Vector2.zero));
-            float textWidth = tempText.cachedTextGenerator.GetPreferredWidth(text, tempText.GetGenerationSettings(Vector2.zero));
+            float textWidth = width ?? tempText.cachedTextGenerator.GetPreferredWidth(text, tempText.GetGenerationSettings(Vector2.zero));
             GameObject.Destroy(tempTextObj);
             
             Image buttonImage = buttonObj.AddComponent<Image>();
@@ -153,7 +155,7 @@ namespace TwitchChat.Menus
             return button;
         }
 
-        protected Text CreateMessageDisplay(Transform parent, string text, int xPosition, int yPosition)
+        protected Text CreateTextDisplay(Transform parent, string text, int xPosition, int yPosition)
         {
             GameObject messageDisplayObj = new GameObject($"{text}Status");
             messageDisplayObj.transform.SetParent(parent, false);

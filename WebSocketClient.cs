@@ -18,7 +18,7 @@ namespace TwitchChat
     {
         private static ClientWebSocket webSocketClient = new();
         private static string session_id = string.Empty;
-        private static DateTime lastKeepaliveTime = DateTime.UtcNow;
+        public static DateTime lastKeepaliveTime = DateTime.UtcNow;
         private static bool isConnectionHealthy = false;
         private static Timer? connectionMonitorTimer;
         public static bool IsConnectionHealthy => isConnectionHealthy;
@@ -27,6 +27,7 @@ namespace TwitchChat
         private static string lastChatMessage = "No messages received";
         public static string LastMessageType => lastMessageType;
         public static string LastChatMessage => lastChatMessage;
+        public static DateTime lastTypeReceivedTime = DateTime.UtcNow;
 
         private static readonly SemaphoreSlim reconnectLock = new(1, 1);
         private static int reconnectAttempts = 0;
