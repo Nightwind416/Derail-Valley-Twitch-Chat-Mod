@@ -27,11 +27,12 @@ namespace TwitchChat.Menus
 
         private void CreateSettingsSection()
         {
-            GameObject settingsSection = CreateSection("Settings", 25, 50);
+            GameObject settingsSection = CreateSection("Settings", 25, 100);
             
-            // Standard Messages Settings
-            CreateTextDisplay(settingsSection.transform, "Future development", 25, 25, Color.yellow);
-            // TODO: Add Standard Messages Settings content
+            // Timed Messages Settings
+            CreateTextDisplay(settingsSection.transform, "Not yet integrated into the panel system. Utilize the Unity Mod Manager menu for Timed Messages.", 10, 25, Color.yellow, 4);
+            
+            // TODO: Add Timed Messages Settings content
         }
     }
 }

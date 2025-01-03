@@ -130,7 +130,7 @@ namespace TwitchChat
                     // wideDisplayBoards[i]?.UpdateWideDisplayBoardValues();
                     // smallDisplayBoards[i]?.UpdateSmallDisplayBoardValues();
                     StandardMessagesMenus[i]?.UpdateStandardMessagesMenuValues();
-                    // CommandMessagesMenus[i]?.UpdateCommandMessagesMenuValues();
+                    CommandMessagesMenus[i]?.UpdateCommandMessagesMenuValues();
                     // TimedMessagesMenus[i]?.UpdateTimedMessagesMenuValues();
                     // configurationMenus[i]?.UpdateConfigurationMenuValues();
                     // debugMenus[i]?.UpdateDebugMenuValues();

@@ -47,9 +47,9 @@ namespace TwitchChat
         public string disconnectMessage = "TwitchChatMod disconnected! Messages are no longer being relayed to in-game panels.";
 
         // Command Messages Settings
-        public bool commandMessageActive = true;
-        public string commandMessage = "Channel Commands:  !info";
-        public bool infoMessageActive = true;
+        public bool commandsMessageEnabled = true;
+        public string commandsMessage = "Channel Commands:  !info";
+        public bool infoMessageEnabled = true;
         public string infoMessage = "Please keep chat clean and respectful. Use !commands to see enabled channel commands.";
 
         public bool customCommand1Active = false;
@@ -191,15 +191,15 @@ namespace TwitchChat
                 GUILayout.Space(10);
                 
                 GUILayout.BeginHorizontal();
-                    Instance.commandMessageActive = GUILayout.Toggle(Instance.commandMessageActive, "", GUILayout.Width(20));
+                    Instance.commandsMessageEnabled = GUILayout.Toggle(Instance.commandsMessageEnabled, "", GUILayout.Width(20));
                     GUILayout.Label("!Commands Message: ", GUILayout.Width(150));
-                    GUILayout.Label(Instance.commandMessage);
+                    GUILayout.Label(Instance.commandsMessage);
                 GUILayout.EndHorizontal();
                 
                 GUILayout.BeginHorizontal();
-                    bool prevInfoActive = Instance.infoMessageActive;
-                    Instance.infoMessageActive = GUILayout.Toggle(Instance.infoMessageActive, "", GUILayout.Width(20));
-                    if (prevInfoActive != Instance.infoMessageActive)
+                    bool prevInfoActive = Instance.infoMessageEnabled;
+                    Instance.infoMessageEnabled = GUILayout.Toggle(Instance.infoMessageEnabled, "", GUILayout.Width(20));
+                    if (prevInfoActive != Instance.infoMessageEnabled)
                         CommandMessages.UpdateCommandsResponse();
                     GUILayout.Label("!Info Message: ", GUILayout.Width(150));
                     Instance.infoMessage = GUILayout.TextField(Instance.infoMessage);
@@ -462,13 +462,13 @@ namespace TwitchChat
     /// </summary>
     public class CommandMessages
     {
-        public static string commandMessage => Settings.Instance.commandMessage;
+        public static string commandMessage => Settings.Instance.commandsMessage;
         public static string infoMessage => Settings.Instance.infoMessage;
         public static void UpdateCommandsResponse()
         {
             var enabledCommands = new List<string>();
             
-            if (Settings.Instance.infoMessageActive) enabledCommands.Add("!info");
+            if (Settings.Instance.infoMessageEnabled) enabledCommands.Add("!info");
             if (Settings.Instance.customCommand1Active) enabledCommands.Add($"!{Settings.Instance.customCommand1Trigger}");
             if (Settings.Instance.customCommand2Active) enabledCommands.Add($"!{Settings.Instance.customCommand2Trigger}");
             if (Settings.Instance.customCommand3Active) enabledCommands.Add($"!{Settings.Instance.customCommand3Trigger}");
@@ -476,7 +476,7 @@ namespace TwitchChat
             if (Settings.Instance.customCommand5Active) enabledCommands.Add($"!{Settings.Instance.customCommand5Trigger}");
 
             string response = "Channel Commands:" + string.Join("  ", enabledCommands);
-            Settings.Instance.commandMessage = response;
+            Settings.Instance.commandsMessage = response;
         }
     }
 

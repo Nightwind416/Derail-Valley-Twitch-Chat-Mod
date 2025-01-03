@@ -62,7 +62,7 @@ namespace TwitchChat.Menus
             CreateHorizontalBar(notificationSection.transform, 130);
             
             // Always or only away from display boards?
-            CreateLabel(notificationSection.transform, "Location", 10, 140, Color.white);
+            CreateLabel(notificationSection.transform, "Min distance from boards", 10, 140, Color.white);
 
             // Location multi-selction
             CreateTextDisplay(notificationSection.transform, "Future development", 25, 160, Color.yellow);

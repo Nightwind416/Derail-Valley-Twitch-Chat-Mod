@@ -134,13 +134,13 @@ namespace TwitchChat
             {
                 string lowerMessage = message.ToLower();
                 
-                if (lowerMessage == "!commands" && settings.commandMessageActive)
+                if (lowerMessage == "!commands" && settings.commandsMessageEnabled)
                 {
-                    _ = TwitchEventHandler.SendWhisper(sender, settings.commandMessage);
+                    _ = TwitchEventHandler.SendWhisper(sender, settings.commandsMessage);
                     return;
                 }
                 
-                if (lowerMessage == "!info" && settings.infoMessageActive)
+                if (lowerMessage == "!info" && settings.infoMessageEnabled)
                 {
                     _ = TwitchEventHandler.SendWhisper(sender, settings.infoMessage);
                     return;
