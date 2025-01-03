@@ -29,6 +29,9 @@ namespace TwitchChat
         private MediumDisplayBoard?[] mediumDisplayBoards = new MediumDisplayBoard?[5];
         private WideDisplayBoard?[] wideDisplayBoards = new WideDisplayBoard?[5];
         private SmallDisplayBoard?[] smallDisplayBoards = new SmallDisplayBoard?[5];
+        private StandardMessagesMenu?[] StandardMessagesMenus = new StandardMessagesMenu?[5];
+        private CommandMessagesMenu?[] CommandMessagesMenus = new CommandMessagesMenu?[5];
+        private TimedMessagesMenu?[] TimedMessagesMenus = new TimedMessagesMenu?[5];
         private ConfigurationMenu?[] configurationMenus = new ConfigurationMenu?[5];
         private DebugMenu?[] debugMenus = new DebugMenu?[5];
 
@@ -41,6 +44,9 @@ namespace TwitchChat
             MediumDisplay,
             WideDisplay,
             SmallDisplay,
+            StandardMessages,
+            CommandMessages,
+            TimedMessages,
             Configuration,
             Debug
         }
@@ -70,6 +76,9 @@ namespace TwitchChat
             { MenuType.MediumDisplay, new(new Vector2(500, 500), new Vector2(500, 500), Vector2.zero, Vector3.zero) },
             { MenuType.WideDisplay, new(new Vector2(900, 220), new Vector2(900, 220), Vector2.zero, Vector3.zero) },
             { MenuType.SmallDisplay, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
+            { MenuType.StandardMessages, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
+            { MenuType.CommandMessages, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
+            { MenuType.TimedMessages, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
             { MenuType.Configuration, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
             { MenuType.Debug, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) }
         };
@@ -242,6 +251,9 @@ namespace TwitchChat
             mediumDisplayBoards[index] = new MediumDisplayBoard(menuPanel.transform);
             wideDisplayBoards[index] = new WideDisplayBoard(menuPanel.transform);
             smallDisplayBoards[index] = new SmallDisplayBoard(menuPanel.transform);
+            StandardMessagesMenus[index] = new StandardMessagesMenu(menuPanel.transform);
+            CommandMessagesMenus[index] = new CommandMessagesMenu(menuPanel.transform);
+            TimedMessagesMenus[index] = new TimedMessagesMenu(menuPanel.transform);
             configurationMenus[index] = new ConfigurationMenu(menuPanel.transform);
             debugMenus[index] = new DebugMenu(menuPanel.transform);
 
@@ -252,6 +264,9 @@ namespace TwitchChat
             if (mediumDisplayBoards[index] != null) mediumDisplayBoards[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
             if (wideDisplayBoards[index] != null) wideDisplayBoards[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
             if (smallDisplayBoards[index] != null) smallDisplayBoards[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
+            if (StandardMessagesMenus[index] != null) StandardMessagesMenus[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
+            if (CommandMessagesMenus[index] != null) CommandMessagesMenus[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
+            if (TimedMessagesMenus[index] != null) TimedMessagesMenus[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
             if (configurationMenus[index] != null) configurationMenus[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
             if (debugMenus[index] != null) debugMenus[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
 
@@ -274,6 +289,9 @@ namespace TwitchChat
             mediumDisplayBoards[index]?.Hide();
             wideDisplayBoards[index]?.Hide();
             smallDisplayBoards[index]?.Hide();
+            StandardMessagesMenus[index]?.Hide();
+            CommandMessagesMenus[index]?.Hide();
+            TimedMessagesMenus[index]?.Hide();
             configurationMenus[index]?.Hide();
             debugMenus[index]?.Hide();
         }
@@ -296,6 +314,9 @@ namespace TwitchChat
                 "Medium Display" => MenuType.MediumDisplay,
                 "Wide Display" => MenuType.WideDisplay,
                 "Small Display" => MenuType.SmallDisplay,
+                "Standard Messages" => MenuType.StandardMessages,
+                "Command Messages" => MenuType.CommandMessages,
+                "Timed Messages" => MenuType.TimedMessages,
                 "Configuration" => MenuType.Configuration,
                 "Debug" => MenuType.Debug,
                 _ => MenuType.Main
@@ -338,6 +359,15 @@ namespace TwitchChat
                     break;
                 case MenuType.SmallDisplay:
                     smallDisplayBoards[index]?.Show();
+                    break;
+                case MenuType.StandardMessages:
+                    StandardMessagesMenus[index]?.Show();
+                    break;
+                case MenuType.CommandMessages:
+                    CommandMessagesMenus[index]?.Show();
+                    break;
+                case MenuType.TimedMessages:
+                    TimedMessagesMenus[index]?.Show();
                     break;
                 case MenuType.Configuration:
                     configurationMenus[index]?.Show();
