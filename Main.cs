@@ -237,7 +237,7 @@ namespace TwitchChat
         /// </summary>
         /// <param name="source">The source (method) of the log entry, also determines which log file to use.</param>
         /// <param name="message">The message to be logged.</param>
-        public static void LogEntry(string source, string message)
+        public static void LogEntry(string source, string message)  // TODO: Refactor for better level use and general cleanup across entire mod
         {
             // Ensure Settings.Instance is initialized
             if (Settings.Instance == null)

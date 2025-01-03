@@ -5,13 +5,16 @@ namespace TwitchChat.Menus
 {
     public class DebugMenu : BaseMenu
     {
+        public static Toggle processOwn;
         public delegate void OnBackButtonClickedHandler();
         public event OnBackButtonClickedHandler OnBackButtonClicked;
 
         public DebugMenu(Transform parent) : base(parent)
         {
             CreateDebugMenu();
-            CreateDebugSection();
+            CreateDebugSetupSection();
+            CreateNotificationTestsSection();
+            CreateTestSendSection();
         }
 
         private void CreateDebugMenu()
@@ -25,14 +28,54 @@ namespace TwitchChat.Menus
             Button backButton = CreateButton(menuObject.transform, " X ", 190, 10, Color.white, () => OnBackButtonClicked?.Invoke());
         }
 
-        private void CreateDebugSection()
+        private void CreateDebugSetupSection()
         {
             // Dimensions - Menu width minus 20
 
             // Debug Section
-            GameObject debugSection = CreateSection("Debug", 25, 100);
+            GameObject debugLevelSection = CreateSection("Debug Level", 25, 60, false);
             
-            // TODO: Add debug section content
+            // Debug Level
+            CreateTextDisplay(debugLevelSection.transform, "Debug Level", 10, 10);
+            
+            // Debug level dropdown selection
+            // Dropdown
+
+            // Horizontal line
+            CreateHorizontalBar(debugLevelSection.transform, 30);
+
+            // Ignore self
+            CreateTextDisplay(debugLevelSection.transform, "Process Own", 10, 40);
+            
+            // Processe own messagese
+            processOwn = CreateToggle(debugLevelSection.transform, 120, 45, "Enabled", "Disabled", Settings.Instance.processOwn);
+            processOwn.onValueChanged.AddListener((value) => {
+                Settings.Instance.processOwn = value;
+                Settings.Instance.Save(Main.ModEntry);
+            });
+        }
+        private void CreateNotificationTestsSection()
+        {
+            // Dimensions - Menu width minus 20
+
+            // Test Notifications Section
+            GameObject notificationTestsSection = CreateSection("Notification Tests", 100, 80);
+            
+            // Direct Attachment Notification Test
+            CreateButton(notificationTestsSection.transform, "Direct Attachment Test", 90, 35, Color.white, () => NotificationManager.AttachNotification("Direct Attachment Notification Test", "null"));
+
+            // Mesage Queue Notification Test
+            CreateButton(notificationTestsSection.transform, "Message Queue Test", 90, 60, Color.white, () => NotificationManager.WebSocketNotificationTest());
+        }
+        private void CreateTestSendSection()
+        {
+            // Dimensions - Menu width minus 20
+
+            // Test Send Section
+            GameObject TestSendSection = CreateSection("Test Send", 195, 55);
+            
+            // Send Test Message
+            CreateButton(TestSendSection.transform, "Send Test Message", 90, 35, Color.white, async () => await TwitchEventHandler.SendMessage("Test message sent 'from' debug page. If you see this mesage on your channel, your Authentication Token valid and working!"));
         }
     }
 }

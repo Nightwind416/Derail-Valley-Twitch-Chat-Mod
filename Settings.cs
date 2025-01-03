@@ -28,16 +28,7 @@ namespace TwitchChat
         public static Settings Instance { get; set; } = null!;
         public string twitchUsername = string.Empty;
         public string authentication_status = "Unverified or not set";
-        public int messageDuration = 20;
         public string EncodedOAuthToken = string.Empty;
-        public string testMessage = "Test message sent 'from' settings page. If you see this, your Authentication Token is working!";
-        private bool getOAuthTokenFlag = false;
-        private bool toggleWebSocketFlag = false;
-        private bool connectionStatusFlag = false;
-        private bool sendMessageFlag = false;
-        private bool directAttachmentMessageTestFlag = false;
-        private bool messageQueueAttachmentMessageTestFlag = false;
-        private bool MessageQueueAttachmentTestFlag = false;
         public DebugLevel debugLevel = DebugLevel.Minimal;
 
         // Standard Messages Settings
@@ -129,17 +120,9 @@ namespace TwitchChat
                 _ => Color.white
             };
         }
-
-        // Add this field near the other private fields at the top of the Settings class
-        private bool debugSectionExpanded = false;
-        public bool processOwnMessages = false;  // Add this new property
-        public bool notificationsEnabled = true;  // Default to true
-        public float notificationDuration = 10;  // Default to 10 seconds
-
-        private void SetDefaults()
-        {
-            activeMenus = ["Main", "Main", "Main", "Main", "Main"];
-        }
+        public bool notificationsEnabled = true;
+        public float notificationDuration = 10;
+        public bool processOwn = false;
 
         /// <summary>
         /// Draws the mod configuration UI using Unity's IMGUI system.
@@ -389,101 +372,30 @@ namespace TwitchChat
             GUILayout.EndVertical();
 
             GUILayout.Space(10);
-
-            // Debug and Troubleshooting Section Header
-            GUILayout.BeginHorizontal();
-                GUI.color = Color.cyan;
-                string toggleSymbol = debugSectionExpanded ? "▼" : "►";
-                if (GUILayout.Button($"{toggleSymbol} Debug and Troubleshooting", GUI.skin.label))
-                {
-                    debugSectionExpanded = !debugSectionExpanded;
-                }
-                GUI.color = Color.white;
-            GUILayout.EndHorizontal();
             
-            if (debugSectionExpanded)
-            {
-                GUILayout.Space(10);
-            
-                // Debug Settings Section
-                GUILayout.BeginVertical(GUI.skin.box);
-                    GUILayout.Label("Debug Level");
-                    
-                    // Store current selection before grid
-                    int currentSelection = (int)debugLevel;
-                    
-                    // Create string array for debug levels
-                    string[] options = ["Off", "Minimal", "Reduced", "Full"];
-                    
-                    // Color each button based on selection
-                    GUILayout.BeginHorizontal();
-                        for (int i = 0; i < options.Length; i++)
-                        {
-                            GUI.color = (i == currentSelection) ? Color.cyan : Color.white;
-                            if (GUILayout.Button(options[i], GUILayout.Width(75)))
-                            {
-                                debugLevel = (DebugLevel)i;
-                            }
-                        }
-                        GUI.color = Color.white;  // Reset color
-                    GUILayout.EndHorizontal();
-                GUILayout.EndVertical();
-
-                GUILayout.Space(10);
-
-                // Add new toggle for processing own messages
-                GUILayout.BeginVertical(GUI.skin.box);
-                    GUILayout.Label("Debug Options");
-                    processOwnMessages = GUILayout.Toggle(processOwnMessages, "Process messages from self (for testing)");
-                    if (processOwnMessages)
+            // Debug Settings Section
+            GUILayout.BeginVertical(GUI.skin.box);
+                GUILayout.Label("Debug Level");
+                
+                // Store current selection before grid
+                int currentSelection = (int)debugLevel;
+                
+                // Create string array for debug levels
+                string[] options = ["Off", "Minimal", "Reduced", "Full"];
+                
+                // Color each button based on selection
+                GUILayout.BeginHorizontal();
+                    for (int i = 0; i < options.Length; i++)
                     {
-                        GUI.color = Color.yellow;
-                        GUILayout.Label("⚠️ Warning: Bot will process its own messages. Turn off when not testing.");
-                        GUI.color = Color.white;
+                        GUI.color = (i == currentSelection) ? Color.cyan : Color.white;
+                        if (GUILayout.Button(options[i], GUILayout.Width(75)))
+                        {
+                            debugLevel = (DebugLevel)i;
+                        }
                     }
-                GUILayout.EndVertical();
-
-                GUILayout.Space(10);
-                
-                // Test Message Display Section
-                GUILayout.BeginVertical(GUI.skin.box);
-                    GUILayout.Label("Test In-Game Message Display");
-                    GUILayout.Space(10);
-
-                    GUILayout.BeginHorizontal();
-                        if (GUILayout.Button("Direct Attachment", GUILayout.Width(125)))
-                        {
-                            directAttachmentMessageTestFlag = true;
-                        }
-                        GUILayout.Label("Typically used by script/mod alerts and non-Twitch messages");
-                    GUILayout.EndHorizontal();
-                    GUILayout.BeginHorizontal();
-                        if (GUILayout.Button("Message Queue", GUILayout.Width(125)))
-                        {
-                            MessageQueueAttachmentTestFlag = true;
-                        }
-                        GUILayout.Label("Uses same 'queuing' system as received Twitch messages");
-                    GUILayout.EndHorizontal();
-                GUILayout.EndVertical();
-                    
-                GUILayout.Space(10);
-                
-                GUILayout.BeginVertical(GUI.skin.box);
-                    GUILayout.Label("Click the button to send the message to your Twitch channel");
-                    GUILayout.BeginHorizontal();
-                        if (GUILayout.Button("Send", GUILayout.Width(80)))
-                        {
-                            sendMessageFlag = true;
-                        }
-                        testMessage = GUILayout.TextField(testMessage);
-                    GUILayout.EndHorizontal();
-                    GUILayout.Label("Note1: You can edit the message above before sending");
-                    GUILayout.Label("Note2: These messages are sent to your channel chat and will be visible to all viewers");
-                    GUILayout.Label("Note3: Mssages received on Twitch only confirm a valid Token");
-                    GUILayout.Label("Note4: Use Connection Status below to check received message status");
-                GUILayout.EndVertical();
-            }
-
+                    GUI.color = Color.white;  // Reset color
+                GUILayout.EndHorizontal();
+            GUILayout.EndVertical();
         }
 
         /// <summary>
@@ -493,45 +405,6 @@ namespace TwitchChat
         public void Update()
         {
             _ = this;
-
-            if (getOAuthTokenFlag)
-            {
-                getOAuthTokenFlag = false;
-                _ = OAuthTokenManager.GetOathToken();
-            }
-            if (toggleWebSocketFlag)
-            {
-                toggleWebSocketFlag = false;
-                if (WebSocketManager.IsConnectionHealthy)
-                    _ = WebSocketManager.DisconnectFromoWebSocket();
-                else
-                    _ = WebSocketManager.ConnectToWebSocket();
-            }
-            if (connectionStatusFlag)
-            {
-                connectionStatusFlag = false;
-                _ = TwitchEventHandler.ConnectionStatus();
-            }
-            if (sendMessageFlag)
-            {
-                sendMessageFlag = false;
-                _ = TwitchEventHandler.SendMessage(testMessage);
-            }
-            if (directAttachmentMessageTestFlag)
-            {
-                directAttachmentMessageTestFlag = false;
-                NotificationManager.AttachNotification("Direct Attachment Notification Test", "null");
-            }
-            if (MessageQueueAttachmentTestFlag)
-            {
-                MessageQueueAttachmentTestFlag = false;
-                NotificationManager.WebSocketNotificationTest();
-            }
-            if (messageQueueAttachmentMessageTestFlag)
-            {
-                messageQueueAttachmentMessageTestFlag = false;
-                NotificationManager.WebSocketNotificationTest();
-            }
         }
 
         /// <summary>

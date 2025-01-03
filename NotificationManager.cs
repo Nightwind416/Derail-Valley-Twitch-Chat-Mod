@@ -124,7 +124,7 @@ namespace TwitchChat
                 }
 
                 // Skip processing if message is from ourselves (unless debug setting is enabled)
-                if (chatterId == TwitchEventHandler.user_id && !Settings.Instance.processOwnMessages)
+                if (chatterId == TwitchEventHandler.user_id && !Settings.Instance.processOwn)
                 {
                     Main.LogEntry($"{methodName}", $"Skipping message from self (ID: {chatterId})");
                     return;
