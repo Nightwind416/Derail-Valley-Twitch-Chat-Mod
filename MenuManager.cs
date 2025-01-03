@@ -18,7 +18,8 @@ namespace TwitchChat
             "LicenseShunting",
             "LicenseLocomotiveDE2",
             "LicenseMuseumCitySouth",
-            "LicenseFreightHaul"
+            "LicenseFreightHaul",
+            "LicenseMuseumDispacther1"
         ];
         private readonly GameObject?[] licenseObjects = new GameObject?[5];
 
@@ -122,24 +123,56 @@ namespace TwitchChat
 
                 if (licenseObjects[i] != null)
                 {
-                    // Update menu values
-                    statusMenus[i]?.UpdateStatusMenuValues();
-                    // notificationSettingsMenus[i]?.UpdateNotificationSettingsMenuValues();
-                    // largeDisplayBoards[i]?.UpdateLargeDisplayBoardValues();
-                    // mediumDisplayBoards[i]?.UpdateMediumDisplayBoardValues();
-                    // wideDisplayBoards[i]?.UpdateWideDisplayBoardValues();
-                    // smallDisplayBoards[i]?.UpdateSmallDisplayBoardValues();
-                    StandardMessagesMenus[i]?.UpdateStandardMessagesMenuValues();
-                    CommandMessagesMenus[i]?.UpdateCommandMessagesMenuValues();
-                    // TimedMessagesMenus[i]?.UpdateTimedMessagesMenuValues();
-                    // configurationMenus[i]?.UpdateConfigurationMenuValues();
-                    // debugMenus[i]?.UpdateDebugMenuValues();
+                    bool isLicenseActive = IsLicenseActive(licenseObjects[i]);
+                    if (menuCanvases[i] != null)
+                    {
+                        menuCanvases[i]!.SetActive(isLicenseActive);
+                    }
 
-                    HandleLicenseAttachment(i);
-                    HandlePaperVisibility(i);
+                    if (isLicenseActive)
+                    {
+                        // Update menu values
+                        statusMenus[i]?.UpdateStatusMenuValues();
+                        // notificationSettingsMenus[i]?.UpdateNotificationSettingsMenuValues();
+                        // largeDisplayBoards[i]?.UpdateLargeDisplayBoardValues();
+                        // mediumDisplayBoards[i]?.UpdateMediumDisplayBoardValues();
+                        // wideDisplayBoards[i]?.UpdateWideDisplayBoardValues();
+                        // smallDisplayBoards[i]?.UpdateSmallDisplayBoardValues();
+                        StandardMessagesMenus[i]?.UpdateStandardMessagesMenuValues();
+                        CommandMessagesMenus[i]?.UpdateCommandMessagesMenuValues();
+                        // TimedMessagesMenus[i]?.UpdateTimedMessagesMenuValues();
+                        // configurationMenus[i]?.UpdateConfigurationMenuValues();
+                        // debugMenus[i]?.UpdateDebugMenuValues();
+
+                        HandleLicenseAttachment(i);
+                        HandlePaperVisibility(i);
+                    }
                 }
             }
         }
+
+        private bool IsLicenseActive(GameObject license)
+        {
+            if (!license.activeInHierarchy)
+                return false;
+
+            // Check if the license is in inventory by looking at its parent hierarchy
+            Transform current = license.transform;
+            while (current.parent != null)
+            {
+                // Check for common inventory container names
+                if (current.parent.name.Contains("Inventory") || 
+                    current.parent.name.Contains("Storage") ||
+                    current.parent.name.Contains("Container"))
+                {
+                    return false;
+                }
+                current = current.parent;
+            }
+
+            return true;
+        }
+
         // BUG: Sticky tape returns after away from loco, detact/reattach fixes it
         private void HandleLicenseAttachment(int index)
         {
