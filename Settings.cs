@@ -159,99 +159,6 @@ namespace TwitchChat
                     twitchUsername = GUILayout.TextField(twitchUsername, GUILayout.Width(200));
                 GUILayout.EndHorizontal();
 
-                GUILayout.BeginHorizontal();
-                    GUILayout.Label("Message Duration: ", GUILayout.Width(120));
-                    messageDuration = int.Parse(GUILayout.TextField(messageDuration.ToString(), GUILayout.Width(30)));
-                    GUILayout.Label("(in seconds)");
-                GUILayout.EndHorizontal();
-            GUILayout.EndVertical();
-
-            GUILayout.Space(10);
-
-            // Twitch Authentication Section
-            GUILayout.BeginVertical(GUI.skin.box);
-                GUILayout.Label("Twitch Authorization");
-                GUILayout.Space(10);
-
-                GUILayout.BeginHorizontal();
-                    string authButtonText = string.IsNullOrEmpty(EncodedOAuthToken) 
-                        ? "Request Authorization Token" 
-                        : "Validate Token";
-
-                    // Set button color based on validation status
-                    GUI.color = authentication_status == "Validated!" ? Color.green : Color.white;
-                    
-                    // Create button style that shows if interactive
-                    GUIStyle buttonStyle = new(GUI.skin.button);
-                    buttonStyle.normal.textColor = authentication_status == "Validated!" ? Color.black : Color.white;
-
-                    // Button is disabled if already validated
-                    GUI.enabled = authentication_status != "Validated!";
-                    if (GUILayout.Button(authButtonText, buttonStyle, GUILayout.Width(200)))
-                    {
-                        if (string.IsNullOrEmpty(EncodedOAuthToken))
-                            getOAuthTokenFlag = true;
-                        else
-                            _ = OAuthTokenManager.ValidateAuthToken();
-                    }
-                    GUI.enabled = true;
-                    GUI.color = Color.white; // Reset color
-                    
-                    // Set status message color
-                    if (authentication_status == "Validated!")
-                        GUI.color = Color.green;
-                    else if (authentication_status == "Authorization failed. Please try again." || authentication_status == "No Username Set")
-                        GUI.color = Color.red;
-                    else if (authentication_status == "Unverified or not set")
-                        GUI.color = Color.yellow;
-                    else
-                        GUI.color = Color.cyan;
-                        
-                    GUILayout.Label($"Last Authorization Status: {authentication_status}");
-                    GUI.color = Color.white; // Reset color
-                GUILayout.EndHorizontal();
-            GUILayout.EndVertical();
-
-            GUILayout.Space(10);
-            
-            // WebSocket (Channel) Connection Section
-            GUILayout.BeginVertical(GUI.skin.box);
-                GUILayout.Label("Channel Connection");
-                GUILayout.Space(10);
-
-                GUILayout.BeginHorizontal();
-                    string buttonText = WebSocketManager.IsConnectionHealthy
-                        ? "Disconnect"
-                        : " Connect ";
-                    if (GUILayout.Button(buttonText, GUILayout.Width(100)))
-                    {
-                        toggleWebSocketFlag = true;
-                    }
-                    GUI.color = Color.white;
-                GUILayout.EndHorizontal();
-                
-                GUILayout.BeginHorizontal();
-                    GUILayout.Label("Connection Status:", GUILayout.Width(125));
-                    GUI.color = Color.white;
-                    GUI.color = WebSocketManager.IsConnectionHealthy ? Color.green : Color.red;
-                    GUILayout.Label("■", GUILayout.Width(10));
-                    GUILayout.Label(WebSocketManager.IsConnectionHealthy ? "Connected" : "Disconnected");
-                    GUI.color = Color.white;
-                GUILayout.EndHorizontal();
-
-                GUILayout.BeginHorizontal();
-                    GUILayout.Label("Last Message Type:", GUILayout.Width(125));
-                    GUI.color = Color.cyan;
-                    GUILayout.Label(WebSocketManager.LastMessageType);
-                    GUI.color = Color.white;
-                GUILayout.EndHorizontal();
-
-                GUILayout.BeginHorizontal();
-                    GUILayout.Label("Last Chat Message:", GUILayout.Width(125));
-                    GUI.color = Color.cyan;
-                    GUILayout.Label(WebSocketManager.LastChatMessage);
-                    GUI.color = Color.white;
-                GUILayout.EndHorizontal();
             GUILayout.EndVertical();
 
             GUILayout.Space(10);
@@ -575,17 +482,6 @@ namespace TwitchChat
                     GUILayout.Label("Note3: Mssages received on Twitch only confirm a valid Token");
                     GUILayout.Label("Note4: Use Connection Status below to check received message status");
                 GUILayout.EndVertical();
-
-                // GUILayout.BeginVertical(GUI.skin.box);
-                //     GUILayout.Label("Click the button to send a whisper to the user_id");
-                //     GUILayout.BeginHorizontal();
-                //         if (GUILayout.Button("Send", GUILayout.Width(80)))
-                //         {
-                //             await TwitchEventHandler.SendWhisper("1218746026", "This is a test whisper message");
-                //         }
-                //     GUILayout.EndHorizontal();
-                //     GUILayout.Label("Note1: You can edit the message above before sending");
-                // GUILayout.EndVertical();
             }
 
         }
