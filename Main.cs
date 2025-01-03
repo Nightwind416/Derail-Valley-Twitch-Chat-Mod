@@ -146,13 +146,13 @@ namespace TwitchChat
             string methodName = MethodBase.GetCurrentMethod().Name;
             if (ModEntry.Enabled)
             {
-                MessageHandler.AttachNotification("TwitchChatMod is now receiving message notifications from your channel.", "null");
+                NotificationManager.AttachNotification("TwitchChatMod is now receiving message notifications from your channel.", "null");
                 LogEntry(methodName, "Mod Enabled!");
                 ModEntry.Enabled = true;
             }
             else
             {
-                MessageHandler.AttachNotification("TwitchChatMod is no longer receiving message notifications from your Channel.", "null");
+                NotificationManager.AttachNotification("TwitchChatMod is no longer receiving message notifications from your Channel.", "null");
                 LogEntry(methodName, "Mod Disabled!");
                 ModEntry.Enabled = false;
             }

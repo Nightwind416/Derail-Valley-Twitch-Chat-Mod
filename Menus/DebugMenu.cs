@@ -11,6 +11,7 @@ namespace TwitchChat.Menus
         public DebugMenu(Transform parent) : base(parent)
         {
             CreateDebugMenu();
+            CreateDebugSection();
         }
 
         private void CreateDebugMenu()
@@ -22,12 +23,16 @@ namespace TwitchChat.Menus
 
             // Back button
             Button backButton = CreateButton(menuObject.transform, " X ", 190, 10, Color.white, () => OnBackButtonClicked?.Invoke());
+        }
+
+        private void CreateDebugSection()
+        {
+            // Dimensions - Menu width minus 20
 
             // Debug Section
             GameObject debugSection = CreateSection("Debug", 25, 100);
-
-            // Add Debug Menu menu items here
-            // TODO: Complete Debug Menu menu
+            
+            // TODO: Add debug section content
         }
     }
 }

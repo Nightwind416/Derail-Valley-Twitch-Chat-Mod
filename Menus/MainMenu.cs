@@ -24,17 +24,20 @@ namespace TwitchChat.Menus
             // Dimensions - 200x300
 
             Main.LogEntry(methodName, "Creating main menu...");
+            
             // Title
             CreateTitle("TwitchChatMod", 18, Color.white, TextAnchor.UpperCenter);
 
             // Menu buttons
-            CreateMenuButton("Status", 75);
-            CreateMenuButton("Settings", 100);
-            CreateMenuButton("Large Display", 125);
-            CreateMenuButton("Wide Display", 150);
-            CreateMenuButton("Medium Display", 175);
+            CreateMenuButton("Status", 50);
+            CreateMenuButton("Notification Settings", 80);
+            CreateMenuButton("Large Display", 110);
+            CreateMenuButton("Wide Display", 140);
+            CreateMenuButton("Medium Display", 170);
             CreateMenuButton("Small Display", 200);
-            CreateMenuButton("Debug", 225);
+            CreateMenuButton("Configuration", 230);
+            CreateMenuButton("Debug", 260);
+            
             Main.LogEntry(methodName, "Main menu creation completed");
         }
 

@@ -11,6 +11,10 @@ namespace TwitchChat.Menus
         public WideDisplayBoard(Transform parent) : base(parent)
         {
             CreateWideDisplayBoard();
+            for (int i = 0; i < 3; i++)
+            {
+                CreateMessageSection(i);
+            }
         }
 
         private void CreateWideDisplayBoard()
@@ -22,15 +26,16 @@ namespace TwitchChat.Menus
 
             // Back button
             Button backButton = CreateButton(menuObject.transform, " X ", 790, 10, Color.white, () => OnBackButtonClicked?.Invoke());
+        }
+
+        private void CreateMessageSection(int i)
+        {
+            // Dimensions - Menu width minus 20
 
             // Message Section
-            GameObject messageSection1 = CreateSection("Message", 20, 80);
+            GameObject messageSection = CreateSection("Message", 20, 80);
             
-            // Message Section
-            GameObject messageSection2 = CreateSection("Message", 120, 80);
-
-            // Add WideDisplayBoard items here
-            // TODO: Complete WideDisplayBoard
+            // TODO: Add message section content
         }
     }
 }

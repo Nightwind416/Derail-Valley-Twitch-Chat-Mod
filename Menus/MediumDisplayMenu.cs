@@ -11,6 +11,11 @@ namespace TwitchChat.Menus
         public MediumDisplayBoard(Transform parent) : base(parent)
         {
             CreateMediumDisplayBoard();
+            CreateStatusSection();
+            for (int i = 0; i < 3; i++)
+            {
+                CreateMessageSection(i);
+            }
         }
 
         private void CreateMediumDisplayBoard()
@@ -22,15 +27,24 @@ namespace TwitchChat.Menus
 
             // Back button
             Button backButton = CreateButton(menuObject.transform, " X ", 490, 10, Color.white, () => OnBackButtonClicked?.Invoke());
+        }
 
-            // Status Section
+        private void CreateStatusSection()
+        {
             GameObject statusSection = CreateSection("Status", 20, 80);
             
+            // Add status section components here
+            // TODO: Add status section content
+        }
+
+        private void CreateMessageSection(int i)
+        {
+            // Dimensions - Menu width minus 20
+
             // Message Section
-            GameObject messageSection = CreateSection("Message", 125, 120);
+            GameObject messageSection = CreateSection("Message", 20, 80);
             
-            // Add Medium Display Board items here
-            // TODO: Complete Medium Display Board
+            // TODO: Add message section content
         }
     }
 }

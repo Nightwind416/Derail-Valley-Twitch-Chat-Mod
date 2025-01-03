@@ -133,6 +133,8 @@ namespace TwitchChat
         // Add this field near the other private fields at the top of the Settings class
         private bool debugSectionExpanded = false;
         public bool processOwnMessages = false;  // Add this new property
+        public bool notificationsEnabled = true;  // Default to true
+        public float notificationDuration = 10;  // Default to 10 seconds
 
         private void SetDefaults()
         {
@@ -622,17 +624,17 @@ namespace TwitchChat
             if (directAttachmentMessageTestFlag)
             {
                 directAttachmentMessageTestFlag = false;
-                MessageHandler.AttachNotification("Direct Attachment Notification Test", "null");
+                NotificationManager.AttachNotification("Direct Attachment Notification Test", "null");
             }
             if (MessageQueueAttachmentTestFlag)
             {
                 MessageQueueAttachmentTestFlag = false;
-                MessageHandler.WebSocketNotificationTest();
+                NotificationManager.WebSocketNotificationTest();
             }
             if (messageQueueAttachmentMessageTestFlag)
             {
                 messageQueueAttachmentMessageTestFlag = false;
-                MessageHandler.WebSocketNotificationTest();
+                NotificationManager.WebSocketNotificationTest();
             }
         }
 

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using UnityEngine;
 using DV.UIFramework;
+using VRTK.Examples;
 
 namespace TwitchChat
 {
@@ -13,7 +14,7 @@ namespace TwitchChat
     /// in the game world. Provides parsing and filtering of incoming chat messages
     /// and manages notification attachments to game objects.
     /// </summary>
-    public class MessageHandler
+    public class NotificationManager
     {
         private static int messageQueueTestCounter = 1;
         public static Dictionary<string, string> NewNotificationQueue = new()
@@ -90,6 +91,15 @@ namespace TwitchChat
         public static void HandleNotification(dynamic jsonMessage)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
+
+            Main.LogEntry(methodName, "Attempting to handle notification...");
+
+            if (Settings.Instance.notificationsEnabled == false)
+            {
+                Main.LogEntry(methodName, "Notification system disabled, skipping.");
+                return;
+            }
+            Main.LogEntry(methodName, "Notification system enabled, continuing...");
         
             try
             {
@@ -246,7 +256,7 @@ namespace TwitchChat
             }
 
             // Find NotificationManager in the scene
-            NotificationManager notificationManager = UnityEngine.Object.FindObjectOfType<NotificationManager>();
+            DV.UIFramework.NotificationManager notificationManager = UnityEngine.Object.FindObjectOfType<DV.UIFramework.NotificationManager>();
             if (notificationManager == null)
             {
                 Main.LogEntry(methodName, "NotificationManager not found in the scene.");
@@ -274,7 +284,7 @@ namespace TwitchChat
                 var notification = notificationManager.ShowNotification(
                     displayed_text,                     // Text
                     null,                               // Localization parameters
-                    Settings.Instance.messageDuration,  // Duration
+                    Settings.Instance.notificationDuration,  // Duration
                     false,                              // Clear existing notifications
                     // found_object?.transform,         // Attach to GameObject if not null
                     null,                               // Temp force null for GameObject.transform

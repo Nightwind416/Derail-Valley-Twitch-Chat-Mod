@@ -40,7 +40,7 @@ namespace TwitchChat.Menus
             // Dimensions - Menu width minus 20
 
             // Authentication Section
-            GameObject authSection = CreateSection("Authentication Status", 25, 75);
+            GameObject authSection = CreateSection("Twitch Authentication Status", 25, 75);
 
             // Authentication Status Message
             authStatus = CreateTextDisplay(authSection.transform, Settings.Instance.authentication_status, 15, 25);
@@ -63,7 +63,7 @@ namespace TwitchChat.Menus
             // Dimensions - Menu width minus 20
 
             // WebSocket Section
-            GameObject wsSection = CreateSection("WebSocket Status", 120, 175);
+            GameObject wsSection = CreateSection("WebSocket Status", 110, 180);
 
             // Connection Status Indicator
             connectionIndicator = CreateTextDisplay(wsSection.transform, "■", 25, 25);
@@ -83,17 +83,23 @@ namespace TwitchChat.Menus
             80  // Fixed width that accommodates both "Connect" and "Disconnect"
             );
 
+            // Horizontal line
+            CreateHorizontalBar(wsSection.transform, 75);
+            
             // Last Message Type
-            CreateLabel(wsSection.transform, "Last Type Received", 15, 75);
-            lastMessageType = CreateTextDisplay(wsSection.transform, WebSocketManager.LastMessageType, 25, 95);
-
+            CreateLabel(wsSection.transform, "Last Type Received", 5, 85);
+            lastMessageType = CreateTextDisplay(wsSection.transform, WebSocketManager.LastMessageType, 15, 105);
+            
             // Last Chat Message
-            CreateLabel(wsSection.transform, "At time:", 15, 115);
-            lastTypeReceivedTime = CreateTextDisplay(wsSection.transform, WebSocketManager.lastTypeReceivedTime.ToString("h:mm:ss tt"), 60, 115);
+            CreateLabel(wsSection.transform, "At time:", 25, 125);
+            lastTypeReceivedTime = CreateTextDisplay(wsSection.transform, WebSocketManager.lastTypeReceivedTime.ToString("h:mm:ss tt"), 75, 125);
 
+            // Horizontal line
+            CreateHorizontalBar(wsSection.transform, 150);
+            
             // Last Chat Message
-            CreateLabel(wsSection.transform, "Last Keepalive Received", 15, 135);
-            lastKeepaliveTime = CreateTextDisplay(wsSection.transform, WebSocketManager.lastKeepaliveTime.ToString("h:mm:ss tt"), 25, 155);
+            CreateLabel(wsSection.transform, "Last Keepalive: ", 5, 160);
+            lastKeepaliveTime = CreateTextDisplay(wsSection.transform, WebSocketManager.lastKeepaliveTime.ToString("h:mm:ss tt"), 100, 160);
         }
 
         public void UpdateStatusMenuValues()

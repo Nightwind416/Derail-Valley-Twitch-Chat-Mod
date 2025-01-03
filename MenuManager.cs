@@ -24,22 +24,24 @@ namespace TwitchChat
 
         private MainMenu?[] mainMenus = new MainMenu?[5];
         private StatusMenu?[] statusMenus = new StatusMenu?[5];
-        private SettingsMenu?[] settingsMenus = new SettingsMenu?[5];
+        private NotificationMenu?[] notificationSettingsMenus = new NotificationMenu?[5];
         private LargeDisplayBoard?[] largeDisplayBoards = new LargeDisplayBoard?[5];
         private MediumDisplayBoard?[] mediumDisplayBoards = new MediumDisplayBoard?[5];
         private WideDisplayBoard?[] wideDisplayBoards = new WideDisplayBoard?[5];
         private SmallDisplayBoard?[] smallDisplayBoards = new SmallDisplayBoard?[5];
+        private ConfigurationMenu?[] configurationMenus = new ConfigurationMenu?[5];
         private DebugMenu?[] debugMenus = new DebugMenu?[5];
 
         private enum MenuType
         {
             Main,
             Status,
-            Settings,
+            NotificationSettings,
             LargeDisplay,
             MediumDisplay,
             WideDisplay,
             SmallDisplay,
+            Configuration,
             Debug
         }
 
@@ -63,11 +65,12 @@ namespace TwitchChat
         {
             { MenuType.Main, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
             { MenuType.Status, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
-            { MenuType.Settings, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
+            { MenuType.NotificationSettings, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
             { MenuType.LargeDisplay, new(new Vector2(1200, 650), new Vector2(1200, 650), Vector2.zero, Vector3.zero) },
             { MenuType.MediumDisplay, new(new Vector2(500, 500), new Vector2(500, 500), Vector2.zero, Vector3.zero) },
             { MenuType.WideDisplay, new(new Vector2(900, 220), new Vector2(900, 220), Vector2.zero, Vector3.zero) },
             { MenuType.SmallDisplay, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
+            { MenuType.Configuration, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
             { MenuType.Debug, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) }
         };
 
@@ -110,10 +113,10 @@ namespace TwitchChat
 
                 if (licenseObjects[i] != null)
                 {
-                    settingsMenus[i]?.UpdateSettingsMenuValues(
-                        Settings.Instance.twitchUsername,
-                        Settings.Instance.messageDuration,
-                        WebSocketManager.LastChatMessage
+                    statusMenus[i]?.UpdateStatusMenuValues(
+                        // Settings.Instance.twitchUsername,
+                        // Settings.Instance.messageDuration,
+                        // WebSocketManager.LastChatMessage
                     );
                     
                     // Add this line to update the status menu
@@ -234,20 +237,22 @@ namespace TwitchChat
             // Create all menus for this instance - now parenting to panel instead of canvas
             mainMenus[index] = new MainMenu(menuPanel.transform, index);
             statusMenus[index] = new StatusMenu(menuPanel.transform);
-            settingsMenus[index] = new SettingsMenu(menuPanel.transform);
+            notificationSettingsMenus[index] = new NotificationMenu(menuPanel.transform);
             largeDisplayBoards[index] = new LargeDisplayBoard(menuPanel.transform);
             mediumDisplayBoards[index] = new MediumDisplayBoard(menuPanel.transform);
             wideDisplayBoards[index] = new WideDisplayBoard(menuPanel.transform);
             smallDisplayBoards[index] = new SmallDisplayBoard(menuPanel.transform);
+            configurationMenus[index] = new ConfigurationMenu(menuPanel.transform);
             debugMenus[index] = new DebugMenu(menuPanel.transform);
 
             // Wire up back button events
             if (statusMenus[index] != null) statusMenus[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
-            if (settingsMenus[index] != null) settingsMenus[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
+            if (notificationSettingsMenus[index] != null) notificationSettingsMenus[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
             if (largeDisplayBoards[index] != null) largeDisplayBoards[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
             if (mediumDisplayBoards[index] != null) mediumDisplayBoards[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
             if (wideDisplayBoards[index] != null) wideDisplayBoards[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
             if (smallDisplayBoards[index] != null) smallDisplayBoards[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
+            if (configurationMenus[index] != null) configurationMenus[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
             if (debugMenus[index] != null) debugMenus[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
 
             // Hide all menus first
@@ -264,11 +269,12 @@ namespace TwitchChat
         {
             mainMenus[index]?.Hide();
             statusMenus[index]?.Hide();
-            settingsMenus[index]?.Hide();
+            notificationSettingsMenus[index]?.Hide();
             largeDisplayBoards[index]?.Hide();
             mediumDisplayBoards[index]?.Hide();
             wideDisplayBoards[index]?.Hide();
             smallDisplayBoards[index]?.Hide();
+            configurationMenus[index]?.Hide();
             debugMenus[index]?.Hide();
         }
 
@@ -285,11 +291,12 @@ namespace TwitchChat
             {
                 "Main" => MenuType.Main,
                 "Status" => MenuType.Status,
-                "Settings" => MenuType.Settings,
+                "Notification Settings" => MenuType.NotificationSettings,
                 "Large Display" => MenuType.LargeDisplay,
                 "Medium Display" => MenuType.MediumDisplay,
                 "Wide Display" => MenuType.WideDisplay,
                 "Small Display" => MenuType.SmallDisplay,
+                "Configuration" => MenuType.Configuration,
                 "Debug" => MenuType.Debug,
                 _ => MenuType.Main
             };
@@ -317,8 +324,8 @@ namespace TwitchChat
                 case MenuType.Status:
                     statusMenus[index]?.Show();
                     break;
-                case MenuType.Settings:
-                    settingsMenus[index]?.Show();
+                case MenuType.NotificationSettings:
+                    notificationSettingsMenus[index]?.Show();
                     break;
                 case MenuType.LargeDisplay:
                     largeDisplayBoards[index]?.Show();
@@ -331,6 +338,9 @@ namespace TwitchChat
                     break;
                 case MenuType.SmallDisplay:
                     smallDisplayBoards[index]?.Show();
+                    break;
+                case MenuType.Configuration:
+                    configurationMenus[index]?.Show();
                     break;
                 case MenuType.Debug:
                     debugMenus[index]?.Show();

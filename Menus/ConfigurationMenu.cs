@@ -3,23 +3,23 @@ using UnityEngine.UI;
 
 namespace TwitchChat.Menus
 {
-    public class SmallDisplayBoard : BaseMenu
+    public class ConfigurationMenu : BaseMenu
     {
         public delegate void OnBackButtonClickedHandler();
         public event OnBackButtonClickedHandler OnBackButtonClicked;
 
-        public SmallDisplayBoard(Transform parent) : base(parent)
+        public ConfigurationMenu(Transform parent) : base(parent)
         {
-            CreateSmallDisplayBoard();
+            CreateConfigurationMenu();
             CreateMessageSection();
         }
 
-        private void CreateSmallDisplayBoard()
+        private void CreateConfigurationMenu()
         {
             // Dimensions - 200x300
 
             // Title
-            CreateTitle("Small Display Board", 18, Color.white, TextAnchor.UpperCenter);
+            CreateTitle("Configuration Menu", 18, Color.white, TextAnchor.UpperCenter);
             
             // Back button
             Button backButton = CreateButton(menuObject.transform, " X ", 190, 10, Color.white, () => OnBackButtonClicked?.Invoke());
@@ -27,10 +27,13 @@ namespace TwitchChat.Menus
 
         private void CreateMessageSection()
         {
+           // Dimensions - Menu width minus 20
+
+            // Message Section
             GameObject messageSection = CreateSection("Message", 25, 100);
             
-            // Add message section components here
-            // TODO: Add message section content
+            // Configuration section
+            // TODO: Add configuration section content
         }
     }
 }
