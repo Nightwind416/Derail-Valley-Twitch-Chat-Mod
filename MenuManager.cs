@@ -19,7 +19,7 @@ namespace TwitchChat
             "LicenseLocomotiveDE2",
             "LicenseMuseumCitySouth",
             "LicenseFreightHaul",
-            "LicenseMuseumDispacther1"
+            "LicenseDispacther1"
         ];
         private readonly GameObject?[] licenseObjects = new GameObject?[5];
 
