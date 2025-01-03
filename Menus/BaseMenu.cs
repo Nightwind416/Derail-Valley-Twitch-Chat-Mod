@@ -226,21 +226,53 @@ namespace TwitchChat.Menus
             message.color = color ?? Color.white;
             message.alignment = TextAnchor.UpperLeft;
             
-            RectTransform parentRect = parent.GetComponent<RectTransform>();
             RectTransform rect = messageDisplayObj.GetComponent<RectTransform>();
             rect.pivot = new Vector2(0, 1);
-
-            float width;
-
             rect.anchorMin = new Vector2(0, 1);
             rect.anchorMax = new Vector2(1, 1);
-            width = parentRect.rect.width - xPosition - 5f; // 5 units buffer from right edge
-            rect.anchoredPosition = new Vector2(xPosition, -yPosition);
-
-            message.horizontalOverflow = HorizontalWrapMode.Wrap;
-            message.verticalOverflow = lines > 1 ? VerticalWrapMode.Overflow : VerticalWrapMode.Truncate;
+            rect.anchoredPosition = new Vector2(0, -yPosition);
+            rect.offsetMin = new Vector2(xPosition, rect.offsetMin.y);
+            rect.offsetMax = new Vector2(-5, rect.offsetMax.y);
             
-            rect.sizeDelta = new Vector2(width, 20 * lines); // 20 units height per line
+            message.horizontalOverflow = HorizontalWrapMode.Wrap;
+            message.verticalOverflow = VerticalWrapMode.Truncate;
+
+            // Force text to wrap and calculate height
+            Canvas.ForceUpdateCanvases();
+            float lineHeight = message.fontSize * 1.2f;
+            float maxHeight = lines * lineHeight;
+            
+            // If text needs truncation
+            if (message.preferredHeight > maxHeight)
+            {
+                // Binary search to find the optimal amount of text that fits
+                int left = 0;
+                int right = text.Length;
+                string bestFit = text;
+                
+                while (left <= right)
+                {
+                    int mid = (left + right) / 2;
+                    string testText = text.Substring(0, mid) + "...";
+                    message.text = testText;
+                    Canvas.ForceUpdateCanvases();
+                    
+                    if (message.preferredHeight <= maxHeight)
+                    {
+                        bestFit = testText;
+                        left = mid + 1;
+                    }
+                    else
+                    {
+                        right = mid - 1;
+                    }
+                }
+                
+                message.text = bestFit;
+            }
+
+            rect.offsetMin = new Vector2(rect.offsetMin.x, -yPosition - maxHeight);
+            rect.offsetMax = new Vector2(rect.offsetMax.x, -yPosition);
             
             return message;
         }

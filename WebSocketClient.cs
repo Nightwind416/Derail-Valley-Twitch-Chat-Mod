@@ -312,9 +312,9 @@ namespace TwitchChat
             else
             {
                 Main.LogEntry(methodName, "Subscribed to channel.chat.message.");
-                if (!string.IsNullOrEmpty(Settings.Instance.welcomeMessage))
+                if (!string.IsNullOrEmpty(Settings.Instance.connectMessage) && Settings.Instance.connectMessageEnabled)
                 {
-                    await TwitchEventHandler.SendMessage(Settings.Instance.welcomeMessage);
+                    await TwitchEventHandler.SendMessage(Settings.Instance.connectMessage);
                 }
             }
         }
@@ -330,7 +330,11 @@ namespace TwitchChat
             {
                 if (!string.IsNullOrEmpty(Settings.Instance.disconnectMessage))
                 {
-                    await TwitchEventHandler.SendMessage(Settings.Instance.disconnectMessage);
+                    if (Settings.Instance.disconnectMessageEnabled)
+                    {
+                        await TwitchEventHandler.SendMessage(Settings.Instance.disconnectMessage);
+                    }
+                    
                     // Small delay to ensure the message is sent before closing
                     await Task.Delay(500);
                 }

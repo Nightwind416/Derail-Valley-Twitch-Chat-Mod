@@ -122,14 +122,18 @@ namespace TwitchChat
 
                 if (licenseObjects[i] != null)
                 {
-                    statusMenus[i]?.UpdateStatusMenuValues(
-                        // Settings.Instance.twitchUsername,
-                        // Settings.Instance.messageDuration,
-                        // WebSocketManager.LastChatMessage
-                    );
-                    
-                    // Add this line to update the status menu
+                    // Update menu values
                     statusMenus[i]?.UpdateStatusMenuValues();
+                    // notificationSettingsMenus[i]?.UpdateNotificationSettingsMenuValues();
+                    // largeDisplayBoards[i]?.UpdateLargeDisplayBoardValues();
+                    // mediumDisplayBoards[i]?.UpdateMediumDisplayBoardValues();
+                    // wideDisplayBoards[i]?.UpdateWideDisplayBoardValues();
+                    // smallDisplayBoards[i]?.UpdateSmallDisplayBoardValues();
+                    StandardMessagesMenus[i]?.UpdateStandardMessagesMenuValues();
+                    // CommandMessagesMenus[i]?.UpdateCommandMessagesMenuValues();
+                    // TimedMessagesMenus[i]?.UpdateTimedMessagesMenuValues();
+                    // configurationMenus[i]?.UpdateConfigurationMenuValues();
+                    // debugMenus[i]?.UpdateDebugMenuValues();
 
                     HandleLicenseAttachment(i);
                     HandlePaperVisibility(i);

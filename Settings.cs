@@ -25,28 +25,33 @@ namespace TwitchChat
     [Serializable]
     public class Settings : UnityModManager.ModSettings, IDrawable
     {
+        // Main Settings
         public static Settings Instance { get; set; } = null!;
         public string twitchUsername = string.Empty;
         public string authentication_status = "Unverified or not set";
         public string EncodedOAuthToken = string.Empty;
         public DebugLevel debugLevel = DebugLevel.Minimal;
-
+        public string[] activeMenus = ["Main", "Main", "Main", "Main", "Main"];
+        public bool notificationsEnabled = true;
+        public float notificationDuration = 10;
+        public bool processOwn = false;
+        
         // Standard Messages Settings
-        public bool welcomeMessageActive = true;
-        public string welcomeMessage = "Welcome to my stream!";
-        public bool newFollowerMessageActive = true;
+        public bool connectMessageEnabled = true;
+        public string connectMessage = "TwitchChatMod connected! Messages are being relayed to in-game panels.";
+        public bool newFollowerMessageEnabled = true;
         public string newFollowerMessage = "Welcome to the crew!";
-        public bool newSubscriberMessageActive = true;
+        public bool newSubscriberMessageEnabled = true;
         public string newSubscriberMessage = "Thank you for subscribing!";
-        public string disconnectMessage = "TwitchChatMod disconnecting, thanks for chatting!";
+        public bool disconnectMessageEnabled = true;
+        public string disconnectMessage = "TwitchChatMod disconnected! Messages are no longer being relayed to in-game panels.";
 
         // Command Messages Settings
         public bool commandMessageActive = true;
         public string commandMessage = "Channel Commands:  !info";
         public bool infoMessageActive = true;
         public string infoMessage = "Please keep chat clean and respectful. Use !commands to see enabled channel commands.";
-        
-        // Custom Commands
+
         public bool customCommand1Active = false;
         public string customCommand1Trigger = "custom1";
         public string customCommand1Response = "Custom command 1 response";
@@ -95,14 +100,13 @@ namespace TwitchChat
         public bool dispatcherMessageActive = false;
         public string dispatcherMessage = "MessageNotSet";
 
+        // Color Options for announcement messages
         public readonly string[] ColorOptions = ["Normal", "Blue", "Green", "Orange", "Purple", "Primary"];
         private int message1ColorIndex = 0;
         private int message2ColorIndex = 0;
         private int message3ColorIndex = 0;
         private int message4ColorIndex = 0;
         private int message5ColorIndex = 0;
-
-        public string[] activeMenus = ["Main", "Main", "Main", "Main", "Main"];
 
         private void CycleColor(ref int colorIndex) {
             colorIndex = (colorIndex + 1) % ColorOptions.Length;
@@ -120,9 +124,6 @@ namespace TwitchChat
                 _ => Color.white
             };
         }
-        public bool notificationsEnabled = true;
-        public float notificationDuration = 10;
-        public bool processOwn = false;
 
         /// <summary>
         /// Draws the mod configuration UI using Unity's IMGUI system.
@@ -132,32 +133,40 @@ namespace TwitchChat
         {
             GUILayout.Space(10);
 
-            // TwitchChat Primary Settings Section
+            // Twitch Username Section
             GUILayout.BeginVertical(GUI.skin.box);
-                GUILayout.Label("Twitch Chat Integration Settings");        
-                GUILayout.Space(10);   
                 
-                GUILayout.BeginHorizontal();
-                    GUILayout.Label("Twitch Username: ", GUILayout.Width(120));
-                    twitchUsername = GUILayout.TextField(twitchUsername, GUILayout.Width(200));
-                GUILayout.EndHorizontal();
+                GUILayout.Label("Twitch Username");
 
+                GUILayout.Space(10);
+
+                twitchUsername = GUILayout.TextField(twitchUsername, GUILayout.Width(200));
+
+                GUILayout.Space(10);
+            
             GUILayout.EndVertical();
 
             GUILayout.Space(10);
 
             // Standard Messages Section
             GUILayout.BeginVertical(GUI.skin.box);
-                GUILayout.Label("Configure standard chat messages and notifications");
+
+                GUILayout.Label("Standard Messages");
+
                 GUILayout.Space(10);
+
                 GUILayout.BeginHorizontal();
-                    GUILayout.Label("Welcome Message: ", GUILayout.Width(160));
-                    Instance.welcomeMessage = GUILayout.TextField(Instance.welcomeMessage);
+                    GUILayout.Label("Connect Message: ", GUILayout.Width(160));
+                    Instance.connectMessage = GUILayout.TextField(Instance.connectMessage);
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+                    GUILayout.Label("Disconnect Message: ", GUILayout.Width(160));
+                    Instance.disconnectMessage = GUILayout.TextField(Instance.disconnectMessage);
                 GUILayout.EndHorizontal();
                 
                 GUILayout.BeginHorizontal();
                     GUILayout.Label("New Follower Message: ", GUILayout.Width(160));
-                    // Instance.newFollowerMessage = GUILayout.TextField(Instance.newFollowerMessage);
                     GUILayout.Label(Instance.newFollowerMessage, GUILayout.Width(200));
                     GUI.color = Color.yellow;
                     GUILayout.Label("(Future Implementation)");
@@ -166,19 +175,19 @@ namespace TwitchChat
                 
                 GUILayout.BeginHorizontal();
                     GUILayout.Label("New Subscriber Message: ", GUILayout.Width(160));
-                    // Instance.newSubscriberMessage = GUILayout.TextField(Instance.newSubscriberMessage);
                     GUILayout.Label(Instance.newSubscriberMessage, GUILayout.Width(200));
                     GUI.color = Color.yellow;
                     GUILayout.Label("(Future Implementation)");
                     GUI.color = Color.white;
                 GUILayout.EndHorizontal();
+            
             GUILayout.EndVertical();
 
             GUILayout.Space(10);
 
             // Command Messages Section
             GUILayout.BeginVertical(GUI.skin.box);
-                GUILayout.Label("Configure command-related messages and responses");
+                GUILayout.Label("Command Messages");
                 GUILayout.Space(10);
                 
                 GUILayout.BeginHorizontal();
@@ -261,7 +270,7 @@ namespace TwitchChat
 
             // Timed Messages Section
             GUILayout.BeginVertical(GUI.skin.box);
-                GUILayout.Label("Configure Timed Messages");
+                GUILayout.Label("Timed Messages");
                 GUILayout.Space(10);
                 
                 // Always enable the toggle button
@@ -363,7 +372,7 @@ namespace TwitchChat
 
             // Dispatcher Mod Integration Section
             GUILayout.BeginVertical(GUI.skin.box);
-                GUILayout.Label("Configure Dispatcher Mod integration messages");
+                GUILayout.Label("Dispatcher Mod Integration");
                 GUILayout.Space(10);
                 // Add Dispatcher Messages configuration UI here
                 GUI.color = Color.yellow;
@@ -439,12 +448,12 @@ namespace TwitchChat
     /// Manages standard welcome and event messages.
     /// Provides access to configured messages for new followers, subscribers, and general welcomes.
     /// </summary>
-    public class StandardMessages
-    {
-        public static string welcomeMessage => Settings.Instance.welcomeMessage;
-        public static string newFollowerMessage => Settings.Instance.newFollowerMessage;
-        public static string newSubscriberMessage => Settings.Instance.newSubscriberMessage;
-    }
+    // public class StandardMessages
+    // {
+    //     // public static string welcomeMessage => Settings.Instance.welcomeMessage;
+    //     public static string newFollowerMessage => Settings.Instance.newFollowerMessage;
+    //     public static string newSubscriberMessage => Settings.Instance.newSubscriberMessage;
+    // }
 
     /// <summary>
     /// Manages chat command messages and responses.
@@ -500,8 +509,8 @@ namespace TwitchChat
     /// Manages integration with the Dispatcher Mod.
     /// Handles message routing and configuration when the Dispatcher Mod is present.
     /// </summary>
-    public class DispatcherModMessages
-    {
-        public static string dispatcherMessage => Settings.Instance.dispatcherMessage;
-    }
+    // public class DispatcherModMessages
+    // {
+    //     public static string dispatcherMessage => Settings.Instance.dispatcherMessage;
+    // }
 }
