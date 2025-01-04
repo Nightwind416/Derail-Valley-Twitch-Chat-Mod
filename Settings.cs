@@ -35,6 +35,7 @@ namespace TwitchChat
         public bool notificationsEnabled = true;
         public float notificationDuration = 10;
         public bool processOwn = false;
+        public bool processDuplicates = false;
         
         // Standard Messages Settings
         public bool connectMessageEnabled = true;

@@ -6,6 +6,7 @@ namespace TwitchChat.Menus
     public class DebugMenu : BaseMenu
     {
         public static Toggle processOwn;
+        public static Toggle processDuplicates;
         public delegate void OnBackButtonClickedHandler();
         public event OnBackButtonClickedHandler OnBackButtonClicked;
 
@@ -33,7 +34,7 @@ namespace TwitchChat.Menus
             // Dimensions - Menu width minus 20
 
             // Debug Section
-            GameObject debugLevelSection = CreateSection("Debug Level", 25, 65, false);
+            GameObject debugLevelSection = CreateSection("Debug Level", 25, 95, false);
             
             // Debug Level
             CreateTextDisplay(debugLevelSection.transform, "Debug Level", 10, 10);
@@ -43,23 +44,36 @@ namespace TwitchChat.Menus
 
             // Horizontal line
             CreateHorizontalBar(debugLevelSection.transform, 35);
-
-            // Ignore self
-            CreateTextDisplay(debugLevelSection.transform, "Process Own", 10, 45);
             
             // Processe own messagese
-            processOwn = CreateToggle(debugLevelSection.transform, 120, 55, "Enabled", "Disabled", Settings.Instance.processOwn);
+            processOwn = CreateToggle(debugLevelSection.transform, 35, 50, "Enabled", "Disabled", Settings.Instance.processOwn);
             processOwn.onValueChanged.AddListener((value) => {
                 Settings.Instance.processOwn = value;
                 Settings.Instance.Save(Main.ModEntry);
             });
+
+            // Process Own
+            CreateTextDisplay(debugLevelSection.transform, "Process Own", 70, 45);
+
+            // Horizontal line
+            CreateHorizontalBar(debugLevelSection.transform, 65);
+
+            // Process Duplicates
+            processDuplicates = CreateToggle(debugLevelSection.transform, 35, 80, "Enabled", "Disabled", Settings.Instance.processDuplicates);
+            processDuplicates.onValueChanged.AddListener((value) => {
+                Settings.Instance.processDuplicates = value;
+                Settings.Instance.Save(Main.ModEntry);
+            });
+
+            // Process Duplicates
+            CreateTextDisplay(debugLevelSection.transform, "Process Duplicates", 70, 75);
         }
         private void CreateNotificationTestsSection()
         {
             // Dimensions - Menu width minus 20
 
             // Test Notifications Section
-            GameObject notificationTestsSection = CreateSection("Notification Tests", 105, 80);
+            GameObject notificationTestsSection = CreateSection("Notification Tests", 135, 80);
             
             // Direct Attachment Notification Test
             CreateButton(notificationTestsSection.transform, "Direct Attachment Test", 90, 35, Color.white, () => NotificationManager.AttachNotification("Direct Attachment Notification Test", "null"));
@@ -72,7 +86,7 @@ namespace TwitchChat.Menus
             // Dimensions - Menu width minus 20
 
             // Test Send Section
-            GameObject TestSendSection = CreateSection("Test Send", 200, 55);
+            GameObject TestSendSection = CreateSection("Test Send", 230, 55);
             
             // Send Test Message
             CreateButton(TestSendSection.transform, "Send Test Message", 90, 35, Color.white, async () => await TwitchEventHandler.SendMessage("Test message sent 'from' debug page. If you see this mesage on your channel, your Authentication Token valid and working!"));

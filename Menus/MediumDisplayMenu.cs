@@ -8,14 +8,9 @@ namespace TwitchChat.Menus
         public delegate void OnBackButtonClickedHandler();
         public event OnBackButtonClickedHandler OnBackButtonClicked;
 
-        private const int MaxVisibleMessages = 5; // Limit the number of visible messages
+        private const int MaxVisibleMessages = 12; // Limit the number of visible messages
 
         public MediumDisplayBoard(Transform parent) : base(parent)
-        {
-            CreateMediumDisplayBoard();
-        }
-
-        private void CreateMediumDisplayBoard()
         {
             // Dimensions - 500x500
             
@@ -24,6 +19,9 @@ namespace TwitchChat.Menus
 
             // Back button
             Button backButton = CreateButton(menuObject.transform, " X ", 490, 10, Color.white, () => OnBackButtonClicked?.Invoke());
+
+            // Scrollable area
+            scrollableArea = CreateScrollableArea(480, 460);
         }
 
         public void AddMessage(string username, string message)

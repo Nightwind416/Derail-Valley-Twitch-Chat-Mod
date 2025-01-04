@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Events;
@@ -7,6 +8,11 @@ namespace TwitchChat.Menus
 {
     public abstract class BaseMenu
     {
+        // Add fields for message management
+        private const int MAX_MESSAGES = 100;
+        private readonly Queue<string> messageHistory = new Queue<string>();
+        private readonly HashSet<string> recentMessages = new HashSet<string>();
+
         protected GameObject menuObject;
         protected RectTransform rectTransform;
         protected GameObject textInputField;
@@ -35,40 +41,58 @@ namespace TwitchChat.Menus
             rectTransform.offsetMax = Vector2.zero;
             rectTransform.pivot = new Vector2(0, 1);
             rectTransform.anchoredPosition = Vector2.zero;
-
-            CreateScrollableArea();
         }
 
-        protected void CreateScrollableArea()
+        protected GameObject CreateScrollableArea(int width = 180, int height = 250)
         {
             scrollableArea = new GameObject("ScrollableArea");
             scrollableArea.transform.SetParent(menuObject.transform, false);
+
+            // Add visible background to scrollable area
+            Image scrollAreaImage = scrollableArea.AddComponent<Image>();
+            scrollAreaImage.color = new Color(0, 0, 0, 0.3f); // Semi-transparent black
 
             ScrollRect scrollRect = scrollableArea.AddComponent<ScrollRect>();
             scrollRect.vertical = true;
             scrollRect.horizontal = false;
 
+            // Set up viewport
             GameObject viewport = new GameObject("Viewport");
             viewport.transform.SetParent(scrollableArea.transform, false);
             RectTransform viewportRect = viewport.AddComponent<RectTransform>();
-            viewportRect.anchorMin = new Vector2(0, 0);
-            viewportRect.anchorMax = new Vector2(1, 1);
-            viewportRect.offsetMin = Vector2.zero;
-            viewportRect.offsetMax = Vector2.zero;
-            viewport.AddComponent<Mask>().showMaskGraphic = false;
-            viewport.AddComponent<Image>().color = new Color(0, 0, 0, 0.1f);
+            viewportRect.anchorMin = Vector2.zero;
+            viewportRect.anchorMax = Vector2.one;
+            viewportRect.sizeDelta = Vector2.zero;
+            viewportRect.anchoredPosition = Vector2.zero;
 
+            // Add mask to viewport
+            Image viewportImage = viewport.AddComponent<Image>();
+            viewportImage.color = new Color(0, 0, 0, 0.1f);
+            viewport.AddComponent<Mask>().showMaskGraphic = true;
+
+            // Set up content
             GameObject content = new GameObject("Content");
             content.transform.SetParent(viewport.transform, false);
             contentRectTransform = content.AddComponent<RectTransform>();
             contentRectTransform.anchorMin = new Vector2(0, 1);
             contentRectTransform.anchorMax = new Vector2(1, 1);
             contentRectTransform.pivot = new Vector2(0.5f, 1);
-            contentRectTransform.offsetMin = Vector2.zero;
-            contentRectTransform.offsetMax = Vector2.zero;
+            contentRectTransform.sizeDelta = new Vector2(0, 0);
+
+            // Configure scrollable area size and position
+            RectTransform scrollAreaRect = scrollableArea.GetComponent<RectTransform>();
+            scrollAreaRect.anchorMin = new Vector2(0, 1);
+            scrollAreaRect.anchorMax = new Vector2(1, 1);
+            scrollAreaRect.pivot = new Vector2(0.5f, 1);
+            scrollAreaRect.sizeDelta = new Vector2(width, height);
+            scrollAreaRect.anchoredPosition = new Vector2(0, -25);
+            scrollAreaRect.offsetMin = new Vector2(10, scrollAreaRect.offsetMin.y);
+            scrollAreaRect.offsetMax = new Vector2(-10, scrollAreaRect.offsetMax.y);
 
             scrollRect.content = contentRectTransform;
             scrollRect.viewport = viewportRect;
+
+            return scrollableArea;
         }
 
         protected void CreateTitle(string titleText, int fontSize = 16, Color? textColor = null, TextAnchor textAlignment = TextAnchor.UpperCenter)
@@ -554,7 +578,31 @@ namespace TwitchChat.Menus
                     return;
                 }
 
-                // Create message container with minimal components
+                // Create unique message identifier
+                string messageId = $"{username}:{message}";
+
+                // Check for duplicate messages within recent history
+                lock (recentMessages)
+                {
+                    if (recentMessages.Contains(messageId) && !Settings.Instance.processDuplicates)
+                    {
+                        Main.LogEntry("BaseMenu.AddMessage", "Duplicate message detected, skipping");
+                        return;
+                    }
+
+                    // Add to recent messages
+                    recentMessages.Add(messageId);
+                    messageHistory.Enqueue(messageId);
+
+                    // Remove oldest message if we exceed the limit
+                    if (messageHistory.Count > MAX_MESSAGES)
+                    {
+                        string oldestMessage = messageHistory.Dequeue();
+                        recentMessages.Remove(oldestMessage);
+                    }
+                }
+
+                // Rest of the existing AddMessage implementation
                 GameObject messageObj = new GameObject("Message");
                 messageObj.transform.SetParent(contentRectTransform, false);
 
