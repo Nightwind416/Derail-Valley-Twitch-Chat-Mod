@@ -88,7 +88,7 @@ namespace TwitchChat.Menus
             
             // Last Message Type
             CreateLabel(wsSection.transform, "Last Type Received", 5, 85);
-            lastMessageType = CreateTextDisplay(wsSection.transform, WebSocketManager.LastMessageType, 15, 105);
+            lastMessageType = CreateTextDisplay(wsSection.transform, WebSocketManager.lastMessageType, 15, 105);
             
             // Last Chat Message
             CreateLabel(wsSection.transform, "At time:", 25, 125);
@@ -129,7 +129,7 @@ namespace TwitchChat.Menus
             connectionStatus.text = WebSocketManager.IsConnectionHealthy ? "Connected" : "Disconnected";
             connectionStatus.color = WebSocketManager.IsConnectionHealthy ? Color.green : Color.red;
 
-            lastMessageType.text = WebSocketManager.LastMessageType;
+            lastMessageType.text = WebSocketManager.lastMessageType;
             lastMessageType.color = Color.cyan;
 
             lastTypeReceivedTime.text = WebSocketManager.lastTypeReceivedTime.ToString("h:mm:ss tt");

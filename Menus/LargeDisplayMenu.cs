@@ -11,32 +11,18 @@ namespace TwitchChat.Menus
         public LargeDisplayBoard(Transform parent) : base(parent)
         {
             CreateLargeDisplayBoard();
-            CreateStatusSection();
-            for (int i = 0; i < 3; i++)
-            {
-                CreateMessageSection(i);
-            }
+
         }
 
         private void CreateLargeDisplayBoard()
         {
-            // Dimensions - 1000x700
+            // Dimensions - 1200x650
             
             // Title
             CreateTitle("Large Display Board", 18, Color.white, TextAnchor.UpperCenter);
 
             // Back button
-            Button backButton = CreateButton(menuObject.transform, " X ", 990, 10, Color.white, () => OnBackButtonClicked?.Invoke());
-        }
-
-        private void CreateStatusSection()
-        {
-            // Dimensions - Menu width minus 20
-
-            GameObject statusSection = CreateSection("Status", 20, 60);
-            
-            // Add status section components here
-            // TODO: Add status section content
+            Button backButton = CreateButton(menuObject.transform, " X ", 1190, 10, Color.white, () => OnBackButtonClicked?.Invoke());
         }
 
         private void CreateMessageSection(int i)

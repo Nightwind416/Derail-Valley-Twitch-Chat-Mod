@@ -23,10 +23,10 @@ namespace TwitchChat
         private static Timer? connectionMonitorTimer;
         public static bool IsConnectionHealthy => isConnectionHealthy;
 
-        private static string lastMessageType = "None";
-        private static string lastChatMessage = "No messages received";
-        public static string LastMessageType => lastMessageType;
-        public static string LastChatMessage => lastChatMessage;
+        public static string lastMessageType = "None";
+        public static string lastChatMessage = "No messages received";
+        // public static string LastMessageType => lastMessageType;
+        // public static string LastChatMessage => lastChatMessage;
         public static DateTime lastTypeReceivedTime = DateTime.UtcNow;
 
         private static readonly SemaphoreSlim reconnectLock = new(1, 1);

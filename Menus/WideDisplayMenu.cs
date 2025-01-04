@@ -11,21 +11,18 @@ namespace TwitchChat.Menus
         public WideDisplayBoard(Transform parent) : base(parent)
         {
             CreateWideDisplayBoard();
-            for (int i = 0; i < 3; i++)
-            {
-                CreateMessageSection(i);
-            }
+
         }
 
         private void CreateWideDisplayBoard()
         {
-            // Dimensions - 800x200
+            // Dimensions - 900x220
             
             // Title
             CreateTitle("Wide Display Board", 18, Color.white, TextAnchor.UpperCenter);
 
             // Back button
-            Button backButton = CreateButton(menuObject.transform, " X ", 790, 10, Color.white, () => OnBackButtonClicked?.Invoke());
+            Button backButton = CreateButton(menuObject.transform, " X ", 890, 10, Color.white, () => OnBackButtonClicked?.Invoke());
         }
 
         private void CreateMessageSection(int i)
