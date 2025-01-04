@@ -1,5 +1,4 @@
 using System.Reflection;
-using DV.Booklets;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -14,21 +13,14 @@ namespace TwitchChat.Menus
 
         public MainMenu(Transform parent, int index) : base(parent)
         {
+            showBackButton = false;
+            showMinimizeButton = false;
             menuIndex = index;
             CreateMainMenu();
         }
 
         private void CreateMainMenu()
         {
-            string methodName = MethodBase.GetCurrentMethod().Name;
-
-            // Dimensions - 200x300
-
-            Main.LogEntry(methodName, "Creating main menu...");
-            
-            // Title
-            CreateTitle("TwitchChatMod", 18, Color.white, TextAnchor.UpperCenter);
-
             // Menu buttons
             CreateMenuButton("Status", 35);
             CreateMenuButton("Notification Settings", 60);
@@ -41,8 +33,6 @@ namespace TwitchChat.Menus
             CreateMenuButton("Command Messages", 235);
             CreateMenuButton("Timed Messages", 260);
             CreateMenuButton("Debug", 285);
-            
-            Main.LogEntry(methodName, "Main menu creation completed");
         }
 
         private void CreateMenuButton(string text, int verticalPosition)

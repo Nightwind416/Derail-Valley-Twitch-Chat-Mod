@@ -7,24 +7,11 @@ namespace TwitchChat.Menus
     {
         public static Toggle notificationsEnabled;
         private Slider notificationDuration;
-        public delegate void OnBackButtonClickedHandler();
-        public event OnBackButtonClickedHandler OnBackButtonClicked;
+        private GameObject notificationSection;
 
         public NotificationMenu(Transform parent) : base(parent)
         {
-            CreateNotificationsMenu();
             CreateNotificationSettingssSection();
-        }
-
-        private void CreateNotificationsMenu()
-        {
-            // Dimensions - 200x300
-
-            // Title
-            CreateTitle("Notifications", 18, Color.white, TextAnchor.UpperCenter);
-            
-            // Back button
-            Button backButton = CreateButton(menuObject.transform, " X ", 190, 10, Color.white, () => OnBackButtonClicked?.Invoke());
         }
 
         private void CreateNotificationSettingssSection()
@@ -32,7 +19,7 @@ namespace TwitchChat.Menus
             // Dimensions - Menu width minus 20
 
             // Notifications Section
-            GameObject notificationSection = CreateSection("Notifications", 25, 240, false);
+            notificationSection = CreateSection("Notifications", 25, 240, false);
             
             // Enabled?
             CreateLabel(notificationSection.transform, "Toggle", 10, 10, Color.white);
@@ -77,6 +64,12 @@ namespace TwitchChat.Menus
             // Limit dropdown
             CreateTextDisplay(notificationSection.transform, "Future development", 25, 215, Color.yellow);
             // TODO: Add dropdown for limit
+        }
+
+        public override void Show()
+        {
+            base.Show();
+            if (notificationSection != null) notificationSection.SetActive(!isMinimized);
         }
     }
 }

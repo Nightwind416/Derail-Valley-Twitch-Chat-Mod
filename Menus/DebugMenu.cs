@@ -7,26 +7,15 @@ namespace TwitchChat.Menus
     {
         public static Toggle processOwn;
         public static Toggle processDuplicates;
-        public delegate void OnBackButtonClickedHandler();
-        public event OnBackButtonClickedHandler OnBackButtonClicked;
+        private GameObject debugLevelSection;
+        private GameObject notificationTestsSection;
+        private GameObject testSendSection;
 
         public DebugMenu(Transform parent) : base(parent)
         {
-            CreateDebugMenu();
             CreateDebugSetupSection();
             CreateNotificationTestsSection();
             CreateTestSendSection();
-        }
-
-        private void CreateDebugMenu()
-        {
-            // Dimensions - 200x300
-            
-            // Title
-            CreateTitle("Debug Menu", 18, Color.white, TextAnchor.UpperCenter);
-
-            // Back button
-            Button backButton = CreateButton(menuObject.transform, " X ", 190, 10, Color.white, () => OnBackButtonClicked?.Invoke());
         }
 
         private void CreateDebugSetupSection()
@@ -34,7 +23,7 @@ namespace TwitchChat.Menus
             // Dimensions - Menu width minus 20
 
             // Debug Section
-            GameObject debugLevelSection = CreateSection("Debug Level", 25, 95, false);
+            debugLevelSection = CreateSection("Debug Level", 25, 95, false);
             
             // Debug Level
             CreateTextDisplay(debugLevelSection.transform, "Debug Level", 10, 10);
@@ -73,7 +62,7 @@ namespace TwitchChat.Menus
             // Dimensions - Menu width minus 20
 
             // Test Notifications Section
-            GameObject notificationTestsSection = CreateSection("Notification Tests", 135, 80);
+            notificationTestsSection = CreateSection("Notification Tests", 135, 80);
             
             // Direct Attachment Notification Test
             CreateButton(notificationTestsSection.transform, "Direct Attachment Test", 90, 35, Color.white, () => NotificationManager.AttachNotification("Direct Attachment Notification Test", "null"));
@@ -86,10 +75,18 @@ namespace TwitchChat.Menus
             // Dimensions - Menu width minus 20
 
             // Test Send Section
-            GameObject TestSendSection = CreateSection("Test Send", 230, 55);
+            testSendSection = CreateSection("Test Send", 230, 55);
             
             // Send Test Message
-            CreateButton(TestSendSection.transform, "Send Test Message", 90, 35, Color.white, async () => await TwitchEventHandler.SendMessage("Test message sent 'from' debug page. If you see this mesage on your channel, your Authentication Token valid and working!"));
+            CreateButton(testSendSection.transform, "Send Test Message", 90, 35, Color.white, async () => await TwitchEventHandler.SendMessage("Test message sent 'from' debug page. If you see this mesage on your channel, your Authentication Token valid and working!"));
+        }
+
+        public override void Show()
+        {
+            base.Show();
+            if (debugLevelSection != null) debugLevelSection.SetActive(!isMinimized);
+            if (notificationTestsSection != null) notificationTestsSection.SetActive(!isMinimized);
+            if (testSendSection != null) testSendSection.SetActive(!isMinimized);
         }
     }
 }

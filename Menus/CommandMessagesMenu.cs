@@ -9,30 +9,18 @@ namespace TwitchChat.Menus
         private Text commandsMessage;
         private Toggle infoMessageEnabled;
         private Text infoMessage;
-        public delegate void OnBackButtonClickedHandler();
-        public event OnBackButtonClickedHandler OnBackButtonClicked;
+        private GameObject commandsSettingsSection;
+        private GameObject customCommandsSection;
 
         public CommandMessagesMenu(Transform parent) : base(parent)
         {
-            CreateCommandMessagesMenu();
             CreateCommandsSettingsSection();
             CreateCustomCommandsSection();
         }
 
-        private void CreateCommandMessagesMenu()
-        {
-            // Dimensions - 200x300
-
-            // Title
-            CreateTitle("Command Messages", 18, Color.white, TextAnchor.UpperCenter);
-            
-            // Back button
-            Button backButton = CreateButton(menuObject.transform, " X ", 190, 10, Color.white, () => OnBackButtonClicked?.Invoke());
-        }
-
         private void CreateCommandsSettingsSection()
         {
-            GameObject commandsSettingsSection = CreateSection("Commands Settings", 25, 175, false);
+            commandsSettingsSection = CreateSection("Commands Settings", 25, 175, false);
             
             // !Commands Message Label
             CreateLabel(commandsSettingsSection.transform, "!Commands Message", 5, 8);
@@ -65,7 +53,7 @@ namespace TwitchChat.Menus
         }
         private void CreateCustomCommandsSection()
         {
-            GameObject customCommandsSection = CreateSection("Custom Commands", 225, 50);
+            customCommandsSection = CreateSection("Custom Commands", 225, 50);
 
             // Custom Commands
             CreateTextDisplay(customCommandsSection.transform, "Future development", 25, 25, Color.yellow);
@@ -76,6 +64,13 @@ namespace TwitchChat.Menus
         {
             commandsMessage.text = Settings.Instance.commandsMessage;
             infoMessage.text = Settings.Instance.infoMessage;
+        }
+
+        public override void Show()
+        {
+            base.Show();
+            if (commandsSettingsSection != null) commandsSettingsSection.SetActive(!isMinimized);
+            if (customCommandsSection != null) customCommandsSection.SetActive(!isMinimized);
         }
     }
 }

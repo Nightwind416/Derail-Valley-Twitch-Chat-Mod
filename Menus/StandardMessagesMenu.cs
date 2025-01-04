@@ -13,30 +13,18 @@ namespace TwitchChat.Menus
         private Text newSubscriberMessage;
         private Toggle disconnectMessageEnabled;
         private Text disconnectMessage;
-        public delegate void OnBackButtonClickedHandler();
-        public event OnBackButtonClickedHandler OnBackButtonClicked;
+        private GameObject connectDisconnectSection;
+        private GameObject newFollowerSubscriberSection;
 
         public StandardMessagesMenu(Transform parent) : base(parent)
         {
-            CreateStandardMessagesMenu();
             CreateConnectDisconnectSection();
             CreateNewFollowerSubscriberSection();
         }
 
-        private void CreateStandardMessagesMenu()
-        {
-            // Dimensions - 200x300
-
-            // Title
-            CreateTitle("Standard Messages", 18, Color.white, TextAnchor.UpperCenter);
-            
-            // Back button
-            Button backButton = CreateButton(menuObject.transform, " X ", 190, 10, Color.white, () => OnBackButtonClicked?.Invoke());
-        }
-
         private void CreateConnectDisconnectSection()
         {
-            GameObject connectDisconnectSection = CreateSection("Connect/Disconnect Section", 20, 135, false);
+            connectDisconnectSection = CreateSection("Connect/Disconnect Section", 20, 135, false);
             
             // Connect Message Label
             CreateLabel(connectDisconnectSection.transform, "Connect", 5, 8);
@@ -69,7 +57,7 @@ namespace TwitchChat.Menus
         }
         private void CreateNewFollowerSubscriberSection()
         {
-            GameObject newFollowerSubscriberSection = CreateSection("New Follower/Subscriber Section", 160, 135, false);
+            newFollowerSubscriberSection = CreateSection("New Follower/Subscriber Section", 160, 135, false);
 
             // Message Label
             CreateLabel(newFollowerSubscriberSection.transform, "New Follower", 5, 8);
@@ -111,6 +99,13 @@ namespace TwitchChat.Menus
             newFollowerMessage.text = Settings.Instance.newFollowerMessage;
             newSubscriberMessage.text = Settings.Instance.newSubscriberMessage;
             disconnectMessage.text = Settings.Instance.disconnectMessage;
+        }
+
+        public override void Show()
+        {
+            base.Show();
+            if (connectDisconnectSection != null) connectDisconnectSection.SetActive(!isMinimized);
+            if (newFollowerSubscriberSection != null) newFollowerSubscriberSection.SetActive(!isMinimized);
         }
     }
 }

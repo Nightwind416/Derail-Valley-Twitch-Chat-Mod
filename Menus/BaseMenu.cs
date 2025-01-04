@@ -26,7 +26,20 @@ namespace TwitchChat.Menus
         protected RectTransform contentRectTransform;
         protected ScrollRect scrollRect;  // Add this field at the top with other fields
 
+        // Add fields for minimize functionality
+        protected bool isMinimized = false;
+        protected Vector2 originalSize;
+        protected Button minimizeButton;
+
+        // Add delegate and event for back button
+        public delegate void OnBackButtonClickedHandler();
+        public event OnBackButtonClickedHandler OnBackButtonClicked;
+
         public GameObject MenuObject => menuObject;
+
+        // Add these fields near the top of the class
+        protected bool showBackButton = true;
+        protected bool showMinimizeButton = true;
 
         protected BaseMenu(Transform parent)
         {
@@ -48,6 +61,90 @@ namespace TwitchChat.Menus
             rectTransform.offsetMax = Vector2.zero;
             rectTransform.pivot = new Vector2(0, 1);
             rectTransform.anchoredPosition = Vector2.zero;
+
+            // Create title
+            CreateTitle(GetType().Name.Replace("Menu", ""), 18, Color.white, TextAnchor.UpperCenter);
+
+            // Only create buttons if they're enabled
+            if (showBackButton)
+            {
+                Button backButton = CreateButton(menuObject.transform, " X ", 0, 0, Color.white, () => OnBackButtonClicked?.Invoke());
+                RectTransform backRect = backButton.GetComponent<RectTransform>();
+                backRect.anchorMin = new Vector2(1, 1);
+                backRect.anchorMax = new Vector2(1, 1);
+                backRect.pivot = new Vector2(1, 1);
+                // backRect.anchoredPosition = new Vector2(-5, -5);
+            }
+
+            if (showMinimizeButton)
+            {
+                minimizeButton = CreateButton(menuObject.transform, " − ", 0, 0, Color.white, OnMinimizeClick);
+                RectTransform minimizeRect = minimizeButton.GetComponent<RectTransform>();
+                minimizeRect.anchorMin = new Vector2(0, 1);
+                minimizeRect.anchorMax = new Vector2(0, 1);
+                minimizeRect.pivot = new Vector2(0, 1);
+                // minimizeRect.anchoredPosition = new Vector2(5, -5);
+            }
+        }
+
+        protected virtual void OnMinimizeClick()
+        {
+            if (!isMinimized)
+            {
+                // Store original size and anchors before minimizing
+                originalSize = rectTransform.sizeDelta;
+                
+                // Get panel image and adjust transparency
+                // Image panelImage = menuObject.GetComponent<Image>();
+                // if (panelImage != null)
+                // {
+                //     panelImage.color = new Color(0, 0, 0, 0.3f);
+                // }
+                
+                // Collapse the menu, but keep title and buttons visible
+                foreach (Transform child in menuObject.transform)
+                {
+                    // Skip the minimize button, title, and back button
+                    if (child.gameObject != minimizeButton.gameObject && 
+                        !child.name.Equals("Title") && 
+                        !child.name.Equals(" X Button"))
+                    {
+                        child.gameObject.SetActive(false);
+                    }
+                }
+                
+                // Set the height to exactly 30 pixels from the top
+                rectTransform.anchorMin = new Vector2(0, 1);
+                rectTransform.anchorMax = new Vector2(1, 1);
+                rectTransform.offsetMin = new Vector2(rectTransform.offsetMin.x, -30);
+                rectTransform.offsetMax = new Vector2(rectTransform.offsetMax.x, 0);
+                
+                minimizeButton.GetComponentInChildren<Text>().text = " + ";
+            }
+            else
+            {
+                // Restore the menu
+                // Image panelImage = menuObject.GetComponent<Image>();
+                // if (panelImage != null)
+                // {
+                //     panelImage.color = new Color(0, 0, 0, 0.3f);
+                // }
+                
+                foreach (Transform child in menuObject.transform)
+                {
+                    child.gameObject.SetActive(true);
+                }
+                
+                // Restore original anchors and position
+                rectTransform.anchorMin = new Vector2(0, 0);
+                rectTransform.anchorMax = new Vector2(1, 1);
+                rectTransform.offsetMin = Vector2.zero;
+                rectTransform.offsetMax = Vector2.zero;
+                
+                minimizeButton.GetComponentInChildren<Text>().text = " − ";
+            }
+            
+            isMinimized = !isMinimized;
         }
 
         protected GameObject CreateScrollableArea(int width = 180, int height = 250)

@@ -8,18 +8,10 @@ namespace TwitchChat.Menus
         public delegate void OnBackButtonClickedHandler();
         public event OnBackButtonClickedHandler OnBackButtonClicked;
 
-        private const int MaxVisibleMessages = 5; // Limit the number of visible messages
+        private const int MaxVisibleMessages = 5;
 
         public WideDisplayBoard(Transform parent) : base(parent)
         {
-            // Dimensions - 900x220
-            
-            // Title
-            CreateTitle("Wide Display Board", 18, Color.white, TextAnchor.UpperCenter);
-
-            // Back button
-            Button backButton = CreateButton(menuObject.transform, " X ", 890, 10, Color.white, () => OnBackButtonClicked?.Invoke());
-
             // Scrollable area
             scrollableArea = CreateScrollableArea(880, 190);
         }
@@ -39,6 +31,13 @@ namespace TwitchChat.Menus
                 totalHeight += child.sizeDelta.y;
             }
             contentRectTransform.sizeDelta = new Vector2(contentRectTransform.sizeDelta.x, totalHeight);
+        }
+
+        public override void Show()
+        {
+            base.Show();
+            // Restore proper height based on minimized state
+            if (scrollableArea != null) scrollableArea.SetActive(!isMinimized);
         }
     }
 }

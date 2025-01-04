@@ -14,33 +14,21 @@ namespace TwitchChat.Menus
         private Text lastTypeReceivedTime;
         private Text lastKeepaliveTime;
 
-        public delegate void OnBackButtonClickedHandler();
-        public event OnBackButtonClickedHandler OnBackButtonClicked;
+        private GameObject authSection;
+        private GameObject wsSection;
 
         public StatusMenu(Transform parent) : base(parent)
         {
-            CreateStatusMenu();
             CreateAuthenticationSection();
             CreateWebSocketSection();
         }
 
-        private void CreateStatusMenu()
-        {
-            // Dimensions - 200x300
-
-            // Title
-            CreateTitle("Status Menu", 18, Color.white, TextAnchor.UpperCenter);
-
-            // Back button
-            Button backButton = CreateButton(menuObject.transform, " X ", 190, 10, Color.white, () => OnBackButtonClicked?.Invoke());
-
-        }
         private void CreateAuthenticationSection()
         {
             // Dimensions - Menu width minus 20
 
             // Authentication Section
-            GameObject authSection = CreateSection("Twitch Authentication Status", 25, 75);
+            authSection = CreateSection("Twitch Authentication Status", 25, 75);
 
             // Authentication Status Message
             authStatus = CreateTextDisplay(authSection.transform, Settings.Instance.authentication_status, 15, 25);
@@ -63,7 +51,7 @@ namespace TwitchChat.Menus
             // Dimensions - Menu width minus 20
 
             // WebSocket Section
-            GameObject wsSection = CreateSection("WebSocket Status", 110, 180);
+            wsSection = CreateSection("WebSocket Status", 110, 180);
 
             // Connection Status Indicator
             connectionIndicator = CreateTextDisplay(wsSection.transform, "■", 25, 25);
@@ -137,6 +125,13 @@ namespace TwitchChat.Menus
 
             lastKeepaliveTime.text = WebSocketManager.lastKeepaliveTime.ToString("h:mm:ss tt");
             lastKeepaliveTime.color = Color.cyan;
+        }
+
+        public override void Show()
+        {
+            base.Show();
+            if (authSection != null) authSection.SetActive(!isMinimized);
+            if (wsSection != null) wsSection.SetActive(!isMinimized);
         }
     }
 }
