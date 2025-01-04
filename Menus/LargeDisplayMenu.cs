@@ -28,24 +28,13 @@ namespace TwitchChat.Menus
         {
             Main.LogEntry("LargeDisplayBoard.AddMessage", "Adding message to large display board...");
 
+            if (contentRectTransform.childCount >= MaxVisibleMessages)
+            {
+                RemoveOldestMessage();
+            }
             base.AddMessage(username, message);
 
             Main.LogEntry("LargeDisplayBoard.AddMessage", "Message added to large display board: " + username + ": " + message);
-
-            // Limit the number of visible messages
-            if (contentRectTransform.childCount > MaxVisibleMessages)
-            {
-                GameObject oldestMessage = contentRectTransform.GetChild(0).gameObject;
-                Object.Destroy(oldestMessage);
-            }
-
-            // Adjust the scrollable area size
-            float totalHeight = 0;
-            foreach (RectTransform child in contentRectTransform)
-            {
-                totalHeight += child.sizeDelta.y;
-            }
-            contentRectTransform.sizeDelta = new Vector2(contentRectTransform.sizeDelta.x, totalHeight);
         }
     }
 }

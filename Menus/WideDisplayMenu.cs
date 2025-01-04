@@ -26,14 +26,11 @@ namespace TwitchChat.Menus
 
         public void AddMessage(string username, string message)
         {
-            base.AddMessage(username, message);
-
-            // Limit the number of visible messages
-            if (contentRectTransform.childCount > MaxVisibleMessages)
+            if (contentRectTransform.childCount >= MaxVisibleMessages)
             {
-                GameObject oldestMessage = contentRectTransform.GetChild(0).gameObject;
-                Object.Destroy(oldestMessage);
+                RemoveOldestMessage();
             }
+            base.AddMessage(username, message);
 
             // Adjust the scrollable area size
             float totalHeight = 0;

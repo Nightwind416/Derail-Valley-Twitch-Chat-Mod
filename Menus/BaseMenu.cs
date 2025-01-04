@@ -13,11 +13,18 @@ namespace TwitchChat.Menus
         private readonly Queue<string> messageHistory = new Queue<string>();
         private readonly HashSet<string> recentMessages = new HashSet<string>();
 
+        // Add new fields for message batching
+        private const float MESSAGE_UPDATE_INTERVAL = 0.1f; // Update every 100ms
+        private float lastUpdateTime;
+        private readonly Queue<(string username, string message)> pendingMessages = new Queue<(string username, string message)>();
+        private bool isProcessingMessages;
+
         protected GameObject menuObject;
         protected RectTransform rectTransform;
         protected GameObject textInputField;
         protected GameObject scrollableArea;
         protected RectTransform contentRectTransform;
+        protected ScrollRect scrollRect;  // Add this field at the top with other fields
 
         public GameObject MenuObject => menuObject;
 
@@ -52,7 +59,7 @@ namespace TwitchChat.Menus
             Image scrollAreaImage = scrollableArea.AddComponent<Image>();
             scrollAreaImage.color = new Color(0, 0, 0, 0.3f); // Semi-transparent black
 
-            ScrollRect scrollRect = scrollableArea.AddComponent<ScrollRect>();
+            scrollRect = scrollableArea.AddComponent<ScrollRect>();
             scrollRect.vertical = true;
             scrollRect.horizontal = false;
 
@@ -568,7 +575,35 @@ namespace TwitchChat.Menus
 
             return barObj;
         }
-        public void AddMessage(string username, string message)
+        protected void RemoveOldestMessage()
+        {
+            if (contentRectTransform.childCount > 0)
+            {
+                if (contentRectTransform.GetChild(0) is RectTransform oldestMessage)
+                {
+                    float messageHeight = oldestMessage.sizeDelta.y + 5f; // Include padding
+                    GameObject.Destroy(oldestMessage.gameObject);
+
+                    // Adjust positions of remaining messages
+                    for (int i = 0; i < contentRectTransform.childCount; i++)
+                    {
+                        if (contentRectTransform.GetChild(i) is RectTransform child)
+                        {
+                            Vector2 position = child.anchoredPosition;
+                            position.y += messageHeight;
+                            child.anchoredPosition = position;
+                        }
+                    }
+
+                    // Adjust content height
+                    Vector2 contentSize = contentRectTransform.sizeDelta;
+                    contentSize.y -= messageHeight;
+                    contentRectTransform.sizeDelta = contentSize;
+                }
+            }
+        }
+
+        public virtual void AddMessage(string username, string message)
         {
             try
             {
@@ -602,71 +637,135 @@ namespace TwitchChat.Menus
                     }
                 }
 
-                // Rest of the existing AddMessage implementation
-                GameObject messageObj = new GameObject("Message");
-                messageObj.transform.SetParent(contentRectTransform, false);
-
-                // Setup RectTransform first
-                RectTransform messageRect = messageObj.AddComponent<RectTransform>();
-                messageRect.anchorMin = new Vector2(0, 1);
-                messageRect.anchorMax = new Vector2(1, 1);
-                messageRect.pivot = new Vector2(0.5f, 1);
-                messageRect.offsetMin = new Vector2(5, 0);
-                messageRect.offsetMax = new Vector2(-5, 0);
-
-                // Setup Text component with safe defaults
-                Text messageText = messageObj.AddComponent<Text>();
-                Font arialFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
-                if (arialFont == null)
+                // Add message to pending queue instead of processing immediately
+                lock (pendingMessages)
                 {
-                    Main.LogEntry("BaseMenu.AddMessage", "Error: Failed to load Arial font");
-                    GameObject.Destroy(messageObj);
-                    return;
+                    pendingMessages.Enqueue((username, message));
                 }
 
-                messageText.font = arialFont;
-                messageText.fontSize = 14;
-                messageText.lineSpacing = 1;
-                messageText.supportRichText = false;
-                messageText.alignByGeometry = true;
-                messageText.resizeTextForBestFit = false;
-                messageText.color = Color.white;
-                messageText.alignment = TextAnchor.UpperLeft;
-                messageText.horizontalOverflow = HorizontalWrapMode.Wrap;
-                messageText.verticalOverflow = VerticalWrapMode.Overflow;
-                messageText.raycastTarget = false;
-
-                // Set text after all other properties
-                messageText.text = $"{username}: {message}";
-
-                // Calculate height using a conservative estimate
-                float estimatedHeight = 20f; // Minimum height
-                if (!string.IsNullOrEmpty(messageText.text))
-                {
-                    int charCount = messageText.text.Length;
-                    float charsPerLine = (contentRectTransform.rect.width - 10) / (messageText.fontSize * 0.6f);
-                    float estimatedLines = Mathf.Ceil(charCount / charsPerLine);
-                    estimatedHeight = Mathf.Max(20f, estimatedLines * messageText.fontSize * 1.2f);
-                }
-
-                // Apply height to rect transform
-                messageRect.sizeDelta = new Vector2(0, estimatedHeight);
-
-                // Update content size
-                float newHeight = contentRectTransform.sizeDelta.y + estimatedHeight + 5f; // 5 pixels padding
-                contentRectTransform.sizeDelta = new Vector2(contentRectTransform.sizeDelta.x, newHeight);
-
-                // Ensure proper positioning relative to previous messages
-                Vector2 anchoredPos = messageRect.anchoredPosition;
-                anchoredPos.y = -contentRectTransform.sizeDelta.y;
-                messageRect.anchoredPosition = anchoredPos;
-
-                Main.LogEntry("BaseMenu.AddMessage", "Message added successfully");
+                // Try to process messages if enough time has passed
+                TryProcessPendingMessages();
             }
             catch (Exception e)
             {
                 Main.LogEntry("BaseMenu.AddMessage", $"Error adding message: {e.Message}\n{e.StackTrace}");
             }
+        }
+
+        private void TryProcessPendingMessages()
+        {
+            if (isProcessingMessages) return;
+
+            float currentTime = Time.realtimeSinceStartup;
+            if (currentTime - lastUpdateTime < MESSAGE_UPDATE_INTERVAL) return;
+
+            isProcessingMessages = true;
+            UnityMainThreadDispatcher.Instance().Enqueue(() =>
+            {
+                try
+                {
+                    ProcessMessageBatch();
+                }
+                finally
+                {
+                    isProcessingMessages = false;
+                    lastUpdateTime = Time.realtimeSinceStartup;
+                }
+            });
+        }
+
+        private void ProcessMessageBatch()
+        {
+            const int MAX_BATCH_SIZE = 10;
+            int processedCount = 0;
+
+            while (processedCount < MAX_BATCH_SIZE)
+            {
+                (string username, string message) messageInfo;
+                lock (pendingMessages)
+                {
+                    if (pendingMessages.Count == 0) break;
+                    messageInfo = pendingMessages.Dequeue();
+                }
+
+                CreateMessageObject(messageInfo.username, messageInfo.message);
+                processedCount++;
+            }
+
+            // Force layout update and scroll after batch
+            if (processedCount > 0)
+            {
+                Canvas.ForceUpdateCanvases();
+                if (scrollRect != null)
+                {
+                    scrollRect.verticalNormalizedPosition = 0f;
+                }
+            }
+        }
+
+        private void CreateMessageObject(string username, string message)
+        {
+            GameObject messageObj = new GameObject("Message");
+            messageObj.transform.SetParent(contentRectTransform, false);
+
+            RectTransform messageRect = messageObj.AddComponent<RectTransform>();
+            messageRect.anchorMin = new Vector2(0, 1);
+            messageRect.anchorMax = new Vector2(1, 1);
+            messageRect.pivot = new Vector2(0.5f, 1);
+            messageRect.offsetMin = new Vector2(5, 0);
+            messageRect.offsetMax = new Vector2(-5, 0);
+
+            Text messageText = messageObj.AddComponent<Text>();
+            Font arialFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            if (arialFont == null)
+            {
+                Main.LogEntry("BaseMenu.AddMessage", "Error: Failed to load Arial font");
+                GameObject.Destroy(messageObj);
+                return;
+            }
+
+            messageText.font = arialFont;
+            messageText.fontSize = 14;
+            messageText.lineSpacing = 1;
+            messageText.supportRichText = false;
+            messageText.alignByGeometry = true;
+            messageText.resizeTextForBestFit = false;
+            messageText.color = Color.white;
+            messageText.alignment = TextAnchor.UpperLeft;
+            messageText.horizontalOverflow = HorizontalWrapMode.Wrap;
+            messageText.verticalOverflow = VerticalWrapMode.Overflow;
+            messageText.raycastTarget = false;
+
+            // Set text content
+            string fullText = $"{username}: {message}";
+            messageText.text = fullText;
+
+            // Calculate height using a simple character-based estimation
+            float availableWidth = contentRectTransform.rect.width - 10f; // Account for padding
+            float approxCharWidth = messageText.fontSize * 0.6f; // Approximate width per character
+            float charsPerLine = Mathf.Floor(availableWidth / approxCharWidth);
+            float estimatedLines = Mathf.Max(1, Mathf.Ceil(fullText.Length / charsPerLine));
+            float lineHeight = messageText.fontSize * 1.2f; // Add 20% for line spacing
+            float estimatedHeight = Mathf.Max(20f, estimatedLines * lineHeight);
+
+            // Apply height to rect transform
+            messageRect.sizeDelta = new Vector2(0, estimatedHeight);
+
+            // Position the new message
+            float yPosition = 0;
+            if (contentRectTransform.childCount > 1)
+            {
+                Transform previousChild = contentRectTransform.GetChild(contentRectTransform.childCount - 2);
+                if (previousChild != null && previousChild.TryGetComponent<RectTransform>(out RectTransform lastMessage))
+                {
+                    yPosition = lastMessage.anchoredPosition.y - (estimatedHeight + 5f);
+                }
+            }
+            messageRect.anchoredPosition = new Vector2(0, yPosition);
+
+            // Update content height
+            float newHeight = Mathf.Abs(yPosition) + estimatedHeight;
+            contentRectTransform.sizeDelta = new Vector2(contentRectTransform.sizeDelta.x, newHeight);
         }
 
         public virtual void Show() => menuObject.SetActive(true);
