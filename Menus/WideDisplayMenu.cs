@@ -13,16 +13,16 @@ namespace TwitchChat.Menus
         public WideDisplayBoard(Transform parent) : base(parent)
         {
             // Scrollable area
-            scrollableArea = CreateScrollableArea(880, 190);
+            scrollableArea = ScrollableArea.CreateScrollableArea(menuObject.transform, 880, 190);
         }
 
         public void AddMessage(string username, string message)
         {
             if (contentRectTransform.childCount >= MaxVisibleMessages)
             {
-                RemoveOldestMessage();
+                MessageManager.RemoveOldestMessage(contentRectTransform);
             }
-            base.AddMessage(username, message);
+            MessageManager.AddMessage(contentRectTransform, scrollRect, username, message);
 
             // Adjust the scrollable area size
             float totalHeight = 0;

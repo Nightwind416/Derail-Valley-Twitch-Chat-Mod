@@ -10,7 +10,7 @@ namespace TwitchChat.Menus
         public LargeDisplayBoard(Transform parent) : base(parent)
         {
             // Scrollable area
-            scrollableArea = CreateScrollableArea(1180, 620);
+            scrollableArea = ScrollableArea.CreateScrollableArea(menuObject.transform, 1180, 620);
         }
 
         public void AddMessage(string username, string message)
@@ -19,9 +19,9 @@ namespace TwitchChat.Menus
 
             if (contentRectTransform.childCount >= MaxVisibleMessages)
             {
-                RemoveOldestMessage();
+                MessageManager.RemoveOldestMessage(contentRectTransform);
             }
-            base.AddMessage(username, message);
+            MessageManager.AddMessage(contentRectTransform, scrollRect, username, message);
 
             Main.LogEntry("LargeDisplayBoard.AddMessage", "Message added to large display board: " + username + ": " + message);
         }

@@ -23,10 +23,10 @@ namespace TwitchChat.Menus
             commandsSettingsSection = CreateSection("Commands Settings", 25, 175, false);
             
             // !Commands Message Label
-            CreateLabel(commandsSettingsSection.transform, "!Commands Message", 5, 8);
+            UIElementFactory.CreateLabel(commandsSettingsSection.transform, "!Commands Message", 5, 8);
             
             // Connect Message Enabled
-            commandsMessageEnabled = CreateToggle(commandsSettingsSection.transform, 155, 15, "Enabled", "Disabled", Settings.Instance.commandsMessageEnabled);
+            commandsMessageEnabled = UIElementFactory.CreateToggle(commandsSettingsSection.transform, 155, 15, "Enabled", "Disabled", Settings.Instance.commandsMessageEnabled);
             commandsMessageEnabled.onValueChanged.AddListener((value) => {
                 Settings.Instance.commandsMessageEnabled = value;
                 Settings.Instance.Save(Main.ModEntry);
@@ -39,10 +39,10 @@ namespace TwitchChat.Menus
             CreateHorizontalBar(commandsSettingsSection.transform, 70);
             
             // !Info Message Label
-            CreateLabel(commandsSettingsSection.transform, "!Info Message", 5, 80);
+            UIElementFactory.CreateLabel(commandsSettingsSection.transform, "!Info Message", 5, 80);
             
             // Disconnect Message Enabled
-            infoMessageEnabled = CreateToggle(commandsSettingsSection.transform, 135, 87, "Enabled", "Disabled", Settings.Instance.infoMessageEnabled);
+            infoMessageEnabled = UIElementFactory.CreateToggle(commandsSettingsSection.transform, 135, 87, "Enabled", "Disabled", Settings.Instance.infoMessageEnabled);
             infoMessageEnabled.onValueChanged.AddListener((value) => {
                 Settings.Instance.infoMessageEnabled = value;
                 Settings.Instance.Save(Main.ModEntry);

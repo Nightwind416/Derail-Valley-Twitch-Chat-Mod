@@ -17,7 +17,7 @@ namespace TwitchChat.Menus
             settingsSection = CreateSection("Settings", 25, 100);
             
             // Timed Messages Settings
-            CreateTextDisplay(settingsSection.transform, "Not yet integrated into the panel system. Utilize the Unity Mod Manager menu for Timed Messages.", 10, 25, Color.yellow, 4);
+            UIElementFactory.CreateTextDisplay(settingsSection.transform, "Not yet integrated into the panel system. Utilize the Unity Mod Manager menu for Timed Messages.", 10, 25, Color.yellow, 4);
             
             // TODO: Add Timed Messages Settings content
         }
