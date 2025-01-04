@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Events;
@@ -68,28 +69,6 @@ namespace TwitchChat.Menus
 
             scrollRect.content = contentRectTransform;
             scrollRect.viewport = viewportRect;
-        }
-
-        public void AddMessage(string username, string message)
-        {
-            GameObject messageObj = new GameObject("Message");
-            messageObj.transform.SetParent(contentRectTransform, false);
-
-            Text messageText = messageObj.AddComponent<Text>();
-            messageText.text = $"{username}: {message}";
-            messageText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            messageText.fontSize = 14;
-            messageText.color = Color.white;
-            messageText.alignment = TextAnchor.UpperLeft;
-
-            RectTransform messageRect = messageObj.GetComponent<RectTransform>();
-            messageRect.anchorMin = new Vector2(0, 1);
-            messageRect.anchorMax = new Vector2(1, 1);
-            messageRect.pivot = new Vector2(0.5f, 1);
-            messageRect.offsetMin = new Vector2(0, -messageText.preferredHeight);
-            messageRect.offsetMax = new Vector2(0, 0);
-
-            contentRectTransform.sizeDelta = new Vector2(contentRectTransform.sizeDelta.x, contentRectTransform.sizeDelta.y + messageText.preferredHeight);
         }
 
         protected void CreateTitle(string titleText, int fontSize = 16, Color? textColor = null, TextAnchor textAlignment = TextAnchor.UpperCenter)
@@ -564,6 +543,82 @@ namespace TwitchChat.Menus
             rect.anchoredPosition = new Vector2(0, -yPosition);
 
             return barObj;
+        }
+        public void AddMessage(string username, string message)
+        {
+            try
+            {
+                if (contentRectTransform == null)
+                {
+                    Main.LogEntry("BaseMenu.AddMessage", "Error: contentRectTransform is null");
+                    return;
+                }
+
+                // Create message container with minimal components
+                GameObject messageObj = new GameObject("Message");
+                messageObj.transform.SetParent(contentRectTransform, false);
+
+                // Setup RectTransform first
+                RectTransform messageRect = messageObj.AddComponent<RectTransform>();
+                messageRect.anchorMin = new Vector2(0, 1);
+                messageRect.anchorMax = new Vector2(1, 1);
+                messageRect.pivot = new Vector2(0.5f, 1);
+                messageRect.offsetMin = new Vector2(5, 0);
+                messageRect.offsetMax = new Vector2(-5, 0);
+
+                // Setup Text component with safe defaults
+                Text messageText = messageObj.AddComponent<Text>();
+                Font arialFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
+                if (arialFont == null)
+                {
+                    Main.LogEntry("BaseMenu.AddMessage", "Error: Failed to load Arial font");
+                    GameObject.Destroy(messageObj);
+                    return;
+                }
+
+                messageText.font = arialFont;
+                messageText.fontSize = 14;
+                messageText.lineSpacing = 1;
+                messageText.supportRichText = false;
+                messageText.alignByGeometry = true;
+                messageText.resizeTextForBestFit = false;
+                messageText.color = Color.white;
+                messageText.alignment = TextAnchor.UpperLeft;
+                messageText.horizontalOverflow = HorizontalWrapMode.Wrap;
+                messageText.verticalOverflow = VerticalWrapMode.Overflow;
+                messageText.raycastTarget = false;
+
+                // Set text after all other properties
+                messageText.text = $"{username}: {message}";
+
+                // Calculate height using a conservative estimate
+                float estimatedHeight = 20f; // Minimum height
+                if (!string.IsNullOrEmpty(messageText.text))
+                {
+                    int charCount = messageText.text.Length;
+                    float charsPerLine = (contentRectTransform.rect.width - 10) / (messageText.fontSize * 0.6f);
+                    float estimatedLines = Mathf.Ceil(charCount / charsPerLine);
+                    estimatedHeight = Mathf.Max(20f, estimatedLines * messageText.fontSize * 1.2f);
+                }
+
+                // Apply height to rect transform
+                messageRect.sizeDelta = new Vector2(0, estimatedHeight);
+
+                // Update content size
+                float newHeight = contentRectTransform.sizeDelta.y + estimatedHeight + 5f; // 5 pixels padding
+                contentRectTransform.sizeDelta = new Vector2(contentRectTransform.sizeDelta.x, newHeight);
+
+                // Ensure proper positioning relative to previous messages
+                Vector2 anchoredPos = messageRect.anchoredPosition;
+                anchoredPos.y = -contentRectTransform.sizeDelta.y;
+                messageRect.anchoredPosition = anchoredPos;
+
+                Main.LogEntry("BaseMenu.AddMessage", "Message added successfully");
+            }
+            catch (Exception e)
+            {
+                Main.LogEntry("BaseMenu.AddMessage", $"Error adding message: {e.Message}\n{e.StackTrace}");
+            }
         }
 
         public virtual void Show() => menuObject.SetActive(true);

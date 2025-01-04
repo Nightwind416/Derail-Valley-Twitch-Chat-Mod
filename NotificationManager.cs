@@ -142,7 +142,14 @@ namespace TwitchChat
                     }
 
                     // Add message to in-game display boards
-                    MenuManager.Instance.AddMessageToDisplayBoards(chatter, text);
+                    try
+                    {
+                        MenuManager.Instance.AddMessageToDisplayBoards(chatter, text);
+                    }
+                    catch (Exception ex)
+                    {
+                        Main.LogEntry($"{methodName}", $"Failed to add message to display boards: {ex.Message}");
+                    }
 
                     // Check if notification system is enabled
                     if (Settings.Instance.notificationsEnabled == false)

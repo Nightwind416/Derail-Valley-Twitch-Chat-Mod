@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using System.Reflection;
 using TwitchChat.Menus;
 using System.Collections.Generic;
+using System;
 
 namespace TwitchChat
 {
@@ -10,7 +11,7 @@ namespace TwitchChat
     {
         private static MenuManager? instance;
         public static GameObject?[] menuCanvases = new GameObject?[6];
-        private readonly bool[] attachedToStickyTape = [false, false, false, false, false];
+        private readonly bool[] attachedToStickyTape = new bool[6];
         private readonly GameObject?[] stickyTapeBases = new GameObject?[6];
         private readonly string[] licenseNames =
         [
@@ -74,7 +75,7 @@ namespace TwitchChat
             { MenuType.Status, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
             { MenuType.NotificationSettings, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
             { MenuType.LargeDisplay, new(new Vector2(1200, 650), new Vector2(1200, 650), Vector2.zero, Vector3.zero) },
-            { MenuType.MediumDisplay, new(new Vector2(500, 500), new(new Vector2(500, 500), Vector2.zero, Vector3.zero) },
+            { MenuType.MediumDisplay, new(new Vector2(500, 500), new Vector2(500, 500), Vector2.zero, Vector3.zero) },
             { MenuType.WideDisplay, new(new Vector2(900, 220), new Vector2(900, 220), Vector2.zero, Vector3.zero) },
             { MenuType.SmallDisplay, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
             { MenuType.StandardMessages, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
@@ -106,10 +107,12 @@ namespace TwitchChat
             {
                 if (licenseObjects[i] == null)
                 {
+                    // BUG: Dispatcher license is not being replaced
                     licenseObjects[i] = GameObject.Find(licenseNames[i]);
                     if (licenseObjects[i] != null)
                     {
-                        Main.LogEntry(methodName, $"Attaching menu to license {i + 1}");
+                        string licenseName = licenseObjects[i]!.name;
+                        Main.LogEntry(methodName, $"Attaching menu {i + 1} to {licenseName}");
                         
                         if (menuCanvases[i] == null)
                         {
@@ -176,40 +179,57 @@ namespace TwitchChat
         // BUG: Sticky tape returns after away from loco, detact/reattach fixes it
         private void HandleLicenseAttachment(int index)
         {
-            Transform current = licenseObjects[index]!.transform;
-            bool currentlyAttached = false;
-            GameObject? newStickyTapeBase = null;
-            
-            while (current.parent != null)
+            // Bounds checking for all arrays
+            if (index < 0 || index >= licenseNames.Length || 
+                index >= attachedToStickyTape.Length ||
+                index >= stickyTapeBases.Length ||
+                licenseObjects[index] == null)
             {
-                if (current.parent.name.Contains("StickyTape_Gadget"))
-                {
-                    currentlyAttached = true;
-                    Transform baseTransform = current.parent.Find("LOD gadget_sticker_base");
-                    if (baseTransform != null)
-                    {
-                        newStickyTapeBase = baseTransform.gameObject;
-                    }
-                    break;
-                }
-                current = current.parent;
+                Main.LogEntry("MenuManager.HandleLicenseAttachment", $"Invalid index or null object: {index}");
+                return;
             }
 
-            if (currentlyAttached != attachedToStickyTape[index])
+            try
             {
-                attachedToStickyTape[index] = currentlyAttached;
-                Main.LogEntry("HandleLicenseAttachment", $"License {index + 1} attachment to sticky tape changed: {attachedToStickyTape[index]}");
+                Transform current = licenseObjects[index]!.transform;
+                bool currentlyAttached = false;
+                GameObject? newStickyTapeBase = null;
                 
-                if (attachedToStickyTape[index] && newStickyTapeBase != null)
+                while (current.parent != null)
                 {
-                    stickyTapeBases[index] = newStickyTapeBase;
-                    stickyTapeBases[index]!.SetActive(false);
+                    if (current.parent.name.Contains("StickyTape_Gadget"))
+                    {
+                        currentlyAttached = true;
+                        Transform baseTransform = current.parent.Find("LOD gadget_sticker_base");
+                        if (baseTransform != null)
+                        {
+                            newStickyTapeBase = baseTransform.gameObject;
+                        }
+                        break;
+                    }
+                    current = current.parent;
                 }
-                else if (!attachedToStickyTape[index] && stickyTapeBases[index] != null)
+
+                if (currentlyAttached != attachedToStickyTape[index])
                 {
-                    stickyTapeBases[index]!.SetActive(true);
-                    stickyTapeBases[index] = null;
+                    attachedToStickyTape[index] = currentlyAttached;
+                    Main.LogEntry("HandleLicenseAttachment", $"License {index + 1} attachment to sticky tape changed: {attachedToStickyTape[index]}");
+                    
+                    if (attachedToStickyTape[index] && newStickyTapeBase != null)
+                    {
+                        stickyTapeBases[index] = newStickyTapeBase;
+                        stickyTapeBases[index]!.SetActive(false);
+                    }
+                    else if (!attachedToStickyTape[index] && stickyTapeBases[index] != null)
+                    {
+                        stickyTapeBases[index]!.SetActive(true);
+                        stickyTapeBases[index] = null;
+                    }
                 }
+            }
+            catch (Exception e)
+            {
+                Main.LogEntry("MenuManager.HandleLicenseAttachment", $"Error: {e.Message}");
             }
         }
 
@@ -440,7 +460,9 @@ namespace TwitchChat
 
         public void AddMessageToDisplayBoards(string username, string message)
         {
-            for (int i = 0; i < largeDisplayBoards.Length; i++)
+            Main.LogEntry("AddMessageToDisplayBoards", $"Adding message to all display boards: {username}: {message}");
+
+            for (int i = 0; i < menuCanvases.Length; i++)
             {
                 largeDisplayBoards[i]?.AddMessage(username, message);
                 mediumDisplayBoards[i]?.AddMessage(username, message);

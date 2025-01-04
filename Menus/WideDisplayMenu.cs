@@ -34,7 +34,7 @@ namespace TwitchChat.Menus
             if (contentRectTransform.childCount > MaxVisibleMessages)
             {
                 GameObject oldestMessage = contentRectTransform.GetChild(0).gameObject;
-                Destroy(oldestMessage);
+                Object.Destroy(oldestMessage);
             }
 
             // Adjust the scrollable area size
