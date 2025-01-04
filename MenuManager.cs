@@ -74,7 +74,7 @@ namespace TwitchChat
             { MenuType.Status, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
             { MenuType.NotificationSettings, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
             { MenuType.LargeDisplay, new(new Vector2(1200, 650), new Vector2(1200, 650), Vector2.zero, Vector3.zero) },
-            { MenuType.MediumDisplay, new(new Vector2(500, 500), new Vector2(500, 500), Vector2.zero, Vector3.zero) },
+            { MenuType.MediumDisplay, new(new Vector2(500, 500), new(new Vector2(500, 500), Vector2.zero, Vector3.zero) },
             { MenuType.WideDisplay, new(new Vector2(900, 220), new Vector2(900, 220), Vector2.zero, Vector3.zero) },
             { MenuType.SmallDisplay, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
             { MenuType.StandardMessages, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
@@ -436,6 +436,17 @@ namespace TwitchChat
             menuCanvas.transform.rotation = licenseObject.transform.rotation * 
                                          Quaternion.Euler(90f, 180f, 0f) * 
                                          Quaternion.Euler(menuConfigs[MenuType.Main].PanelRotationOffset);
+        }
+
+        public void AddMessageToDisplayBoards(string username, string message)
+        {
+            for (int i = 0; i < largeDisplayBoards.Length; i++)
+            {
+                largeDisplayBoards[i]?.AddMessage(username, message);
+                mediumDisplayBoards[i]?.AddMessage(username, message);
+                wideDisplayBoards[i]?.AddMessage(username, message);
+                smallDisplayBoards[i]?.AddMessage(username, message);
+            }
         }
     }
 }

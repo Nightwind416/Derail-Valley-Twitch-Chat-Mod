@@ -8,10 +8,11 @@ namespace TwitchChat.Menus
         public delegate void OnBackButtonClickedHandler();
         public event OnBackButtonClickedHandler OnBackButtonClicked;
 
+        private const int MaxVisibleMessages = 3; // Limit the number of visible messages
+
         public SmallDisplayBoard(Transform parent) : base(parent)
         {
             CreateSmallDisplayBoard();
-            CreateMessageSection();
         }
 
         private void CreateSmallDisplayBoard()
@@ -25,12 +26,24 @@ namespace TwitchChat.Menus
             Button backButton = CreateButton(menuObject.transform, " X ", 190, 10, Color.white, () => OnBackButtonClicked?.Invoke());
         }
 
-        private void CreateMessageSection()
+        public void AddMessage(string username, string message)
         {
-            GameObject messageSection = CreateSection("Message", 25, 100);
-            
-            // Add message section components here
-            // TODO: Add message section content
+            base.AddMessage(username, message);
+
+            // Limit the number of visible messages
+            if (contentRectTransform.childCount > MaxVisibleMessages)
+            {
+                GameObject oldestMessage = contentRectTransform.GetChild(0).gameObject;
+                Destroy(oldestMessage);
+            }
+
+            // Adjust the scrollable area size
+            float totalHeight = 0;
+            foreach (RectTransform child in contentRectTransform)
+            {
+                totalHeight += child.sizeDelta.y;
+            }
+            contentRectTransform.sizeDelta = new Vector2(contentRectTransform.sizeDelta.x, totalHeight);
         }
     }
 }

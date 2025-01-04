@@ -9,6 +9,8 @@ namespace TwitchChat.Menus
         protected GameObject menuObject;
         protected RectTransform rectTransform;
         protected GameObject textInputField;
+        protected GameObject scrollableArea;
+        protected RectTransform contentRectTransform;
 
         public GameObject MenuObject => menuObject;
 
@@ -32,7 +34,64 @@ namespace TwitchChat.Menus
             rectTransform.offsetMax = Vector2.zero;
             rectTransform.pivot = new Vector2(0, 1);
             rectTransform.anchoredPosition = Vector2.zero;
+
+            CreateScrollableArea();
         }
+
+        protected void CreateScrollableArea()
+        {
+            scrollableArea = new GameObject("ScrollableArea");
+            scrollableArea.transform.SetParent(menuObject.transform, false);
+
+            ScrollRect scrollRect = scrollableArea.AddComponent<ScrollRect>();
+            scrollRect.vertical = true;
+            scrollRect.horizontal = false;
+
+            GameObject viewport = new GameObject("Viewport");
+            viewport.transform.SetParent(scrollableArea.transform, false);
+            RectTransform viewportRect = viewport.AddComponent<RectTransform>();
+            viewportRect.anchorMin = new Vector2(0, 0);
+            viewportRect.anchorMax = new Vector2(1, 1);
+            viewportRect.offsetMin = Vector2.zero;
+            viewportRect.offsetMax = Vector2.zero;
+            viewport.AddComponent<Mask>().showMaskGraphic = false;
+            viewport.AddComponent<Image>().color = new Color(0, 0, 0, 0.1f);
+
+            GameObject content = new GameObject("Content");
+            content.transform.SetParent(viewport.transform, false);
+            contentRectTransform = content.AddComponent<RectTransform>();
+            contentRectTransform.anchorMin = new Vector2(0, 1);
+            contentRectTransform.anchorMax = new Vector2(1, 1);
+            contentRectTransform.pivot = new Vector2(0.5f, 1);
+            contentRectTransform.offsetMin = Vector2.zero;
+            contentRectTransform.offsetMax = Vector2.zero;
+
+            scrollRect.content = contentRectTransform;
+            scrollRect.viewport = viewportRect;
+        }
+
+        public void AddMessage(string username, string message)
+        {
+            GameObject messageObj = new GameObject("Message");
+            messageObj.transform.SetParent(contentRectTransform, false);
+
+            Text messageText = messageObj.AddComponent<Text>();
+            messageText.text = $"{username}: {message}";
+            messageText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            messageText.fontSize = 14;
+            messageText.color = Color.white;
+            messageText.alignment = TextAnchor.UpperLeft;
+
+            RectTransform messageRect = messageObj.GetComponent<RectTransform>();
+            messageRect.anchorMin = new Vector2(0, 1);
+            messageRect.anchorMax = new Vector2(1, 1);
+            messageRect.pivot = new Vector2(0.5f, 1);
+            messageRect.offsetMin = new Vector2(0, -messageText.preferredHeight);
+            messageRect.offsetMax = new Vector2(0, 0);
+
+            contentRectTransform.sizeDelta = new Vector2(contentRectTransform.sizeDelta.x, contentRectTransform.sizeDelta.y + messageText.preferredHeight);
+        }
+
         protected void CreateTitle(string titleText, int fontSize = 16, Color? textColor = null, TextAnchor textAlignment = TextAnchor.UpperCenter)
         {
             GameObject titleObj = new GameObject("Title");
