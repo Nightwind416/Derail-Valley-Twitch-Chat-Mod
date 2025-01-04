@@ -9,9 +9,9 @@ namespace TwitchChat
     public class MenuManager : MonoBehaviour
     {
         private static MenuManager? instance;
-        public static GameObject?[] menuCanvases = new GameObject?[5];
+        public static GameObject?[] menuCanvases = new GameObject?[6];
         private readonly bool[] attachedToStickyTape = [false, false, false, false, false];
-        private readonly GameObject?[] stickyTapeBases = new GameObject?[5];
+        private readonly GameObject?[] stickyTapeBases = new GameObject?[6];
         private readonly string[] licenseNames =
         [
             "LicenseTrainDriver",
@@ -19,22 +19,22 @@ namespace TwitchChat
             "LicenseLocomotiveDE2",
             "LicenseMuseumCitySouth",
             "LicenseFreightHaul",
-            "LicenseDispacther1"
+            "LicenseDispatcher1"
         ];
-        private readonly GameObject?[] licenseObjects = new GameObject?[5];
+        private readonly GameObject?[] licenseObjects = new GameObject?[6];
 
-        private MainMenu?[] mainMenus = new MainMenu?[5];
-        private StatusMenu?[] statusMenus = new StatusMenu?[5];
-        private NotificationMenu?[] notificationSettingsMenus = new NotificationMenu?[5];
-        private LargeDisplayBoard?[] largeDisplayBoards = new LargeDisplayBoard?[5];
-        private MediumDisplayBoard?[] mediumDisplayBoards = new MediumDisplayBoard?[5];
-        private WideDisplayBoard?[] wideDisplayBoards = new WideDisplayBoard?[5];
-        private SmallDisplayBoard?[] smallDisplayBoards = new SmallDisplayBoard?[5];
-        private StandardMessagesMenu?[] StandardMessagesMenus = new StandardMessagesMenu?[5];
-        private CommandMessagesMenu?[] CommandMessagesMenus = new CommandMessagesMenu?[5];
-        private TimedMessagesMenu?[] TimedMessagesMenus = new TimedMessagesMenu?[5];
-        private ConfigurationMenu?[] configurationMenus = new ConfigurationMenu?[5];
-        private DebugMenu?[] debugMenus = new DebugMenu?[5];
+        private MainMenu?[] mainMenus = new MainMenu?[6];
+        private StatusMenu?[] statusMenus = new StatusMenu?[6];
+        private NotificationMenu?[] notificationSettingsMenus = new NotificationMenu?[6];
+        private LargeDisplayBoard?[] largeDisplayBoards = new LargeDisplayBoard?[6];
+        private MediumDisplayBoard?[] mediumDisplayBoards = new MediumDisplayBoard?[6];
+        private WideDisplayBoard?[] wideDisplayBoards = new WideDisplayBoard?[6];
+        private SmallDisplayBoard?[] smallDisplayBoards = new SmallDisplayBoard?[6];
+        private StandardMessagesMenu?[] StandardMessagesMenus = new StandardMessagesMenu?[6];
+        private CommandMessagesMenu?[] CommandMessagesMenus = new CommandMessagesMenu?[6];
+        private TimedMessagesMenu?[] TimedMessagesMenus = new TimedMessagesMenu?[6];
+        private ConfigurationMenu?[] configurationMenus = new ConfigurationMenu?[6];
+        private DebugMenu?[] debugMenus = new DebugMenu?[6];
 
         private enum MenuType
         {
@@ -424,7 +424,7 @@ namespace TwitchChat
         {
             if (menuCanvas == null)
             {
-                Debug.LogWarning("Menu Canvas is not initialized.");
+                Main.LogEntry("MenuManager.PositionNearObject", "Menu Canvas is not initialized.");
                 return;
             }
 

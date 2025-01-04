@@ -92,12 +92,12 @@ namespace TwitchChat
 
             Main.LogEntry(methodName, "Attempting to handle notification...");
 
-            if (Settings.Instance.notificationsEnabled == false)
-            {
-                Main.LogEntry(methodName, "Notification system disabled, skipping.");
-                return;
-            }
-            Main.LogEntry(methodName, "Notification system enabled, continuing...");
+            // if (Settings.Instance.notificationsEnabled == false)
+            // {
+            //     Main.LogEntry(methodName, "Notification system disabled, skipping.");
+            //     return;
+            // }
+            // Main.LogEntry(methodName, "Notification system enabled, continuing...");
         
             try
             {
@@ -141,7 +141,17 @@ namespace TwitchChat
                         return;
                     }
 
-                    // Show notification only for non-command messages
+                    // Add message to in-game display boards
+                    // TODO: Add message to display board
+
+                    // Check if notification system is enabled
+                    if (Settings.Instance.notificationsEnabled == false)
+                    {
+                        Main.LogEntry(methodName, "Notification system disabled, skipping.");
+                        return;
+                    }
+                    Main.LogEntry(methodName, "Notification system enabled, continuing...");
+
                     try
                     {
                         Main.LogEntry($"{methodName}", "Attempting to queue notification...");
