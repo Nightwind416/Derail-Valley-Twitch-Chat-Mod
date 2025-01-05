@@ -1,14 +1,14 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace TwitchChat.Menus
+namespace TwitchChat.MenuConstructor
 {
     public class CommandMessagesMenu : MenuConstructor.BaseMenu
     {
-        private Toggle? commandsMessageEnabled;
-        private Text? commandsMessage;
-        private Toggle? infoMessageEnabled;
-        private Text? infoMessage;
+        private UnityEngine.UI.Toggle? commandsMessageEnabled;
+        private UnityEngine.UI.Text? commandsMessage;
+        private UnityEngine.UI.Toggle? infoMessageEnabled;
+        private UnityEngine.UI.Text? infoMessage;
         private GameObject? commandsSettingsSection;
         private GameObject? customCommandsSection;
 

@@ -2,7 +2,7 @@ using System.Reflection;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace TwitchChat.Menus
+namespace TwitchChat.MenuConstructor
 {
     public class MainMenu : MenuConstructor.BaseMenu
     {
@@ -35,7 +35,7 @@ namespace TwitchChat.Menus
             string methodName = MethodBase.GetCurrentMethod().Name;
             
             Main.LogEntry(methodName, $"Creating button: {text}");
-            Button button = MenuConstructor.Button.Create(menuObject.transform, text, 100, verticalPosition);
+            UnityEngine.UI.Button button = MenuConstructor.Button.Create(menuObject.transform, text, 100, verticalPosition);
             button.onClick.AddListener(() => {
                 Main.LogEntry(methodName, $"Button clicked: {text}");
                 MenuManager.Instance.OnMenuButtonClicked(text, menuIndex);

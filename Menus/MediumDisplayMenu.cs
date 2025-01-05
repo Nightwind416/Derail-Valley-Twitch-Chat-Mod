@@ -1,30 +1,9 @@
 using UnityEngine;
 
-namespace TwitchChat.Menus
+namespace TwitchChat.MenuConstructor
 {
-    public class MediumDisplayBoard : MenuConstructor.BaseMenu
+    public class MediumDisplayBoard : DisplayBoard
     {
-        private const int MaxVisibleMessages = 12; // Limit the number of visible messages
-
-        public MediumDisplayBoard(Transform parent) : base(parent)
-        {
-            // Scrollable area
-            scrollableArea = MenuConstructor.ScrollableArea.Create(menuObject.transform, 480, 460);
-        }
-
-        public void AddMessage(string username, string message)
-        {
-            if (contentRectTransform.childCount >= MaxVisibleMessages)
-            {
-                MenuConstructor.MessageManager.RemoveOldestMessage(contentRectTransform);
-            }
-            MenuConstructor.MessageManager.AddMessage(contentRectTransform, scrollRect, username, message);
-        }
-
-        public override void Show()
-        {
-            base.Show();
-            scrollableArea?.SetActive(!isMinimized);
-        }
+        public MediumDisplayBoard(Transform parent) : base(parent, 12, 480, 460) { }
     }
 }

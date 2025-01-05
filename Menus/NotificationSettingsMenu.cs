@@ -1,12 +1,12 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace TwitchChat.Menus
+namespace TwitchChat.MenuConstructor
 {
     public class NotificationMenu : MenuConstructor.BaseMenu
     {
-        public static Toggle? notificationsEnabled;
-        private Slider? notificationDuration;
+        public static UnityEngine.UI.Toggle? notificationsEnabled;
+        private UnityEngine.UI.Slider? notificationDuration;
         private GameObject? notificationSection;
 
         public NotificationMenu(Transform parent) : base(parent)

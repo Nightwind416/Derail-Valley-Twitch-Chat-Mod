@@ -5,56 +5,55 @@ namespace TwitchChat.MenuConstructor
 {
     public static class ScrollableArea
     {
-        public static GameObject Create(Transform parent, int width = 180, int height = 250)
+        public static GameObject Create(Transform parent, float width, float height)
         {
-            GameObject scrollableArea = new("ScrollableArea");
-            scrollableArea.transform.SetParent(parent, false);
+            GameObject scrollView = new("ScrollView");
+            scrollView.transform.SetParent(parent, false);
 
-            // Add visible background to scrollable area
-            Image scrollAreaImage = scrollableArea.AddComponent<Image>();
-            scrollAreaImage.color = new Color(0, 0, 0, 0.3f); // Semi-transparent black
+            RectTransform scrollViewRect = scrollView.AddComponent<RectTransform>();
+            scrollViewRect.anchorMin = new Vector2(0.5f, 0.5f);
+            scrollViewRect.anchorMax = new Vector2(0.5f, 0.5f);
+            scrollViewRect.pivot = new Vector2(0.5f, 0.5f);
+            scrollViewRect.sizeDelta = new Vector2(width, height);
+            scrollViewRect.anchoredPosition = new Vector2(0, -50); // Offset for title
 
-            ScrollRect scrollRect = scrollableArea.AddComponent<ScrollRect>();
-            scrollRect.vertical = true;
-            scrollRect.horizontal = false;
+            // Add mask
+            Image maskImage = scrollView.AddComponent<Image>();
+            maskImage.color = new Color(0, 0, 0, 0.1f);
+            Mask mask = scrollView.AddComponent<Mask>();
+            mask.showMaskGraphic = true;
 
-            // Set up viewport
+            // Create viewport
             GameObject viewport = new("Viewport");
-            viewport.transform.SetParent(scrollableArea.transform, false);
+            viewport.transform.SetParent(scrollView.transform, false);
             RectTransform viewportRect = viewport.AddComponent<RectTransform>();
             viewportRect.anchorMin = Vector2.zero;
             viewportRect.anchorMax = Vector2.one;
             viewportRect.sizeDelta = Vector2.zero;
-            viewportRect.anchoredPosition = Vector2.zero;
+            viewportRect.pivot = new Vector2(0, 1);
 
-            // Add mask to viewport
-            Image viewportImage = viewport.AddComponent<Image>();
-            viewportImage.color = new Color(0, 0, 0, 0.1f);
-            viewport.AddComponent<Mask>().showMaskGraphic = true;
-
-            // Set up content
+            // Create content
             GameObject content = new("Content");
             content.transform.SetParent(viewport.transform, false);
-            RectTransform contentRectTransform = content.AddComponent<RectTransform>();
-            contentRectTransform.anchorMin = new Vector2(0, 1);
-            contentRectTransform.anchorMax = new Vector2(1, 1);
-            contentRectTransform.pivot = new Vector2(0.5f, 1);
-            contentRectTransform.sizeDelta = new Vector2(0, 0);
+            RectTransform contentRect = content.AddComponent<RectTransform>();
+            contentRect.anchorMin = new Vector2(0, 1);
+            contentRect.anchorMax = new Vector2(1, 1);
+            contentRect.pivot = new Vector2(0.5f, 1);
+            contentRect.anchoredPosition = Vector2.zero;
 
-            // Configure scrollable area size and position
-            RectTransform scrollAreaRect = scrollableArea.GetComponent<RectTransform>();
-            scrollAreaRect.anchorMin = new Vector2(0, 1);
-            scrollAreaRect.anchorMax = new Vector2(1, 1);
-            scrollAreaRect.pivot = new Vector2(0.5f, 1);
-            scrollAreaRect.sizeDelta = new Vector2(width, height);
-            scrollAreaRect.anchoredPosition = new Vector2(0, -25);
-            scrollAreaRect.offsetMin = new Vector2(10, scrollAreaRect.offsetMin.y);
-            scrollAreaRect.offsetMax = new Vector2(-10, scrollAreaRect.offsetMax.y);
-
-            scrollRect.content = contentRectTransform;
+            // Add ScrollRect component
+            ScrollRect scrollRect = scrollView.AddComponent<ScrollRect>();
+            scrollRect.content = contentRect;
             scrollRect.viewport = viewportRect;
+            scrollRect.horizontal = false;
+            scrollRect.vertical = true;
+            scrollRect.scrollSensitivity = 5;
+            scrollRect.movementType = ScrollRect.MovementType.Elastic;
+            scrollRect.elasticity = 0.1f;
+            scrollRect.inertia = true;
+            scrollRect.decelerationRate = 0.135f;
 
-            return scrollableArea;
+            return scrollView;
         }
     }
 }

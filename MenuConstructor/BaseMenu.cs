@@ -31,6 +31,15 @@ namespace TwitchChat.MenuConstructor
         protected BaseMenu(Transform parent)
         {
             CreateBaseMenu(parent);
+            // Get references from the scrollable area when created
+            if (scrollableArea != null)
+            {
+                scrollRect = scrollableArea.GetComponent<ScrollRect>();
+                if (scrollRect != null)
+                {
+                    contentRectTransform = scrollRect.content;
+                }
+            }
         }
 
         protected virtual void CreateBaseMenu(Transform parent)

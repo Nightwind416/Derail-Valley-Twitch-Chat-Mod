@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Reflection;
-using TwitchChat.Menus;
+using TwitchChat.MenuConstructor;
 using System.Collections.Generic;
 using System;
 

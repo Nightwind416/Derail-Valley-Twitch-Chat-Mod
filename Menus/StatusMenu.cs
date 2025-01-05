@@ -1,14 +1,14 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace TwitchChat.Menus
+namespace TwitchChat.MenuConstructor
 {
     public class StatusMenu : MenuConstructor.BaseMenu
     {
-        private Button? authButton;
-        private Text? authStatus;
-        private Button? connectButton;
-        private Text? connectionStatus;
+        private UnityEngine.UI.Button? authButton;
+        private UnityEngine.UI.Text? authStatus;
+        private UnityEngine.UI.Button? connectButton;
+        private UnityEngine.UI.Text? connectionStatus;
         private Text? connectionIndicator;
         private Text? lastMessageType;
         private Text? lastTypeReceivedTime;

@@ -1,12 +1,12 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace TwitchChat.Menus
+namespace TwitchChat.MenuConstructor
 {
     public class DebugMenu : MenuConstructor.BaseMenu
     {
-        public static Toggle? processOwn;
-        public static Toggle? processDuplicates;
+        public static UnityEngine.UI.Toggle? processOwn;
+        public static UnityEngine.UI.Toggle? processDuplicates;
         private GameObject? debugLevelSection;
         private GameObject? notificationTestsSection;
         private GameObject? testSendSection;
