@@ -5,10 +5,10 @@ namespace TwitchChat.Menus
 {
     public class CommandMessagesMenu : MenuConstructor.BaseMenu
     {
-        private UnityEngine.UI.Toggle? commandsMessageEnabled;
-        private UnityEngine.UI.Text? commandsMessage;
-        private UnityEngine.UI.Toggle? infoMessageEnabled;
-        private UnityEngine.UI.Text? infoMessage;
+        private Toggle? commandsMessageEnabled;
+        private Text? commandsMessage;
+        private Toggle? infoMessageEnabled;
+        private Text? infoMessage;
         private GameObject? commandsSettingsSection;
         private GameObject? customCommandsSection;
 
@@ -18,6 +18,16 @@ namespace TwitchChat.Menus
             CreateCustomCommandsSection();
         }
 
+        public void UpdateCommandsMessageEnabled(bool value)
+        {
+            if (commandsMessageEnabled != null) commandsMessageEnabled.isOn = value;
+        }
+
+        public void UpdateInfoMessageEnabled(bool value)
+        {
+            if (infoMessageEnabled != null) infoMessageEnabled.isOn = value;
+        }
+
         private void CreateCommandsSettingsSection()
         {
             commandsSettingsSection = MenuConstructor.Section.Create(menuObject.transform, "Commands Settings", 25, 175, false);
@@ -25,11 +35,14 @@ namespace TwitchChat.Menus
             // !Commands Message Label
             MenuConstructor.Label.Create(commandsSettingsSection.transform, "!Commands Message", 5, 8);
             
-            // Connect Message Enabled
+            // Connect Message Toggle
             commandsMessageEnabled = MenuConstructor.Toggle.Create(commandsSettingsSection.transform, 155, 15, "Enabled", "Disabled", Settings.Instance.commandsMessageEnabled);
+
+            // Add listener after toggle creation
             commandsMessageEnabled.onValueChanged.AddListener((value) => {
                 Settings.Instance.commandsMessageEnabled = value;
                 Settings.Instance.Save(Main.ModEntry);
+                MenuManager.Instance.UpdateCommandsMessageToggles(value);
             });
 
             // Connect Message Text
@@ -41,11 +54,14 @@ namespace TwitchChat.Menus
             // !Info Message Label
             MenuConstructor.Label.Create(commandsSettingsSection.transform, "!Info Message", 5, 80);
             
-            // Disconnect Message Enabled
+            // Disconnect Message Toggle
             infoMessageEnabled = MenuConstructor.Toggle.Create(commandsSettingsSection.transform, 135, 87, "Enabled", "Disabled", Settings.Instance.infoMessageEnabled);
+
+            // Add listener after toggle creation
             infoMessageEnabled.onValueChanged.AddListener((value) => {
                 Settings.Instance.infoMessageEnabled = value;
                 Settings.Instance.Save(Main.ModEntry);
+                MenuManager.Instance.UpdateInfoMessageToggles(value);
             });
 
             // Disconnect Message Text

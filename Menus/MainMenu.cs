@@ -35,7 +35,7 @@ namespace TwitchChat.Menus
             string methodName = MethodBase.GetCurrentMethod().Name;
             
             Main.LogEntry(methodName, $"Creating button: {text}");
-            UnityEngine.UI.Button button = MenuConstructor.Button.Create(menuObject.transform, text, 100, verticalPosition);
+            Button button = MenuConstructor.Button.Create(menuObject.transform, text, 100, verticalPosition);
             button.onClick.AddListener(() => {
                 Main.LogEntry(methodName, $"Button clicked: {text}");
                 MenuManager.Instance.OnMenuButtonClicked(text, menuIndex);

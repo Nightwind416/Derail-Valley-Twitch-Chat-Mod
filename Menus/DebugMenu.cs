@@ -5,8 +5,8 @@ namespace TwitchChat.Menus
 {
     public class DebugMenu : MenuConstructor.BaseMenu
     {
-        public static UnityEngine.UI.Toggle? processOwn;
-        public static UnityEngine.UI.Toggle? processDuplicates;
+        private Toggle? processOwn;         // Changed from static to instance
+        private Toggle? processDuplicates;  // Changed from static to instance
         private GameObject? debugLevelSection;
         private GameObject? notificationTestsSection;
         private GameObject? testSendSection;
@@ -18,6 +18,21 @@ namespace TwitchChat.Menus
             CreateTestSendSection();
         }
 
+        public void UpdateProcessOwn(bool value)
+        {
+            if (processOwn != null)
+            {
+                processOwn.isOn = value;
+            }
+        }
+
+        public void UpdateProcessDuplicates(bool value)
+        {
+            if (processDuplicates != null)
+            {
+                processDuplicates.isOn = value;
+            }
+        }
         private void CreateDebugSetupSection()
         {
             // Dimensions - Menu width minus 20
@@ -34,28 +49,34 @@ namespace TwitchChat.Menus
             // Horizontal line
             MenuConstructor.HorizontalBar.Create(debugLevelSection.transform, 35);
             
+            // Process Own
+            MenuConstructor.Label.Create(debugLevelSection.transform, "Process Own", 70, 45);
+            
             // Processe own messagese
             processOwn = MenuConstructor.Toggle.Create(debugLevelSection.transform, 35, 50, "Enabled", "Disabled", Settings.Instance.processOwn);
+
+            // Add listener after toggle creation
             processOwn.onValueChanged.AddListener((value) => {
                 Settings.Instance.processOwn = value;
                 Settings.Instance.Save(Main.ModEntry);
+                MenuManager.Instance.UpdateAllProcessOwnToggles(value);
             });
-
-            // Process Own
-            MenuConstructor.Label.Create(debugLevelSection.transform, "Process Own", 70, 45);
 
             // Horizontal line
             MenuConstructor.HorizontalBar.Create(debugLevelSection.transform, 65);
 
             // Process Duplicates
+            MenuConstructor.Label.Create(debugLevelSection.transform, "Process Duplicates", 70, 75);
+
+            // Process Duplicates
             processDuplicates = MenuConstructor.Toggle.Create(debugLevelSection.transform, 35, 80, "Enabled", "Disabled", Settings.Instance.processDuplicates);
+
+            // Add listener after toggle creation
             processDuplicates.onValueChanged.AddListener((value) => {
                 Settings.Instance.processDuplicates = value;
                 Settings.Instance.Save(Main.ModEntry);
+                MenuManager.Instance.UpdateAllProcessDuplicatesToggles(value);
             });
-
-            // Process Duplicates
-            MenuConstructor.Label.Create(debugLevelSection.transform, "Process Duplicates", 70, 75);
         }
         private void CreateNotificationTestsSection()
         {

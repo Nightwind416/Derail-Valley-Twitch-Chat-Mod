@@ -504,5 +504,111 @@ namespace TwitchChat
         {
             // TODO: Add message to display boards
         }
+
+        public void UpdateAllNotificationToggles(bool value)
+        {
+            foreach (var license in licenses.Values)
+            {
+                if (license.NotificationMenu != null)
+                {
+                    license.NotificationMenu.UpdateNotificationsEnabled(value);
+                }
+            }
+        }
+
+        public void UpdateAllNotificationDurations(float value)
+        {
+            foreach (var license in licenses.Values)
+            {
+                if (license.NotificationMenu != null)
+                {
+                    license.NotificationMenu.UpdateNotificationDuration(value);
+                }
+            }
+        }
+        public void UpdateAllProcessOwnToggles(bool value)
+        {
+            foreach (var license in licenses.Values)
+            {
+                if (license.DebugMenu != null)
+                {
+                    license.DebugMenu.UpdateProcessOwn(value);
+                }
+            }
+        }
+        public void UpdateAllProcessDuplicatesToggles(bool value)
+        {
+            foreach (var license in licenses.Values)
+            {
+                if (license.DebugMenu != null)
+                {
+                    license.DebugMenu.UpdateProcessDuplicates(value);
+                }
+            }
+        }
+
+        public void UpdateAllConnectMessageEnabledToggles(bool value)
+        {
+            foreach (var license in licenses.Values)
+            {
+                if (license.StandardMessagesMenu != null)
+                {
+                    license.StandardMessagesMenu.UpdateConnectMessageEnabled(value);
+                }
+            }
+        }
+
+        public void UpdateAllNewFollowerMessageEnabledToggles(bool value)
+        {
+            foreach (var license in licenses.Values)
+            {
+                if (license.StandardMessagesMenu != null)
+                {
+                    license.StandardMessagesMenu.UpdateNewFollowerMessageEnabled(value);
+                }
+            }
+        }
+
+        public void UpdateAllNewSubscriberMessageEnabledToggles(bool value)
+        {
+            foreach (var license in licenses.Values)
+            {
+                if (license.StandardMessagesMenu != null)
+                {
+                    license.StandardMessagesMenu.UpdateNewSubscriberMessageEnabled(value);
+                }
+            }
+        }
+
+        public void UpdateAllDisconnectMessageEnabledToggles(bool value)
+        {
+            foreach (var license in licenses.Values)
+            {
+                if (license.StandardMessagesMenu != null)
+                {
+                    license.StandardMessagesMenu.UpdateDisconnectMessageEnabled(value);
+                }
+            }
+        }
+        public void UpdateCommandsMessageToggles(bool value)
+        {
+            foreach (var license in licenses.Values)
+            {
+                if (license.CommandMessagesMenu != null)
+                {
+                    license.CommandMessagesMenu.UpdateCommandsMessageEnabled(value);
+                }
+            }
+        }
+        public void UpdateInfoMessageToggles(bool value)
+        {
+            foreach (var license in licenses.Values)
+            {
+                if (license.CommandMessagesMenu != null)
+                {
+                    license.CommandMessagesMenu.UpdateInfoMessageEnabled(value);
+                }
+            }
+        }
     }
 }

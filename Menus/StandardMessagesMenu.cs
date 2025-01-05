@@ -22,6 +22,27 @@ namespace TwitchChat.Menus
             CreateNewFollowerSubscriberSection();
         }
 
+        public void UpdateConnectMessageEnabled(bool enabled)
+        {
+            if (connectMessageEnabled != null)
+                connectMessageEnabled.isOn = enabled;
+        }
+        public void UpdateNewFollowerMessageEnabled(bool enabled)
+        {
+            if (newFollowerMessageEnabled != null)
+                newFollowerMessageEnabled.isOn = enabled;
+        }
+        public void UpdateNewSubscriberMessageEnabled(bool enabled)
+        {
+            if (newSubscriberMessageEnabled != null)
+                newSubscriberMessageEnabled.isOn = enabled;
+        }
+        public void UpdateDisconnectMessageEnabled(bool enabled)
+        {
+            if (disconnectMessageEnabled != null)
+                disconnectMessageEnabled.isOn = enabled;
+        }
+
         private void CreateConnectDisconnectSection()
         {
 
@@ -30,11 +51,14 @@ namespace TwitchChat.Menus
             // Connect Message Label
             MenuConstructor.Label.Create(connectDisconnectSection.transform, "Connect", 5, 8);
             
-            // Connect Message Enabled
+            // Connect Message Toggle
             connectMessageEnabled = MenuConstructor.Toggle.Create(connectDisconnectSection.transform, 135, 15, "Enabled", "Disabled", Settings.Instance.connectMessageEnabled);
+
+            // Add listener after toggle creation
             connectMessageEnabled.onValueChanged.AddListener((value) => {
                 Settings.Instance.connectMessageEnabled = value;
                 Settings.Instance.Save(Main.ModEntry);
+                MenuManager.Instance.UpdateAllConnectMessageEnabledToggles(value);
             });
 
             // Connect Message Text
@@ -46,11 +70,14 @@ namespace TwitchChat.Menus
             // Disconnect Message Label
             MenuConstructor.Label.Create(connectDisconnectSection.transform, "Disconnect", 5, 80);
             
-            // Disconnect Message Enabled
+            // Disconnect Message Toggle
             disconnectMessageEnabled = MenuConstructor.Toggle.Create(connectDisconnectSection.transform, 135, 87, "Enabled", "Disabled", Settings.Instance.disconnectMessageEnabled);
+
+            // Add listener after toggle creation
             disconnectMessageEnabled.onValueChanged.AddListener((value) => {
                 Settings.Instance.disconnectMessageEnabled = value;
                 Settings.Instance.Save(Main.ModEntry);
+                MenuManager.Instance.UpdateAllDisconnectMessageEnabledToggles(value);
             });
 
             // Disconnect Message Text
@@ -64,11 +91,14 @@ namespace TwitchChat.Menus
             // Message Label
             MenuConstructor.Label.Create(newFollowerSubscriberSection.transform, "New Follower", 5, 8);
             
-            // Enabled
+            // New Follower Toggle
             newFollowerMessageEnabled = MenuConstructor.Toggle.Create(newFollowerSubscriberSection.transform, 135, 15, "Enabled", "Disabled", Settings.Instance.newFollowerMessageEnabled);
+
+            // Add listener after toggle creation
             newFollowerMessageEnabled.onValueChanged.AddListener((value) => {
                 Settings.Instance.newFollowerMessageEnabled = value;
                 Settings.Instance.Save(Main.ModEntry);
+                MenuManager.Instance.UpdateAllNewFollowerMessageEnabledToggles(value);
             });
 
             // Message Text
@@ -80,11 +110,14 @@ namespace TwitchChat.Menus
             // Message Label
             MenuConstructor.Label.Create(newFollowerSubscriberSection.transform, "New Subscriber", 5, 80);
             
-            // Enabled
+            // New Subscriber Toggle
             newSubscriberMessageEnabled = MenuConstructor.Toggle.Create(newFollowerSubscriberSection.transform, 135, 87, "Enabled", "Disabled", Settings.Instance.newSubscriberMessageEnabled);
+
+            // Add listener after toggle creation
             newSubscriberMessageEnabled.onValueChanged.AddListener((value) => {
                 Settings.Instance.newSubscriberMessageEnabled = value;
                 Settings.Instance.Save(Main.ModEntry);
+                MenuManager.Instance.UpdateAllNewSubscriberMessageEnabledToggles(value);
             });
 
             // Message Text

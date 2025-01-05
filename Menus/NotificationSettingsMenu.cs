@@ -5,13 +5,30 @@ namespace TwitchChat.Menus
 {
     public class NotificationMenu : MenuConstructor.BaseMenu
     {
-        public static UnityEngine.UI.Toggle? notificationsEnabled;
-        private UnityEngine.UI.Slider? notificationDuration;
+        private Toggle? notificationsEnabled;
+        private Slider? notificationDuration;
+
         private GameObject? notificationSection;
 
         public NotificationMenu(Transform parent) : base(parent)
         {
             CreateNotificationSettingssSection();
+        }
+
+        public void UpdateNotificationsEnabled(bool value)
+        {
+            if (notificationsEnabled != null)
+            {
+                notificationsEnabled.isOn = value;
+            }
+        }
+
+        public void UpdateNotificationDuration(float value)
+        {
+            if (notificationDuration != null)
+            {
+                notificationDuration.value = value;
+            }
         }
 
         private void CreateNotificationSettingssSection()
@@ -26,9 +43,12 @@ namespace TwitchChat.Menus
 
             // Toggle button with value change listener
             notificationsEnabled = MenuConstructor.Toggle.Create(notificationSection.transform, 90, 35, "Enabled", "Disabled", Settings.Instance.notificationsEnabled);
+            
+            // Add listener after toggle creation
             notificationsEnabled.onValueChanged.AddListener((value) => {
                 Settings.Instance.notificationsEnabled = value;
                 Settings.Instance.Save(Main.ModEntry);
+                MenuManager.Instance.UpdateAllNotificationToggles(value);
             });
 
             // Horizontal line
@@ -43,6 +63,7 @@ namespace TwitchChat.Menus
             notificationDuration.onValueChanged.AddListener((value) => {
                 Settings.Instance.notificationDuration = value;
                 Settings.Instance.Save(Main.ModEntry);
+                MenuManager.Instance.UpdateAllNotificationDurations(value);
             });
 
             // Horizontal line

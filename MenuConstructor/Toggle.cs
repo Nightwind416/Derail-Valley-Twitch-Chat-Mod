@@ -1,11 +1,12 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Events;
 
 namespace TwitchChat.MenuConstructor
 {
     public static class Toggle
     {
-        public static UnityEngine.UI.Toggle Create(Transform parent, int xPosition, int yPosition, string textOn, string textOff, bool initialState = true, Color? color1 = null, Color? color2 = null)
+        public static UnityEngine.UI.Toggle Create(Transform parent, int xPosition, int yPosition, string textOn, string textOff, bool initialState = true, Color? color1 = null, Color? color2 = null, UnityAction<bool>? onValueChanged = null)
         {
             GameObject toggleObj = new($"{textOn}/{textOff}Toggle");
             toggleObj.transform.SetParent(parent, false);
@@ -60,6 +61,17 @@ namespace TwitchChat.MenuConstructor
             textRect.anchorMax = Vector2.one;
             textRect.offsetMin = Vector2.zero;
             textRect.offsetMax = Vector2.zero;
+
+            if (onValueChanged != null)
+            {
+                toggle.onValueChanged.AddListener(onValueChanged);
+            }
+
+            // update text and color when toggle changes
+            toggle.onValueChanged.AddListener((isOn) => {
+                toggleText.text = isOn ? textOn : textOff;
+                toggleText.color = isOn ? (color1 ?? Color.white) : (color2 ?? Color.gray);
+            });
 
             return toggle;
         }
