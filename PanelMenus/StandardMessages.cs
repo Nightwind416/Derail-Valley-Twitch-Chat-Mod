@@ -1,9 +1,9 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace TwitchChat.Menus
+namespace TwitchChat.PanelMenus
 {
-    public class StandardMessagesMenu : MenuConstructor.BaseMenu
+    public class StandardMessagesPanel : PanelConstructor.BasePanel
     {
         private Toggle? connectMessageEnabled;
         private Text? connectMessage;
@@ -16,7 +16,7 @@ namespace TwitchChat.Menus
         private GameObject? connectDisconnectSection;
         private GameObject? newFollowerSubscriberSection;
 
-        public StandardMessagesMenu(Transform parent) : base(parent)
+        public StandardMessagesPanel(Transform parent) : base(parent)
         {
             CreateConnectDisconnectSection();
             CreateNewFollowerSubscriberSection();
@@ -46,13 +46,13 @@ namespace TwitchChat.Menus
         private void CreateConnectDisconnectSection()
         {
 
-            connectDisconnectSection = MenuConstructor.Section.Create(menuObject.transform, "Connect/Disconnect Section", 20, 135, false);
+            connectDisconnectSection = PanelConstructor.Section.Create(panelObject.transform, "Connect/Disconnect Section", 20, 135, false);
             
             // Connect Message Label
-            MenuConstructor.Label.Create(connectDisconnectSection.transform, "Connect", 5, 8);
+            PanelConstructor.Label.Create(connectDisconnectSection.transform, "Connect", 5, 8);
             
             // Connect Message Toggle
-            connectMessageEnabled = MenuConstructor.Toggle.Create(connectDisconnectSection.transform, 135, 15, "Enabled", "Disabled", Settings.Instance.connectMessageEnabled);
+            connectMessageEnabled = PanelConstructor.Toggle.Create(connectDisconnectSection.transform, 135, 15, "Enabled", "Disabled", Settings.Instance.connectMessageEnabled);
 
             // Add listener after toggle creation
             connectMessageEnabled.onValueChanged.AddListener((value) => {
@@ -62,16 +62,16 @@ namespace TwitchChat.Menus
             });
 
             // Connect Message Text
-            connectMessage = MenuConstructor.DisplayText.Create(connectDisconnectSection.transform, "", 10, 30, Color.cyan, 2);
+            connectMessage = PanelConstructor.DisplayText.Create(connectDisconnectSection.transform, "", 10, 30, Color.cyan, 2);
 
             // Horizontal line
-            MenuConstructor.HorizontalBar.Create(connectDisconnectSection.transform, 70);
+            PanelConstructor.HorizontalBar.Create(connectDisconnectSection.transform, 70);
             
             // Disconnect Message Label
-            MenuConstructor.Label.Create(connectDisconnectSection.transform, "Disconnect", 5, 80);
+            PanelConstructor.Label.Create(connectDisconnectSection.transform, "Disconnect", 5, 80);
             
             // Disconnect Message Toggle
-            disconnectMessageEnabled = MenuConstructor.Toggle.Create(connectDisconnectSection.transform, 135, 87, "Enabled", "Disabled", Settings.Instance.disconnectMessageEnabled);
+            disconnectMessageEnabled = PanelConstructor.Toggle.Create(connectDisconnectSection.transform, 135, 87, "Enabled", "Disabled", Settings.Instance.disconnectMessageEnabled);
 
             // Add listener after toggle creation
             disconnectMessageEnabled.onValueChanged.AddListener((value) => {
@@ -81,18 +81,18 @@ namespace TwitchChat.Menus
             });
 
             // Disconnect Message Text
-            disconnectMessage = MenuConstructor.DisplayText.Create(connectDisconnectSection.transform, "", 10, 100, Color.cyan, 2);
+            disconnectMessage = PanelConstructor.DisplayText.Create(connectDisconnectSection.transform, "", 10, 100, Color.cyan, 2);
         }
         private void CreateNewFollowerSubscriberSection()
         {
 
-            newFollowerSubscriberSection = MenuConstructor.Section.Create(menuObject.transform, "New Follower/Subscriber Section", 160, 135, false);
+            newFollowerSubscriberSection = PanelConstructor.Section.Create(panelObject.transform, "New Follower/Subscriber Section", 160, 135, false);
 
             // Message Label
-            MenuConstructor.Label.Create(newFollowerSubscriberSection.transform, "New Follower", 5, 8);
+            PanelConstructor.Label.Create(newFollowerSubscriberSection.transform, "New Follower", 5, 8);
             
             // New Follower Toggle
-            newFollowerMessageEnabled = MenuConstructor.Toggle.Create(newFollowerSubscriberSection.transform, 135, 15, "Enabled", "Disabled", Settings.Instance.newFollowerMessageEnabled);
+            newFollowerMessageEnabled = PanelConstructor.Toggle.Create(newFollowerSubscriberSection.transform, 135, 15, "Enabled", "Disabled", Settings.Instance.newFollowerMessageEnabled);
 
             // Add listener after toggle creation
             newFollowerMessageEnabled.onValueChanged.AddListener((value) => {
@@ -102,16 +102,16 @@ namespace TwitchChat.Menus
             });
 
             // Message Text
-            newFollowerMessage = MenuConstructor.DisplayText.Create(newFollowerSubscriberSection.transform, "", 10, 30, Color.cyan, 2);
+            newFollowerMessage = PanelConstructor.DisplayText.Create(newFollowerSubscriberSection.transform, "", 10, 30, Color.cyan, 2);
 
             // Horizontal line
-            MenuConstructor.HorizontalBar.Create(newFollowerSubscriberSection.transform, 70);
+            PanelConstructor.HorizontalBar.Create(newFollowerSubscriberSection.transform, 70);
             
             // Message Label
-            MenuConstructor.Label.Create(newFollowerSubscriberSection.transform, "New Subscriber", 5, 80);
+            PanelConstructor.Label.Create(newFollowerSubscriberSection.transform, "New Subscriber", 5, 80);
             
             // New Subscriber Toggle
-            newSubscriberMessageEnabled = MenuConstructor.Toggle.Create(newFollowerSubscriberSection.transform, 135, 87, "Enabled", "Disabled", Settings.Instance.newSubscriberMessageEnabled);
+            newSubscriberMessageEnabled = PanelConstructor.Toggle.Create(newFollowerSubscriberSection.transform, 135, 87, "Enabled", "Disabled", Settings.Instance.newSubscriberMessageEnabled);
 
             // Add listener after toggle creation
             newSubscriberMessageEnabled.onValueChanged.AddListener((value) => {
@@ -121,9 +121,9 @@ namespace TwitchChat.Menus
             });
 
             // Message Text
-            newSubscriberMessage = MenuConstructor.DisplayText.Create(newFollowerSubscriberSection.transform, "New Subscriber Message not yet implemented.", 10, 102, Color.cyan, 2);
+            newSubscriberMessage = PanelConstructor.DisplayText.Create(newFollowerSubscriberSection.transform, "New Subscriber Message not yet implemented.", 10, 102, Color.cyan, 2);
         }
-        public void UpdateStandardMessagesMenuValues()
+        public void UpdateStandardMessagesPanelValues()
         {
             if (connectMessageEnabled != null)
                 connectMessageEnabled.isOn = Settings.Instance.connectMessageEnabled;

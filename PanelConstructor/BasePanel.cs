@@ -1,12 +1,12 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace TwitchChat.MenuConstructor
+namespace TwitchChat.PanelConstructor
 {
-    public abstract class BaseMenu
+    public abstract class BasePanel
     {
-        protected GameObject menuObject;
-        public GameObject MenuObject => menuObject;
+        protected GameObject panelObject;
+        public GameObject PanelObject => panelObject;
         protected RectTransform rectTransform;
         protected GameObject textInputField;
         protected GameObject scrollableArea;
@@ -25,12 +25,12 @@ namespace TwitchChat.MenuConstructor
         protected bool showBackButton = true;
         protected bool showMinimizeButton = true;
 
-        public virtual void Show() => menuObject.SetActive(true);
-        public virtual void Hide() => menuObject.SetActive(false);
+        public virtual void Show() => panelObject.SetActive(true);
+        public virtual void Hide() => panelObject.SetActive(false);
 
-        protected BaseMenu(Transform parent)
+        protected BasePanel(Transform parent)
         {
-            CreateBaseMenu(parent);
+            CreateBasePanel(parent);
             // Get references from the scrollable area when created
             if (scrollableArea != null)
             {
@@ -42,15 +42,15 @@ namespace TwitchChat.MenuConstructor
             }
         }
 
-        protected virtual void CreateBaseMenu(Transform parent)
+        protected virtual void CreateBasePanel(Transform parent)
         {
-            menuObject = new GameObject(GetType().Name);
-            menuObject.transform.SetParent(parent, false);
+            panelObject = new GameObject(GetType().Name);
+            panelObject.transform.SetParent(parent, false);
             
-            Image panelImage = menuObject.AddComponent<Image>();
+            Image panelImage = panelObject.AddComponent<Image>();
             panelImage.color = new Color(0, 0, 0, 0.3f);
             
-            rectTransform = menuObject.GetComponent<RectTransform>();
+            rectTransform = panelObject.GetComponent<RectTransform>();
             rectTransform.anchorMin = new Vector2(0, 0);
             rectTransform.anchorMax = new Vector2(1, 1);
             rectTransform.offsetMin = Vector2.zero;
@@ -59,17 +59,17 @@ namespace TwitchChat.MenuConstructor
             rectTransform.anchoredPosition = Vector2.zero;
 
             // Create title using Title factory
-            Title.Create(menuObject.transform, GetType().Name.Replace("Menu", ""), 18);
+            Title.Create(panelObject.transform, GetType().Name.Replace("Panel", ""), 18);
 
             // Create back button
-            UnityEngine.UI.Button backButton = Button.Create(menuObject.transform, " < ", 0, 0, Color.white, () => OnBackButtonClicked?.Invoke());
+            UnityEngine.UI.Button backButton = Button.Create(panelObject.transform, " < ", 0, 0, Color.white, () => OnBackButtonClicked?.Invoke());
             RectTransform backRect = backButton.GetComponent<RectTransform>();
             backRect.anchorMin = new Vector2(1, 1);
             backRect.anchorMax = new Vector2(1, 1);
             backRect.pivot = new Vector2(1, 1);
 
             // Create minimize button
-            minimizeButton = Button.Create(menuObject.transform, " − ", 0, 0, Color.white, OnMinimizeClick);
+            minimizeButton = Button.Create(panelObject.transform, " − ", 0, 0, Color.white, OnMinimizeClick);
             RectTransform minimizeRect = minimizeButton.GetComponent<RectTransform>();
             minimizeRect.anchorMin = new Vector2(0, 1);
             minimizeRect.anchorMax = new Vector2(0, 1);
@@ -83,8 +83,8 @@ namespace TwitchChat.MenuConstructor
                 // Store original size and anchors before minimizing
                 originalSize = rectTransform.sizeDelta;
 
-                // Collapse the menu, but keep title and buttons visible
-                foreach (Transform child in menuObject.transform)
+                // Collapse the panel, but keep title and buttons visible
+                foreach (Transform child in panelObject.transform)
                 {
                     // Skip the minimize button, title, and back button
                     if (child.gameObject != minimizeButton.gameObject && 
@@ -105,7 +105,7 @@ namespace TwitchChat.MenuConstructor
             }
             else
             {
-                foreach (Transform child in menuObject.transform)
+                foreach (Transform child in panelObject.transform)
                 {
                     child.gameObject.SetActive(true);
                 }

@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace TwitchChat.MenuConstructor
+namespace TwitchChat.PanelConstructor
 {
     public static class Label
     {

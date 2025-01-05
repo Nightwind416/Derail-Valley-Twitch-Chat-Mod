@@ -1,9 +1,9 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace TwitchChat.Menus
+namespace TwitchChat.PanelMenus
 {
-    public class StatusMenu : MenuConstructor.BaseMenu
+    public class StatusPanel : PanelConstructor.BasePanel
     {
         private Button? authButton;
         private Text? authStatus;
@@ -17,7 +17,7 @@ namespace TwitchChat.Menus
         private GameObject? authSection;
         private GameObject? wsSection;
 
-        public StatusMenu(Transform parent) : base(parent)
+        public StatusPanel(Transform parent) : base(parent)
         {
             CreateAuthenticationSection();
             CreateWebSocketSection();
@@ -29,13 +29,13 @@ namespace TwitchChat.Menus
             // Dimensions - Menu width minus 20
 
             // Authentication Section
-            authSection = MenuConstructor.Section.Create(menuObject.transform, "Twitch Authentication Status", 25, 75);
+            authSection = PanelConstructor.Section.Create(panelObject.transform, "Twitch Authentication Status", 25, 75);
 
             // Authentication Status Message
-            authStatus = MenuConstructor.DisplayText.Create(authSection.transform, Settings.Instance.authentication_status, 15, 25);
+            authStatus = PanelConstructor.DisplayText.Create(authSection.transform, Settings.Instance.authentication_status, 15, 25);
             
             // Authentication Button
-            authButton = MenuConstructor.Button.Create(authSection.transform,
+            authButton = PanelConstructor.Button.Create(authSection.transform,
             string.IsNullOrEmpty(Settings.Instance.EncodedOAuthToken) ? "Request Authorization Token" : "Validate Token",
             90, 55,
             Color.white,
@@ -53,14 +53,14 @@ namespace TwitchChat.Menus
             // Dimensions - Menu width minus 20
 
             // WebSocket Section
-            wsSection = MenuConstructor.Section.Create(menuObject.transform, "WebSocket Status", 110, 180);
+            wsSection = PanelConstructor.Section.Create(panelObject.transform, "WebSocket Status", 110, 180);
 
             // Connection Status Indicator
-            connectionIndicator = MenuConstructor.DisplayText.Create(wsSection.transform, "■", 25, 25);
-            connectionStatus = MenuConstructor.DisplayText.Create(wsSection.transform, WebSocketManager.IsConnectionHealthy ? "Connected" : "Disconnected", 40, 25);
+            connectionIndicator = PanelConstructor.DisplayText.Create(wsSection.transform, "■", 25, 25);
+            connectionStatus = PanelConstructor.DisplayText.Create(wsSection.transform, WebSocketManager.IsConnectionHealthy ? "Connected" : "Disconnected", 40, 25);
             
             // Connection Button
-            connectButton = MenuConstructor.Button.Create(wsSection.transform,
+            connectButton = PanelConstructor.Button.Create(wsSection.transform,
             WebSocketManager.IsConnectionHealthy ? "Disconnect" : "Connect",
             90, 55,
             Color.white,
@@ -74,25 +74,25 @@ namespace TwitchChat.Menus
             );
 
             // Horizontal line
-            MenuConstructor.HorizontalBar.Create(wsSection.transform, 75);
+            PanelConstructor.HorizontalBar.Create(wsSection.transform, 75);
             
             // Last Message Type
-            MenuConstructor.Label.Create(wsSection.transform, "Last Type Received", 5, 85);
-            lastMessageType = MenuConstructor.DisplayText.Create(wsSection.transform, WebSocketManager.lastMessageType, 15, 105);
+            PanelConstructor.Label.Create(wsSection.transform, "Last Type Received", 5, 85);
+            lastMessageType = PanelConstructor.DisplayText.Create(wsSection.transform, WebSocketManager.lastMessageType, 15, 105);
             
             // Last Chat Message
-            MenuConstructor.Label.Create(wsSection.transform, "At time:", 25, 125);
-            lastTypeReceivedTime = MenuConstructor.DisplayText.Create(wsSection.transform, WebSocketManager.lastTypeReceivedTime.ToString("h:mm:ss tt"), 75, 125);
+            PanelConstructor.Label.Create(wsSection.transform, "At time:", 25, 125);
+            lastTypeReceivedTime = PanelConstructor.DisplayText.Create(wsSection.transform, WebSocketManager.lastTypeReceivedTime.ToString("h:mm:ss tt"), 75, 125);
 
             // Horizontal line
-            MenuConstructor.HorizontalBar.Create(wsSection.transform, 150);
+            PanelConstructor.HorizontalBar.Create(wsSection.transform, 150);
             
             // Last Chat Message
-            MenuConstructor.Label.Create(wsSection.transform, "Last Keepalive: ", 5, 160);
-            lastKeepaliveTime = MenuConstructor.DisplayText.Create(wsSection.transform, WebSocketManager.lastKeepaliveTime.ToString("h:mm:ss tt"), 100, 160);
+            PanelConstructor.Label.Create(wsSection.transform, "Last Keepalive: ", 5, 160);
+            lastKeepaliveTime = PanelConstructor.DisplayText.Create(wsSection.transform, WebSocketManager.lastKeepaliveTime.ToString("h:mm:ss tt"), 100, 160);
         }
 
-        public void UpdateStatusMenuValues()
+        public void UpdateStatusPanelValues()
         {
             if (authButton != null && authStatus != null && connectButton != null && 
                 connectionIndicator != null && connectionStatus != null && lastMessageType != null && 

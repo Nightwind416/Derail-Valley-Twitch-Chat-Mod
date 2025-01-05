@@ -1,9 +1,9 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace TwitchChat.Menus
+namespace TwitchChat.PanelMenus
 {
-    public class CommandMessagesMenu : MenuConstructor.BaseMenu
+    public class CommandMessagesPanel : PanelConstructor.BasePanel
     {
         private Toggle? commandsMessageEnabled;
         private Text? commandsMessage;
@@ -12,7 +12,7 @@ namespace TwitchChat.Menus
         private GameObject? commandsSettingsSection;
         private GameObject? customCommandsSection;
 
-        public CommandMessagesMenu(Transform parent) : base(parent)
+        public CommandMessagesPanel(Transform parent) : base(parent)
         {
             CreateCommandsSettingsSection();
             CreateCustomCommandsSection();
@@ -30,13 +30,13 @@ namespace TwitchChat.Menus
 
         private void CreateCommandsSettingsSection()
         {
-            commandsSettingsSection = MenuConstructor.Section.Create(menuObject.transform, "Commands Settings", 25, 175, false);
+            commandsSettingsSection = PanelConstructor.Section.Create(panelObject.transform, "Commands Settings", 25, 175, false);
             
             // !Commands Message Label
-            MenuConstructor.Label.Create(commandsSettingsSection.transform, "!Commands Message", 5, 8);
+            PanelConstructor.Label.Create(commandsSettingsSection.transform, "!Commands Message", 5, 8);
             
             // Connect Message Toggle
-            commandsMessageEnabled = MenuConstructor.Toggle.Create(commandsSettingsSection.transform, 155, 15, "Enabled", "Disabled", Settings.Instance.commandsMessageEnabled);
+            commandsMessageEnabled = PanelConstructor.Toggle.Create(commandsSettingsSection.transform, 155, 15, "Enabled", "Disabled", Settings.Instance.commandsMessageEnabled);
 
             // Add listener after toggle creation
             commandsMessageEnabled.onValueChanged.AddListener((value) => {
@@ -46,16 +46,16 @@ namespace TwitchChat.Menus
             });
 
             // Connect Message Text
-            commandsMessage = MenuConstructor.DisplayText.Create(commandsSettingsSection.transform, "", 10, 30, Color.cyan, 2);
+            commandsMessage = PanelConstructor.DisplayText.Create(commandsSettingsSection.transform, "", 10, 30, Color.cyan, 2);
 
             // Horizontal line
-            MenuConstructor.HorizontalBar.Create(commandsSettingsSection.transform, 70);
+            PanelConstructor.HorizontalBar.Create(commandsSettingsSection.transform, 70);
             
             // !Info Message Label
-            MenuConstructor.Label.Create(commandsSettingsSection.transform, "!Info Message", 5, 80);
+            PanelConstructor.Label.Create(commandsSettingsSection.transform, "!Info Message", 5, 80);
             
             // Disconnect Message Toggle
-            infoMessageEnabled = MenuConstructor.Toggle.Create(commandsSettingsSection.transform, 135, 87, "Enabled", "Disabled", Settings.Instance.infoMessageEnabled);
+            infoMessageEnabled = PanelConstructor.Toggle.Create(commandsSettingsSection.transform, 135, 87, "Enabled", "Disabled", Settings.Instance.infoMessageEnabled);
 
             // Add listener after toggle creation
             infoMessageEnabled.onValueChanged.AddListener((value) => {
@@ -65,18 +65,18 @@ namespace TwitchChat.Menus
             });
 
             // Disconnect Message Text
-            infoMessage = MenuConstructor.DisplayText.Create(commandsSettingsSection.transform, "", 10, 100, Color.cyan, 4);
+            infoMessage = PanelConstructor.DisplayText.Create(commandsSettingsSection.transform, "", 10, 100, Color.cyan, 4);
         }
         private void CreateCustomCommandsSection()
         {
-            customCommandsSection = MenuConstructor.Section.Create(menuObject.transform, "Custom Commands", 225, 50);
+            customCommandsSection = PanelConstructor.Section.Create(panelObject.transform, "Custom Commands", 225, 50);
 
             // Custom Commands
-            MenuConstructor.DisplayText.Create(customCommandsSection.transform, "Future development", 25, 25, Color.yellow);
+            PanelConstructor.DisplayText.Create(customCommandsSection.transform, "Future development", 25, 25, Color.yellow);
             
             // TODO: Add Standard Messages Settings content
         }
-        public void UpdateCommandMessagesMenuValues()
+        public void UpdateCommandMessagesPanelValues()
         {
             if (commandsMessage != null) commandsMessage.text = Settings.Instance.commandsMessage;
             if (infoMessage != null) infoMessage.text = Settings.Instance.infoMessage;

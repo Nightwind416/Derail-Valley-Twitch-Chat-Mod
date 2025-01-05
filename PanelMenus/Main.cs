@@ -2,13 +2,13 @@ using System.Reflection;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace TwitchChat.Menus
+namespace TwitchChat.PanelMenus
 {
-    public class MainMenu : MenuConstructor.BaseMenu
+    public class MainPanel : PanelConstructor.BasePanel
     {
         private readonly License menuIndex;
 
-        public MainMenu(Transform parent, License index) : base(parent)
+        public MainPanel(Transform parent, License index) : base(parent)
         {
             menuIndex = index;
             CreateMainMenu();
@@ -35,10 +35,10 @@ namespace TwitchChat.Menus
             string methodName = MethodBase.GetCurrentMethod().Name;
             
             Main.LogEntry(methodName, $"Creating button: {text}");
-            Button button = MenuConstructor.Button.Create(menuObject.transform, text, 100, verticalPosition);
+            Button button = PanelConstructor.Button.Create(panelObject.transform, text, 100, verticalPosition);
             button.onClick.AddListener(() => {
                 Main.LogEntry(methodName, $"Button clicked: {text}");
-                MenuManager.Instance.OnMenuButtonClicked(text, menuIndex);
+                MenuManager.Instance.OnPanelButtonClicked(text, menuIndex);
             });
         }
     }

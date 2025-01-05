@@ -1,12 +1,12 @@
 using UnityEngine;
 
-namespace TwitchChat.Menus
+namespace TwitchChat.PanelMenus
 {
-    public class ConfigurationMenu : MenuConstructor.BaseMenu
+    public class ConfigurationPanel : PanelConstructor.BasePanel
     {
         private GameObject? messageSection;
 
-        public ConfigurationMenu(Transform parent) : base(parent)
+        public ConfigurationPanel(Transform parent) : base(parent)
         {
             CreateMessageSection();
         }
@@ -16,7 +16,7 @@ namespace TwitchChat.Menus
            // Dimensions - Menu width minus 20
 
             // Message Section
-            messageSection = MenuConstructor.Section.Create(menuObject.transform, "Configuration", 25, 100, false);
+            messageSection = PanelConstructor.Section.Create(panelObject.transform, "Configuration", 25, 100, false);
             
             // Configuration section
             // TODO: Add configuration section content

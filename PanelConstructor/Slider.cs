@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Events;
 
-namespace TwitchChat.MenuConstructor
+namespace TwitchChat.PanelConstructor
 {
     public static class Slider
     {

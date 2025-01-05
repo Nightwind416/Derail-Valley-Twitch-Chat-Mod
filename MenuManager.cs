@@ -1,7 +1,8 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Reflection;
-using TwitchChat.Menus;
+using TwitchChat.PanelMenus;
+using TwitchChat.PanelDisplays;
 using System.Collections.Generic;
 using System;
 
@@ -15,19 +16,21 @@ namespace TwitchChat
         public bool AttachedToStickyTape { get; set; }
         public GameObject? StickyTapeBase { get; set; }
 
-        // Menu panels
-        public MainMenu? MainMenu { get; set; }
-        public StatusMenu? StatusMenu { get; set; }
-        public NotificationMenu? NotificationMenu { get; set; }
-        public LargeDisplayBoard? LargeDisplayBoard { get; set; }
-        public MediumDisplayBoard? MediumDisplayBoard { get; set; }
-        public WideDisplayBoard? WideDisplayBoard { get; set; }
-        public SmallDisplayBoard? SmallDisplayBoard { get; set; }
-        public StandardMessagesMenu? StandardMessagesMenu { get; set; }
-        public CommandMessagesMenu? CommandMessagesMenu { get; set; }
-        public TimedMessagesMenu? TimedMessagesMenu { get; set; }
-        public ConfigurationMenu? ConfigurationMenu { get; set; }
-        public DebugMenu? DebugMenu { get; set; }
+        // Panel Menus
+        public MainPanel? MainPanel { get; set; }
+        public StatusPanel? StatusPanel { get; set; }
+        public NotificationPanel? NotificationPanel { get; set; }
+        public StandardMessagesPanel? StandardMessagesPanel { get; set; }
+        public CommandMessagesPanel? CommandMessagesPanel { get; set; }
+        public TimedMessagesPanel? TimedMessagesPanel { get; set; }
+        public ConfigurationPanel? ConfigurationPanel { get; set; }
+        public DebugPanel? DebugPanel { get; set; }
+
+        // Panel Displays
+        public LargeDisplayPanel? LargeDisplayPanel { get; set; }
+        public MediumDisplayPanel? MediumDisplayPanel { get; set; }
+        public SmallDisplayPanel? SmallDisplayPanel { get; set; }
+        public WideDisplayPanel? WideDisplayPanel { get; set; }
 
         public License(string name)
         {
@@ -158,18 +161,18 @@ namespace TwitchChat
         private void CreatePanelTemplates(Transform parent)
         {
             // Create one of each panel type as templates
-            var mainMenu = new MainMenu(parent, null);
-            var statusMenu = new StatusMenu(parent);
-            var notificationMenu = new NotificationMenu(parent);
-            var largeDisplay = new LargeDisplayBoard(parent);
-            var mediumDisplay = new MediumDisplayBoard(parent);
-            var wideDisplay = new WideDisplayBoard(parent);
-            var smallDisplay = new SmallDisplayBoard(parent);
-            var standardMessages = new StandardMessagesMenu(parent);
-            var commandMessages = new CommandMessagesMenu(parent);
-            var timedMessages = new TimedMessagesMenu(parent);
-            var configuration = new ConfigurationMenu(parent);
-            var debug = new DebugMenu(parent);
+            var mainPanel = new MainPanel(parent, null);
+            var statusPanel = new StatusPanel(parent);
+            var notificationPanel = new NotificationPanel(parent);
+            var largeDisplayPanel = new LargeDisplayPanel(parent);
+            var mediumDisplayPanel = new MediumDisplayPanel(parent);
+            var wideDisplayPanel = new WideDisplayPanel(parent);
+            var smallDisplayPanel = new SmallDisplayPanel(parent);
+            var standardMessagesPanel = new StandardMessagesPanel(parent);
+            var commandMessagesPanel = new CommandMessagesPanel(parent);
+            var timedMessagesPanel = new TimedMessagesPanel(parent);
+            var configurationPanel = new ConfigurationPanel(parent);
+            var debugPanel = new DebugPanel(parent);
 
             // Hide all template panels
             foreach (Transform child in parent)
@@ -211,7 +214,7 @@ namespace TwitchChat
 
                     if (isLicenseActive)
                     {
-                        UpdateMenuValues(license);
+                        UpdatePanelValues(license);
                         HandleLicenseAttachment(license);
                         HandlePaperVisibility(license);
                     }
@@ -219,12 +222,11 @@ namespace TwitchChat
             }
         }
 
-        private void UpdateMenuValues(License license)
+        private void UpdatePanelValues(License license)
         {
-            license.StatusMenu?.UpdateStatusMenuValues();
-            license.StandardMessagesMenu?.UpdateStandardMessagesMenuValues();
-            license.CommandMessagesMenu?.UpdateCommandMessagesMenuValues();
-            // Add other menu updates as needed
+            license.StatusPanel?.UpdateStatusPanelValues();
+            license.StandardMessagesPanel?.UpdateStandardMessagesPanelValues();
+            license.CommandMessagesPanel?.UpdateCommandMessagesPanelValues();
         }
 
         private bool IsLicenseActive(GameObject license)
@@ -323,10 +325,10 @@ namespace TwitchChat
             }
         }
 
-        public void OnMenuButtonClicked(string menuName, License license)
+        public void OnPanelButtonClicked(string panelName, License license)
         {
-            Main.LogEntry("OnMenuButtonClicked", $"Menu button clicked: {menuName} for license: {license.Name}");
-            ShowPanel(menuName, license);
+            Main.LogEntry("OnPanelButtonClicked", $"Panel button clicked: {panelName} for license: {license.Name}");
+            ShowPanel(panelName, license);
         }
 
         private void CreateMenuCanvas(License license)
@@ -344,31 +346,31 @@ namespace TwitchChat
             Transform menuPanel = license.MenuCanvas.transform.Find("MenuPanel");
             
             // Create and wire up all panels from the templates
-            license.MainMenu = new MainMenu(menuPanel, license);
-            license.StatusMenu = new StatusMenu(menuPanel);
-            license.NotificationMenu = new NotificationMenu(menuPanel);
-            license.LargeDisplayBoard = new LargeDisplayBoard(menuPanel);
-            license.MediumDisplayBoard = new MediumDisplayBoard(menuPanel);
-            license.WideDisplayBoard = new WideDisplayBoard(menuPanel);
-            license.SmallDisplayBoard = new SmallDisplayBoard(menuPanel);
-            license.StandardMessagesMenu = new StandardMessagesMenu(menuPanel);
-            license.CommandMessagesMenu = new CommandMessagesMenu(menuPanel);
-            license.TimedMessagesMenu = new TimedMessagesMenu(menuPanel);
-            license.ConfigurationMenu = new ConfigurationMenu(menuPanel);
-            license.DebugMenu = new DebugMenu(menuPanel);
+            license.MainPanel = new MainPanel(menuPanel, license);
+            license.StatusPanel = new StatusPanel(menuPanel);
+            license.NotificationPanel = new NotificationPanel(menuPanel);
+            license.LargeDisplayPanel = new LargeDisplayPanel(menuPanel);
+            license.MediumDisplayPanel = new MediumDisplayPanel(menuPanel);
+            license.WideDisplayPanel = new WideDisplayPanel(menuPanel);
+            license.SmallDisplayPanel = new SmallDisplayPanel(menuPanel);
+            license.StandardMessagesPanel = new StandardMessagesPanel(menuPanel);
+            license.CommandMessagesPanel = new CommandMessagesPanel(menuPanel);
+            license.TimedMessagesPanel = new TimedMessagesPanel(menuPanel);
+            license.ConfigurationPanel = new ConfigurationPanel(menuPanel);
+            license.DebugPanel = new DebugPanel(menuPanel);
 
             // Wire up back button events
-            if (license.StatusMenu != null) license.StatusMenu.OnBackButtonClicked += () => ShowPanel("Main", license);
-            if (license.NotificationMenu != null) license.NotificationMenu.OnBackButtonClicked += () => ShowPanel("Main", license);
-            if (license.LargeDisplayBoard != null) license.LargeDisplayBoard.OnBackButtonClicked += () => ShowPanel("Main", license);
-            if (license.MediumDisplayBoard != null) license.MediumDisplayBoard.OnBackButtonClicked += () => ShowPanel("Main", license);
-            if (license.WideDisplayBoard != null) license.WideDisplayBoard.OnBackButtonClicked += () => ShowPanel("Main", license);
-            if (license.SmallDisplayBoard != null) license.SmallDisplayBoard.OnBackButtonClicked += () => ShowPanel("Main", license);
-            if (license.StandardMessagesMenu != null) license.StandardMessagesMenu.OnBackButtonClicked += () => ShowPanel("Main", license);
-            if (license.CommandMessagesMenu != null) license.CommandMessagesMenu.OnBackButtonClicked += () => ShowPanel("Main", license);
-            if (license.TimedMessagesMenu != null) license.TimedMessagesMenu.OnBackButtonClicked += () => ShowPanel("Main", license);
-            if (license.ConfigurationMenu != null) license.ConfigurationMenu.OnBackButtonClicked += () => ShowPanel("Main", license);
-            if (license.DebugMenu != null) license.DebugMenu.OnBackButtonClicked += () => ShowPanel("Main", license);
+            if (license.StatusPanel != null) license.StatusPanel.OnBackButtonClicked += () => ShowPanel("Main", license);
+            if (license.NotificationPanel != null) license.NotificationPanel.OnBackButtonClicked += () => ShowPanel("Main", license);
+            if (license.LargeDisplayPanel != null) license.LargeDisplayPanel.OnBackButtonClicked += () => ShowPanel("Main", license);
+            if (license.MediumDisplayPanel != null) license.MediumDisplayPanel.OnBackButtonClicked += () => ShowPanel("Main", license);
+            if (license.WideDisplayPanel != null) license.WideDisplayPanel.OnBackButtonClicked += () => ShowPanel("Main", license);
+            if (license.SmallDisplayPanel != null) license.SmallDisplayPanel.OnBackButtonClicked += () => ShowPanel("Main", license);
+            if (license.StandardMessagesPanel != null) license.StandardMessagesPanel.OnBackButtonClicked += () => ShowPanel("Main", license);
+            if (license.CommandMessagesPanel != null) license.CommandMessagesPanel.OnBackButtonClicked += () => ShowPanel("Main", license);
+            if (license.TimedMessagesPanel != null) license.TimedMessagesPanel.OnBackButtonClicked += () => ShowPanel("Main", license);
+            if (license.ConfigurationPanel != null) license.ConfigurationPanel.OnBackButtonClicked += () => ShowPanel("Main", license);
+            if (license.DebugPanel != null) license.DebugPanel.OnBackButtonClicked += () => ShowPanel("Main", license);
 
             // Show initial panel
             string panelToShow = !string.IsNullOrEmpty(Settings.Instance.activePanels[0]) 
@@ -381,18 +383,18 @@ namespace TwitchChat
 
         private void HideAllPanels(License license)
         {
-            license.MainMenu?.Hide();
-            license.StatusMenu?.Hide();
-            license.NotificationMenu?.Hide();
-            license.LargeDisplayBoard?.Hide();
-            license.MediumDisplayBoard?.Hide();
-            license.WideDisplayBoard?.Hide();
-            license.SmallDisplayBoard?.Hide();
-            license.StandardMessagesMenu?.Hide();
-            license.CommandMessagesMenu?.Hide();
-            license.TimedMessagesMenu?.Hide();
-            license.ConfigurationMenu?.Hide();
-            license.DebugMenu?.Hide();
+            license.MainPanel?.Hide();
+            license.StatusPanel?.Hide();
+            license.NotificationPanel?.Hide();
+            license.LargeDisplayPanel?.Hide();
+            license.MediumDisplayPanel?.Hide();
+            license.WideDisplayPanel?.Hide();
+            license.SmallDisplayPanel?.Hide();
+            license.StandardMessagesPanel?.Hide();
+            license.CommandMessagesPanel?.Hide();
+            license.TimedMessagesPanel?.Hide();
+            license.ConfigurationPanel?.Hide();
+            license.DebugPanel?.Hide();
         }
 
         private void ShowPanel(string panelName, License license)
@@ -400,7 +402,7 @@ namespace TwitchChat
             if (license.MenuCanvas == null || !license.MenuCanvas!.activeSelf)
                 return;
             
-            Main.LogEntry("ShowMenu", $"Showing panel {panelName} for license {license.Name}");
+            Main.LogEntry("ShowPanel", $"Showing panel {panelName} for license {license.Name}");
 
             HideAllPanels(license);
 
@@ -439,40 +441,40 @@ namespace TwitchChat
             switch (panelType)
             {
                 case PanelType.Main:
-                    license.MainMenu?.Show();
+                    license.MainPanel?.Show();
                     break;
                 case PanelType.Status:
-                    license.StatusMenu?.Show();
+                    license.StatusPanel?.Show();
                     break;
                 case PanelType.NotificationSettings:
-                    license.NotificationMenu?.Show();
+                    license.NotificationPanel?.Show();
                     break;
                 case PanelType.LargeDisplay:
-                    license.LargeDisplayBoard?.Show();
+                    license.LargeDisplayPanel?.Show();
                     break;
                 case PanelType.MediumDisplay:
-                    license.MediumDisplayBoard?.Show();
+                    license.MediumDisplayPanel?.Show();
                     break;
                 case PanelType.WideDisplay:
-                    license.WideDisplayBoard?.Show();
+                    license.WideDisplayPanel?.Show();
                     break;
                 case PanelType.SmallDisplay:
-                    license.SmallDisplayBoard?.Show();
+                    license.SmallDisplayPanel?.Show();
                     break;
                 case PanelType.StandardMessages:
-                    license.StandardMessagesMenu?.Show();
+                    license.StandardMessagesPanel?.Show();
                     break;
                 case PanelType.CommandMessages:
-                    license.CommandMessagesMenu?.Show();
+                    license.CommandMessagesPanel?.Show();
                     break;
                 case PanelType.TimedMessages:
-                    license.TimedMessagesMenu?.Show();
+                    license.TimedMessagesPanel?.Show();
                     break;
                 case PanelType.Configuration:
-                    license.ConfigurationMenu?.Show();
+                    license.ConfigurationPanel?.Show();
                     break;
                 case PanelType.Debug:
-                    license.DebugMenu?.Show();
+                    license.DebugPanel?.Show();
                     break;
             }
 
@@ -509,9 +511,9 @@ namespace TwitchChat
         {
             foreach (var license in licenses.Values)
             {
-                if (license.NotificationMenu != null)
+                if (license.NotificationPanel != null)
                 {
-                    license.NotificationMenu.UpdateNotificationsEnabled(value);
+                    license.NotificationPanel.UpdateNotificationsEnabled(value);
                 }
             }
         }
@@ -520,9 +522,9 @@ namespace TwitchChat
         {
             foreach (var license in licenses.Values)
             {
-                if (license.NotificationMenu != null)
+                if (license.NotificationPanel != null)
                 {
-                    license.NotificationMenu.UpdateNotificationDuration(value);
+                    license.NotificationPanel.UpdateNotificationDuration(value);
                 }
             }
         }
@@ -530,9 +532,9 @@ namespace TwitchChat
         {
             foreach (var license in licenses.Values)
             {
-                if (license.DebugMenu != null)
+                if (license.DebugPanel != null)
                 {
-                    license.DebugMenu.UpdateProcessOwn(value);
+                    license.DebugPanel.UpdateProcessOwn(value);
                 }
             }
         }
@@ -540,9 +542,9 @@ namespace TwitchChat
         {
             foreach (var license in licenses.Values)
             {
-                if (license.DebugMenu != null)
+                if (license.DebugPanel != null)
                 {
-                    license.DebugMenu.UpdateProcessDuplicates(value);
+                    license.DebugPanel.UpdateProcessDuplicates(value);
                 }
             }
         }
@@ -551,9 +553,9 @@ namespace TwitchChat
         {
             foreach (var license in licenses.Values)
             {
-                if (license.StandardMessagesMenu != null)
+                if (license.StandardMessagesPanel != null)
                 {
-                    license.StandardMessagesMenu.UpdateConnectMessageEnabled(value);
+                    license.StandardMessagesPanel.UpdateConnectMessageEnabled(value);
                 }
             }
         }
@@ -562,9 +564,9 @@ namespace TwitchChat
         {
             foreach (var license in licenses.Values)
             {
-                if (license.StandardMessagesMenu != null)
+                if (license.StandardMessagesPanel != null)
                 {
-                    license.StandardMessagesMenu.UpdateNewFollowerMessageEnabled(value);
+                    license.StandardMessagesPanel.UpdateNewFollowerMessageEnabled(value);
                 }
             }
         }
@@ -573,9 +575,9 @@ namespace TwitchChat
         {
             foreach (var license in licenses.Values)
             {
-                if (license.StandardMessagesMenu != null)
+                if (license.StandardMessagesPanel != null)
                 {
-                    license.StandardMessagesMenu.UpdateNewSubscriberMessageEnabled(value);
+                    license.StandardMessagesPanel.UpdateNewSubscriberMessageEnabled(value);
                 }
             }
         }
@@ -584,9 +586,9 @@ namespace TwitchChat
         {
             foreach (var license in licenses.Values)
             {
-                if (license.StandardMessagesMenu != null)
+                if (license.StandardMessagesPanel != null)
                 {
-                    license.StandardMessagesMenu.UpdateDisconnectMessageEnabled(value);
+                    license.StandardMessagesPanel.UpdateDisconnectMessageEnabled(value);
                 }
             }
         }
@@ -594,9 +596,9 @@ namespace TwitchChat
         {
             foreach (var license in licenses.Values)
             {
-                if (license.CommandMessagesMenu != null)
+                if (license.CommandMessagesPanel != null)
                 {
-                    license.CommandMessagesMenu.UpdateCommandsMessageEnabled(value);
+                    license.CommandMessagesPanel.UpdateCommandsMessageEnabled(value);
                 }
             }
         }
@@ -604,9 +606,9 @@ namespace TwitchChat
         {
             foreach (var license in licenses.Values)
             {
-                if (license.CommandMessagesMenu != null)
+                if (license.CommandMessagesPanel != null)
                 {
-                    license.CommandMessagesMenu.UpdateInfoMessageEnabled(value);
+                    license.CommandMessagesPanel.UpdateInfoMessageEnabled(value);
                 }
             }
         }
