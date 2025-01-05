@@ -37,7 +37,7 @@ namespace TwitchChat
         private ConfigurationMenu?[] configurationMenus = new ConfigurationMenu?[6];
         private DebugMenu?[] debugMenus = new DebugMenu?[6];
 
-        private enum MenuType
+        private enum PanelType
         {
             Main,
             Status,
@@ -69,20 +69,20 @@ namespace TwitchChat
             }
         }
 
-        private readonly Dictionary<MenuType, PanelConfig> menuConfigs = new()
+        private readonly Dictionary<PanelType, PanelConfig> panelConfigs = new()
         {
-            { MenuType.Main, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
-            { MenuType.Status, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
-            { MenuType.NotificationSettings, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
-            { MenuType.LargeDisplay, new(new Vector2(1200, 650), new Vector2(1200, 650), Vector2.zero, Vector3.zero) },
-            { MenuType.MediumDisplay, new(new Vector2(500, 500), new Vector2(500, 500), Vector2.zero, Vector3.zero) },
-            { MenuType.WideDisplay, new(new Vector2(900, 220), new Vector2(900, 220), Vector2.zero, Vector3.zero) },
-            { MenuType.SmallDisplay, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
-            { MenuType.StandardMessages, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
-            { MenuType.CommandMessages, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
-            { MenuType.TimedMessages, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
-            { MenuType.Configuration, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
-            { MenuType.Debug, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) }
+            { PanelType.Main, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
+            { PanelType.Status, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
+            { PanelType.NotificationSettings, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
+            { PanelType.LargeDisplay, new(new Vector2(1200, 650), new Vector2(1200, 650), Vector2.zero, Vector3.zero) },
+            { PanelType.MediumDisplay, new(new Vector2(500, 500), new Vector2(500, 500), Vector2.zero, Vector3.zero) },
+            { PanelType.WideDisplay, new(new Vector2(900, 220), new Vector2(900, 220), Vector2.zero, Vector3.zero) },
+            { PanelType.SmallDisplay, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
+            { PanelType.StandardMessages, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
+            { PanelType.CommandMessages, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
+            { PanelType.TimedMessages, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
+            { PanelType.Configuration, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
+            { PanelType.Debug, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) }
         };
 
         public static MenuManager Instance
@@ -107,17 +107,16 @@ namespace TwitchChat
             {
                 if (licenseObjects[i] == null)
                 {
-                    // BUG: Dispatcher license is not being replaced
                     licenseObjects[i] = GameObject.Find(licenseNames[i]);
                     if (licenseObjects[i] != null)
                     {
                         string licenseName = licenseObjects[i]!.name;
-                        Main.LogEntry(methodName, $"Attaching menu {i + 1} to {licenseName}");
+                        Main.LogEntry(methodName, $"Attaching menu canvas {i + 1} to {licenseName}");
                         
                         if (menuCanvases[i] == null)
                         {
                             Main.LogEntry(methodName, $"Menu canvas {i + 1} was null, creating...");
-                            CreateCanvas(i);
+                            CreateMenuCanvas(i);
                         }
 
                         menuCanvases[i]!.SetActive(true);
@@ -256,10 +255,10 @@ namespace TwitchChat
         public void OnMenuButtonClicked(string menuName, int index)
         {
             Main.LogEntry("OnMenuButtonClicked", $"Menu button clicked: {menuName} for index: {index}");
-            ShowMenu(menuName, index);
+            ShowPanel(menuName, index);
         }
 
-        private void CreateCanvas(int index)
+        private void CreateMenuCanvas(int index)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
             Main.LogEntry(methodName, $"Creating menu UI elements for license {index + 1}");
@@ -280,7 +279,7 @@ namespace TwitchChat
             canvas.sortingOrder = 1000;
             
             RectTransform canvasRect = menuCanvases[index]!.GetComponent<RectTransform>();
-            canvasRect.sizeDelta = menuConfigs[MenuType.Main].CanvasSize;
+            canvasRect.sizeDelta = panelConfigs[PanelType.Main].CanvasSize;
             canvasRect.localScale = Vector3.one * 0.001f;
 
             menuCanvases[index]!.AddComponent<GraphicRaycaster>();
@@ -289,14 +288,14 @@ namespace TwitchChat
             GameObject menuPanel = new("MenuPanel");
             menuPanel.transform.SetParent(menuCanvases[index]!.transform, false);
             RectTransform panelRect = menuPanel.AddComponent<RectTransform>();
-            panelRect.sizeDelta = menuConfigs[MenuType.Main].PanelSize;
+            panelRect.sizeDelta = panelConfigs[PanelType.Main].PanelSize;
             panelRect.anchorMin = new Vector2(0f, 1f);
             panelRect.anchorMax = new Vector2(0f, 1f);
             panelRect.pivot = new Vector2(0.5f, 0.5f);
-            panelRect.localPosition = menuConfigs[MenuType.Main].PanelPosition;
-            panelRect.localRotation = Quaternion.Euler(menuConfigs[MenuType.Main].PanelRotationOffset);
+            panelRect.localPosition = panelConfigs[PanelType.Main].PanelPosition;
+            panelRect.localRotation = Quaternion.Euler(panelConfigs[PanelType.Main].PanelRotationOffset);
 
-            // Create all menus - ensure they start hidden
+            // Create all panels - ensure they start hidden
             mainMenus[index] = new MainMenu(menuPanel.transform, index);
             mainMenus[index]?.Hide();
             
@@ -334,29 +333,29 @@ namespace TwitchChat
             debugMenus[index]?.Hide();
 
             // Wire up back button events
-            if (statusMenus[index] != null) statusMenus[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
-            if (notificationSettingsMenus[index] != null) notificationSettingsMenus[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
-            if (largeDisplayBoards[index] != null) largeDisplayBoards[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
-            if (mediumDisplayBoards[index] != null) mediumDisplayBoards[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
-            if (wideDisplayBoards[index] != null) wideDisplayBoards[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
-            if (smallDisplayBoards[index] != null) smallDisplayBoards[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
-            if (StandardMessagesMenus[index] != null) StandardMessagesMenus[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
-            if (CommandMessagesMenus[index] != null) CommandMessagesMenus[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
-            if (TimedMessagesMenus[index] != null) TimedMessagesMenus[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
-            if (configurationMenus[index] != null) configurationMenus[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
-            if (debugMenus[index] != null) debugMenus[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
+            if (statusMenus[index] != null) statusMenus[index]!.OnBackButtonClicked += () => ShowPanel("Main", index);
+            if (notificationSettingsMenus[index] != null) notificationSettingsMenus[index]!.OnBackButtonClicked += () => ShowPanel("Main", index);
+            if (largeDisplayBoards[index] != null) largeDisplayBoards[index]!.OnBackButtonClicked += () => ShowPanel("Main", index);
+            if (mediumDisplayBoards[index] != null) mediumDisplayBoards[index]!.OnBackButtonClicked += () => ShowPanel("Main", index);
+            if (wideDisplayBoards[index] != null) wideDisplayBoards[index]!.OnBackButtonClicked += () => ShowPanel("Main", index);
+            if (smallDisplayBoards[index] != null) smallDisplayBoards[index]!.OnBackButtonClicked += () => ShowPanel("Main", index);
+            if (StandardMessagesMenus[index] != null) StandardMessagesMenus[index]!.OnBackButtonClicked += () => ShowPanel("Main", index);
+            if (CommandMessagesMenus[index] != null) CommandMessagesMenus[index]!.OnBackButtonClicked += () => ShowPanel("Main", index);
+            if (TimedMessagesMenus[index] != null) TimedMessagesMenus[index]!.OnBackButtonClicked += () => ShowPanel("Main", index);
+            if (configurationMenus[index] != null) configurationMenus[index]!.OnBackButtonClicked += () => ShowPanel("Main", index);
+            if (debugMenus[index] != null) debugMenus[index]!.OnBackButtonClicked += () => ShowPanel("Main", index);
 
-            // Show the saved menu or default to main menu
-            string menuToShow = !string.IsNullOrEmpty(Settings.Instance.activeMenus[index]) 
-                ? Settings.Instance.activeMenus[index] 
+            // Show the saved panel or default to main menu
+            string panelToShow = !string.IsNullOrEmpty(Settings.Instance.activePanels[index]) 
+                ? Settings.Instance.activePanels[index] 
                 : "Main";
-            ShowMenu(menuToShow, index);
+            ShowPanel(panelToShow, index);
 
             // Initially disable the canvas until the license is found
             menuCanvases[index]!.SetActive(false);
         }
 
-        private void HideAllMenus(int index)
+        private void HideAllPanels(int index)
         {
             mainMenus[index]?.Hide();
             statusMenus[index]?.Hide();
@@ -372,34 +371,34 @@ namespace TwitchChat
             debugMenus[index]?.Hide();
         }
 
-        private void ShowMenu(string menuName, int index)
+        private void ShowPanel(string panelName, int index)
         {
             if (menuCanvases[index] == null || !menuCanvases[index]!.activeSelf)
                 return;
             
-            Main.LogEntry("ShowMenu", $"Showing menu {menuName} for license {index + 1}");
+            Main.LogEntry("ShowMenu", $"Showing panel {panelName} for license {index + 1}");
 
-            HideAllMenus(index);
+            HideAllPanels(index);
 
-            MenuType menuType = menuName switch
+            PanelType panelType = panelName switch
             {
-                "Main" => MenuType.Main,
-                "Status" => MenuType.Status,
-                "Notification Settings" => MenuType.NotificationSettings,
-                "Large Display" => MenuType.LargeDisplay,
-                "Medium Display" => MenuType.MediumDisplay,
-                "Wide Display" => MenuType.WideDisplay,
-                "Small Display" => MenuType.SmallDisplay,
-                "Standard Messages" => MenuType.StandardMessages,
-                "Command Messages" => MenuType.CommandMessages,
-                "Timed Messages" => MenuType.TimedMessages,
-                "Configuration" => MenuType.Configuration,
-                "Debug" => MenuType.Debug,
-                _ => MenuType.Main
+                "Main" => PanelType.Main,
+                "Status" => PanelType.Status,
+                "Notification Settings" => PanelType.NotificationSettings,
+                "Large Display" => PanelType.LargeDisplay,
+                "Medium Display" => PanelType.MediumDisplay,
+                "Wide Display" => PanelType.WideDisplay,
+                "Small Display" => PanelType.SmallDisplay,
+                "Standard Messages" => PanelType.StandardMessages,
+                "Command Messages" => PanelType.CommandMessages,
+                "Timed Messages" => PanelType.TimedMessages,
+                "Configuration" => PanelType.Configuration,
+                "Debug" => PanelType.Debug,
+                _ => PanelType.Main
             };
 
-            // Apply the configuration for this menu type
-            var config = menuConfigs[menuType];
+            // Apply the configuration for this panel type
+            var config = panelConfigs[panelType];
             var menuPanel = menuCanvases[index]!.transform.Find("MenuPanel");
             if (menuPanel != null)
             {
@@ -412,51 +411,51 @@ namespace TwitchChat
                 panelRect.localRotation = Quaternion.Euler(config.PanelRotationOffset);
             }
 
-            // Show the selected menu
-            switch (menuType)
+            // Show the selected panel
+            switch (panelType)
             {
-                case MenuType.Main:
+                case PanelType.Main:
                     mainMenus[index]?.Show();
                     break;
-                case MenuType.Status:
+                case PanelType.Status:
                     statusMenus[index]?.Show();
                     break;
-                case MenuType.NotificationSettings:
+                case PanelType.NotificationSettings:
                     notificationSettingsMenus[index]?.Show();
                     break;
-                case MenuType.LargeDisplay:
+                case PanelType.LargeDisplay:
                     largeDisplayBoards[index]?.Show();
                     break;
-                case MenuType.MediumDisplay:
+                case PanelType.MediumDisplay:
                     mediumDisplayBoards[index]?.Show();
                     break;
-                case MenuType.WideDisplay:
+                case PanelType.WideDisplay:
                     wideDisplayBoards[index]?.Show();
                     break;
-                case MenuType.SmallDisplay:
+                case PanelType.SmallDisplay:
                     smallDisplayBoards[index]?.Show();
                     break;
-                case MenuType.StandardMessages:
+                case PanelType.StandardMessages:
                     StandardMessagesMenus[index]?.Show();
                     break;
-                case MenuType.CommandMessages:
+                case PanelType.CommandMessages:
                     CommandMessagesMenus[index]?.Show();
                     break;
-                case MenuType.TimedMessages:
+                case PanelType.TimedMessages:
                     TimedMessagesMenus[index]?.Show();
                     break;
-                case MenuType.Configuration:
+                case PanelType.Configuration:
                     configurationMenus[index]?.Show();
                     break;
-                case MenuType.Debug:
+                case PanelType.Debug:
                     debugMenus[index]?.Show();
                     break;
             }
 
             // Save the active menu state
-            Settings.Instance.activeMenus[index] = menuName;
+            Settings.Instance.activePanels[index] = panelName;
             Settings.Instance.Save(Main.ModEntry);
-            Main.LogEntry("ShowMenu", $"Saving active menu state for license {index + 1}: {menuName}");
+            Main.LogEntry("ShowMenu", $"Saving active menu state for license {index + 1}: {panelName}");
         }
 
         private void PositionNearObject(GameObject licenseObject, GameObject menuCanvas, int index)
@@ -474,7 +473,7 @@ namespace TwitchChat
 
             menuCanvas.transform.rotation = licenseObject.transform.rotation * 
                                          Quaternion.Euler(90f, 180f, 0f) * 
-                                         Quaternion.Euler(menuConfigs[MenuType.Main].PanelRotationOffset);
+                                         Quaternion.Euler(panelConfigs[PanelType.Main].PanelRotationOffset);
         }
 
         public void AddMessageToDisplayBoards(string username, string message)
