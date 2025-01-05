@@ -6,9 +6,9 @@ namespace TwitchChat.Menus
 {
     public class MainMenu : MenuConstructor.BaseMenu
     {
-        private readonly int menuIndex;
+        private readonly License menuIndex;
 
-        public MainMenu(Transform parent, int index) : base(parent)
+        public MainMenu(Transform parent, License index) : base(parent)
         {
             menuIndex = index;
             CreateMainMenu();
