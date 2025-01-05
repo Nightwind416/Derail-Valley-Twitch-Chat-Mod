@@ -11,6 +11,7 @@ namespace TwitchChat
     public class License
     {
         public string Name { get; private set; }
+        public int LicenseIndex { get; private set; }  // Add this property
         public GameObject? LicenseObject { get; set; }
         public GameObject? MenuCanvas { get; set; }
         public bool AttachedToStickyTape { get; set; }
@@ -32,9 +33,10 @@ namespace TwitchChat
         public SmallDisplayPanel? SmallDisplayPanel { get; set; }
         public WideDisplayPanel? WideDisplayPanel { get; set; }
 
-        public License(string name)
+        public License(string name, int index)  // Update constructor
         {
             Name = name;
+            LicenseIndex = index;
         }
     }
 
@@ -108,17 +110,19 @@ namespace TwitchChat
 
         public MenuManager()
         {
-            // Initialize licenses
-            foreach (string licenseName in new[] {
+            // Initialize licenses with their index
+            string[] licenseNames = {
                 "LicenseTrainDriver",
                 "LicenseShunting",
                 "LicenseLocomotiveDE2",
                 "LicenseMuseumCitySouth",
                 "LicenseFreightHaul",
                 "LicenseDispatcher1"
-            })
+            };
+
+            for (int i = 0; i < licenseNames.Length; i++)
             {
-                licenses.Add(licenseName, new License(licenseName));
+                licenses.Add(licenseNames[i], new License(licenseNames[i], i));
             }
         }
 
@@ -199,8 +203,6 @@ namespace TwitchChat
                             Main.LogEntry(methodName, $"Menu canvas for {license.Name} was null, creating...");
                             CreateMenuCanvas(license);
                         }
-
-                        license.MenuCanvas!.SetActive(true);
                     }
                 }
 
@@ -209,7 +211,19 @@ namespace TwitchChat
                     bool isLicenseActive = IsLicenseActive(license.LicenseObject);
                     if (license.MenuCanvas != null)
                     {
-                        license.MenuCanvas.SetActive(isLicenseActive);
+                        // Only update canvas visibility if it's changed
+                        if (license.MenuCanvas.activeSelf != isLicenseActive)
+                        {
+                            license.MenuCanvas.SetActive(isLicenseActive);
+                            if (isLicenseActive)
+                            {
+                                // Re-show the active panel when canvas becomes visible
+                                string panelToShow = !string.IsNullOrEmpty(Settings.Instance.activePanels[license.LicenseIndex]) 
+                                    ? Settings.Instance.activePanels[license.LicenseIndex] 
+                                    : "Main";
+                                ShowPanel(panelToShow, license);
+                            }
+                        }
                     }
 
                     if (isLicenseActive)
@@ -359,6 +373,9 @@ namespace TwitchChat
             license.ConfigurationPanel = new ConfigurationPanel(menuPanel);
             license.DebugPanel = new DebugPanel(menuPanel);
 
+            // Explicitly hide all panels immediately after creation
+            HideAllPanels(license);
+
             // Wire up back button events
             if (license.StatusPanel != null) license.StatusPanel.OnBackButtonClicked += () => ShowPanel("Main", license);
             if (license.NotificationPanel != null) license.NotificationPanel.OnBackButtonClicked += () => ShowPanel("Main", license);
@@ -373,12 +390,10 @@ namespace TwitchChat
             if (license.DebugPanel != null) license.DebugPanel.OnBackButtonClicked += () => ShowPanel("Main", license);
 
             // Show initial panel
-            string panelToShow = !string.IsNullOrEmpty(Settings.Instance.activePanels[0]) 
-                ? Settings.Instance.activePanels[0] 
+            string panelToShow = !string.IsNullOrEmpty(Settings.Instance.activePanels[license.LicenseIndex]) 
+                ? Settings.Instance.activePanels[license.LicenseIndex] 
                 : "Main";
             ShowPanel(panelToShow, license);
-
-            license.MenuCanvas.SetActive(false);
         }
 
         private void HideAllPanels(License license)
@@ -402,7 +417,7 @@ namespace TwitchChat
             if (license.MenuCanvas == null || !license.MenuCanvas!.activeSelf)
                 return;
             
-            Main.LogEntry("ShowPanel", $"Showing panel {panelName} for license {license.Name}");
+            Main.LogEntry("ShowPanel", $"Showing panel {panelName} for license {license.Name} (index: {license.LicenseIndex})");
 
             HideAllPanels(license);
 
@@ -478,10 +493,10 @@ namespace TwitchChat
                     break;
             }
 
-            // Save the active panel state
-            Settings.Instance.activePanels[0] = panelName;
+            // Save the active panel state to the correct index
+            Settings.Instance.activePanels[license.LicenseIndex] = panelName;
             Settings.Instance.Save(Main.ModEntry);
-            Main.LogEntry("ShowPanel", $"Saving active panel state for license {license.Name}: {panelName}");
+            Main.LogEntry("ShowPanel", $"Saving active panel state for license {license.Name} at index {license.LicenseIndex}: {panelName}");
         }
 
         private void PositionNearObject(License license)

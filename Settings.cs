@@ -31,7 +31,7 @@ namespace TwitchChat
         public string authentication_status = "Unverified or not set";
         public string EncodedOAuthToken = string.Empty;
         public DebugLevel debugLevel = DebugLevel.Minimal;
-        public string[] activePanels = ["Main", "Main", "Main", "Main", "Main", "Main"];
+        public string[] activePanels = new string[] { "Main", "Main", "Main", "Main", "Main", "Main" };
         public bool notificationsEnabled = true;
         public float notificationDuration = 10;
         public bool processOwn = false;
