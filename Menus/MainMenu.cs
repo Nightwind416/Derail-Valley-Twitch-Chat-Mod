@@ -2,7 +2,7 @@ using System.Reflection;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace TwitchChat.MenuConstructor
+namespace TwitchChat.Menus
 {
     public class MainMenu : MenuConstructor.BaseMenu
     {

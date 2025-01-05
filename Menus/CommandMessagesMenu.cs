@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace TwitchChat.MenuConstructor
+namespace TwitchChat.Menus
 {
     public class CommandMessagesMenu : MenuConstructor.BaseMenu
     {

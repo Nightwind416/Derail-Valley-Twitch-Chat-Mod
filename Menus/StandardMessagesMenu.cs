@@ -1,18 +1,18 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace TwitchChat.MenuConstructor
+namespace TwitchChat.Menus
 {
     public class StandardMessagesMenu : MenuConstructor.BaseMenu
     {
-        private UnityEngine.UI.Toggle? connectMessageEnabled;
-        private UnityEngine.UI.Text? connectMessage;
-        private UnityEngine.UI.Toggle? newFollowerMessageEnabled;
-        private UnityEngine.UI.Text? newFollowerMessage;
-        private UnityEngine.UI.Toggle? newSubscriberMessageEnabled;
-        private UnityEngine.UI.Text? newSubscriberMessage;
-        private UnityEngine.UI.Toggle? disconnectMessageEnabled;
-        private UnityEngine.UI.Text? disconnectMessage;
+        private Toggle? connectMessageEnabled;
+        private Text? connectMessage;
+        private Toggle? newFollowerMessageEnabled;
+        private Text? newFollowerMessage;
+        private Toggle? newSubscriberMessageEnabled;
+        private Text? newSubscriberMessage;
+        private Toggle? disconnectMessageEnabled;
+        private Text? disconnectMessage;
         private GameObject? connectDisconnectSection;
         private GameObject? newFollowerSubscriberSection;
 

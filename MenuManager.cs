@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Reflection;
-using TwitchChat.MenuConstructor;
+using TwitchChat.Menus;
 using System.Collections.Generic;
 using System;
 
@@ -479,15 +479,7 @@ namespace TwitchChat
 
         public void AddMessageToDisplayBoards(string username, string message)
         {
-            Main.LogEntry("AddMessageToDisplayBoards", $"Adding message to all display boards: {username}: {message}");
-
-            for (int i = 0; i < menuCanvases.Length; i++)
-            {
-                largeDisplayBoards[i]?.AddMessage(username, message);
-                mediumDisplayBoards[i]?.AddMessage(username, message);
-                wideDisplayBoards[i]?.AddMessage(username, message);
-                smallDisplayBoards[i]?.AddMessage(username, message);
-            }
+            // TODO: Add message to display boards
         }
     }
 }
