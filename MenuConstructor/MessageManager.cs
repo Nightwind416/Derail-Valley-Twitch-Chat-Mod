@@ -1,18 +1,19 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
-namespace TwitchChat.Menus
+namespace TwitchChat.MenuConstructor
 {
     public static class MessageManager
     {
         private const int MAX_MESSAGES = 100;
-        private static readonly Queue<string> messageHistory = new Queue<string>();
-        private static readonly HashSet<string> recentMessages = new HashSet<string>();
+        private static readonly Queue<string> messageHistory = new();
+        private static readonly HashSet<string> recentMessages = [];
 
         private const float MESSAGE_UPDATE_INTERVAL = 0.1f; // Update every 100ms
         private static float lastUpdateTime;
-        private static readonly Queue<(string username, string message)> pendingMessages = new Queue<(string username, string message)>();
+        private static readonly Queue<(string username, string message)> pendingMessages = new();
         private static bool isProcessingMessages;
 
         public static void AddMessage(RectTransform contentRectTransform, ScrollRect scrollRect, string username, string message)
@@ -117,7 +118,7 @@ namespace TwitchChat.Menus
 
         private static void CreateMessageObject(RectTransform contentRectTransform, string username, string message)
         {
-            GameObject messageObj = new GameObject("Message");
+            GameObject messageObj = new("Message");
             messageObj.transform.SetParent(contentRectTransform, false);
 
             RectTransform messageRect = messageObj.AddComponent<RectTransform>();
@@ -186,7 +187,7 @@ namespace TwitchChat.Menus
             {
                 if (contentRectTransform.GetChild(0) is RectTransform oldestMessage)
                 {
-                    float messageHeight = oldestMessage.sizeDelta.y + 5f; // Include padding
+                    float messageHeight = oldestMessage.sizeDelta.y + 5f;
                     GameObject.Destroy(oldestMessage.gameObject);
 
                     // Adjust positions of remaining messages

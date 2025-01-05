@@ -1,13 +1,13 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace TwitchChat.Menus
+namespace TwitchChat.MenuConstructor
 {
     public static class Section
     {
-        public static GameObject CreateSection(Transform parent, string name, int yPosition, int height, bool createLabel = true)
+        public static GameObject Create(Transform parent, string name, int yPosition, int height, bool createLabel = true)
         {
-            GameObject section = new GameObject(name);
+            GameObject section = new(name);
             section.transform.SetParent(parent, false);
 
             Image sectionImage = section.AddComponent<Image>();
@@ -24,7 +24,7 @@ namespace TwitchChat.Menus
 
             if (createLabel)
             {
-                UIElementFactory.CreateLabel(section.transform, name, 5, 5, Color.gray);
+                Label.Create(section.transform, name, 5, 5, Color.gray);
             }
 
             return section;

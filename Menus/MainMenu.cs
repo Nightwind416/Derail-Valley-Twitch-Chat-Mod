@@ -4,17 +4,12 @@ using UnityEngine.UI;
 
 namespace TwitchChat.Menus
 {
-    public class MainMenu : BaseMenu
+    public class MainMenu : MenuConstructor.BaseMenu
     {
         private readonly int menuIndex;
 
-        public delegate void OnMenuButtonClickedHandler(string menuName);
-        public event OnMenuButtonClickedHandler OnMenuButtonClicked;
-
         public MainMenu(Transform parent, int index) : base(parent)
         {
-            showBackButton = false;
-            showMinimizeButton = false;
             menuIndex = index;
             CreateMainMenu();
         }
@@ -40,7 +35,7 @@ namespace TwitchChat.Menus
             string methodName = MethodBase.GetCurrentMethod().Name;
             
             Main.LogEntry(methodName, $"Creating button: {text}");
-            Button button = CreateButton(menuObject.transform, text, 100, verticalPosition);
+            Button button = MenuConstructor.Button.Create(menuObject.transform, text, 100, verticalPosition);
             button.onClick.AddListener(() => {
                 Main.LogEntry(methodName, $"Button clicked: {text}");
                 MenuManager.Instance.OnMenuButtonClicked(text, menuIndex);

@@ -1,11 +1,10 @@
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace TwitchChat.Menus
 {
-    public class ConfigurationMenu : BaseMenu
+    public class ConfigurationMenu : MenuConstructor.BaseMenu
     {
-        private GameObject messageSection;
+        private GameObject? messageSection;
 
         public ConfigurationMenu(Transform parent) : base(parent)
         {
@@ -17,7 +16,7 @@ namespace TwitchChat.Menus
            // Dimensions - Menu width minus 20
 
             // Message Section
-            messageSection = CreateSection("Message", 25, 100);
+            messageSection = MenuConstructor.Section.Create(menuObject.transform, "Configuration", 25, 100, false);
             
             // Configuration section
             // TODO: Add configuration section content
@@ -26,7 +25,7 @@ namespace TwitchChat.Menus
         public override void Show()
         {
             base.Show();
-            if (messageSection != null) messageSection.SetActive(!isMinimized);
+            messageSection?.SetActive(!isMinimized);
         }
     }
 }

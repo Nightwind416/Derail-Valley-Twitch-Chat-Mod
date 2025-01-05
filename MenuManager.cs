@@ -238,10 +238,7 @@ namespace TwitchChat
             if (licenseObjects[index] != null)
             {
                 Transform paperTransform = licenseObjects[index]!.transform.Find("Pivot/TempPaper(Clone)(Clone) 0/Paper");
-                if (paperTransform != null)
-                {
-                    paperTransform.gameObject.SetActive(false);
-                }
+                paperTransform?.gameObject.SetActive(false);
             }
         }
 
@@ -273,46 +270,68 @@ namespace TwitchChat
                 Destroy(menuCanvases[index]);
             }
 
+            // Create canvas and setup basic components
             menuCanvases[index] = new GameObject($"MenuCanvas_{index + 1}");
             if (menuCanvases[index] == null)
-                throw new System.InvalidOperationException($"Menu canvas {index} is null after creation");
+                throw new InvalidOperationException($"Menu canvas {index} is null after creation");
 
             Canvas canvas = menuCanvases[index]!.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.WorldSpace;
             canvas.sortingOrder = 1000;
             
             RectTransform canvasRect = menuCanvases[index]!.GetComponent<RectTransform>();
-            canvasRect.sizeDelta = menuConfigs[MenuType.Main].CanvasSize; // Start with main menu size
+            canvasRect.sizeDelta = menuConfigs[MenuType.Main].CanvasSize;
             canvasRect.localScale = Vector3.one * 0.001f;
 
             menuCanvases[index]!.AddComponent<GraphicRaycaster>();
 
-            // Create a panel to contain all menus
-            GameObject menuPanel = new GameObject("MenuPanel");
+            // Create panel
+            GameObject menuPanel = new("MenuPanel");
             menuPanel.transform.SetParent(menuCanvases[index]!.transform, false);
             RectTransform panelRect = menuPanel.AddComponent<RectTransform>();
             panelRect.sizeDelta = menuConfigs[MenuType.Main].PanelSize;
-            // Change anchor points to top-left (0,1)
             panelRect.anchorMin = new Vector2(0f, 1f);
             panelRect.anchorMax = new Vector2(0f, 1f);
-            // Keep pivot in center (0.5,0.5) for rotation around center
             panelRect.pivot = new Vector2(0.5f, 0.5f);
             panelRect.localPosition = menuConfigs[MenuType.Main].PanelPosition;
             panelRect.localRotation = Quaternion.Euler(menuConfigs[MenuType.Main].PanelRotationOffset);
 
-            // Create all menus for this instance - now parenting to panel instead of canvas
+            // Create all menus - ensure they start hidden
             mainMenus[index] = new MainMenu(menuPanel.transform, index);
+            mainMenus[index]?.Hide();
+            
             statusMenus[index] = new StatusMenu(menuPanel.transform);
+            statusMenus[index]?.Hide();
+            
             notificationSettingsMenus[index] = new NotificationMenu(menuPanel.transform);
+            notificationSettingsMenus[index]?.Hide();
+            
             largeDisplayBoards[index] = new LargeDisplayBoard(menuPanel.transform);
+            largeDisplayBoards[index]?.Hide();
+            
             mediumDisplayBoards[index] = new MediumDisplayBoard(menuPanel.transform);
+            mediumDisplayBoards[index]?.Hide();
+            
             wideDisplayBoards[index] = new WideDisplayBoard(menuPanel.transform);
+            wideDisplayBoards[index]?.Hide();
+            
             smallDisplayBoards[index] = new SmallDisplayBoard(menuPanel.transform);
+            smallDisplayBoards[index]?.Hide();
+            
             StandardMessagesMenus[index] = new StandardMessagesMenu(menuPanel.transform);
+            StandardMessagesMenus[index]?.Hide();
+            
             CommandMessagesMenus[index] = new CommandMessagesMenu(menuPanel.transform);
+            CommandMessagesMenus[index]?.Hide();
+            
             TimedMessagesMenus[index] = new TimedMessagesMenu(menuPanel.transform);
+            TimedMessagesMenus[index]?.Hide();
+            
             configurationMenus[index] = new ConfigurationMenu(menuPanel.transform);
+            configurationMenus[index]?.Hide();
+            
             debugMenus[index] = new DebugMenu(menuPanel.transform);
+            debugMenus[index]?.Hide();
 
             // Wire up back button events
             if (statusMenus[index] != null) statusMenus[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
@@ -327,11 +346,11 @@ namespace TwitchChat
             if (configurationMenus[index] != null) configurationMenus[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
             if (debugMenus[index] != null) debugMenus[index]!.OnBackButtonClicked += () => ShowMenu("Main", index);
 
-            // Hide all menus first
-            HideAllMenus(index);
-            
-            // Show the saved menu instead of defaulting to main menu
-            ShowMenu(Settings.Instance.activeMenus[index], index);
+            // Show the saved menu or default to main menu
+            string menuToShow = !string.IsNullOrEmpty(Settings.Instance.activeMenus[index]) 
+                ? Settings.Instance.activeMenus[index] 
+                : "Main";
+            ShowMenu(menuToShow, index);
 
             // Initially disable the canvas until the license is found
             menuCanvases[index]!.SetActive(false);

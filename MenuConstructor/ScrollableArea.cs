@@ -1,13 +1,13 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace TwitchChat.Menus
+namespace TwitchChat.MenuConstructor
 {
     public static class ScrollableArea
     {
-        public static GameObject CreateScrollableArea(Transform parent, int width = 180, int height = 250)
+        public static GameObject Create(Transform parent, int width = 180, int height = 250)
         {
-            GameObject scrollableArea = new GameObject("ScrollableArea");
+            GameObject scrollableArea = new("ScrollableArea");
             scrollableArea.transform.SetParent(parent, false);
 
             // Add visible background to scrollable area
@@ -19,7 +19,7 @@ namespace TwitchChat.Menus
             scrollRect.horizontal = false;
 
             // Set up viewport
-            GameObject viewport = new GameObject("Viewport");
+            GameObject viewport = new("Viewport");
             viewport.transform.SetParent(scrollableArea.transform, false);
             RectTransform viewportRect = viewport.AddComponent<RectTransform>();
             viewportRect.anchorMin = Vector2.zero;
@@ -33,7 +33,7 @@ namespace TwitchChat.Menus
             viewport.AddComponent<Mask>().showMaskGraphic = true;
 
             // Set up content
-            GameObject content = new GameObject("Content");
+            GameObject content = new("Content");
             content.transform.SetParent(viewport.transform, false);
             RectTransform contentRectTransform = content.AddComponent<RectTransform>();
             contentRectTransform.anchorMin = new Vector2(0, 1);

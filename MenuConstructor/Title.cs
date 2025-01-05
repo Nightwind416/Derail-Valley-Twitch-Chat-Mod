@@ -1,13 +1,13 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace TwitchChat.Menus
+namespace TwitchChat.MenuConstructor
 {
     public static class Title
     {
-        public static void CreateTitle(Transform parent, string titleText, int fontSize = 16, Color? textColor = null, TextAnchor textAlignment = TextAnchor.UpperCenter)
+        public static void Create(Transform parent, string titleText, int fontSize = 16, Color? textColor = null, TextAnchor textAlignment = TextAnchor.UpperCenter)
         {
-            GameObject titleObj = new GameObject("Title");
+            GameObject titleObj = new("Title");
             titleObj.transform.SetParent(parent, false);
             Text title = titleObj.AddComponent<Text>();
             title.text = titleText;

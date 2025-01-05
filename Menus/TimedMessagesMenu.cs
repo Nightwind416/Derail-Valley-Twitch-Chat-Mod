@@ -1,11 +1,10 @@
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace TwitchChat.Menus
 {
-    public class TimedMessagesMenu : BaseMenu
+    public class TimedMessagesMenu : MenuConstructor.BaseMenu
     {
-        private GameObject settingsSection;
+        private GameObject? settingsSection;
 
         public TimedMessagesMenu(Transform parent) : base(parent)
         {
@@ -14,18 +13,15 @@ namespace TwitchChat.Menus
 
         private void CreateSettingsSection()
         {
-            settingsSection = CreateSection("Settings", 25, 100);
+            settingsSection = MenuConstructor.Section.Create(menuObject.transform, "Settings", 25, 100);
             
-            // Timed Messages Settings
-            UIElementFactory.CreateTextDisplay(settingsSection.transform, "Not yet integrated into the panel system. Utilize the Unity Mod Manager menu for Timed Messages.", 10, 25, Color.yellow, 4);
-            
-            // TODO: Add Timed Messages Settings content
+            MenuConstructor.DisplayText.Create(settingsSection.transform, "Not yet integrated into the panel system. Utilize the Unity Mod Manager menu for Timed Messages.", 10, 25, Color.yellow, 4);
         }
 
         public override void Show()
         {
             base.Show();
-            if (settingsSection != null) settingsSection.SetActive(!isMinimized);
+            settingsSection?.SetActive(!isMinimized);
         }
     }
 }
