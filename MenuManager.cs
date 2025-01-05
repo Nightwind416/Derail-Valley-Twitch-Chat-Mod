@@ -39,6 +39,7 @@ namespace TwitchChat
     {
         private static MenuManager? instance;
         private readonly Dictionary<string, License> licenses = new();
+        private GameObject? templateCanvas;
 
         private enum PanelType
         {
@@ -115,6 +116,65 @@ namespace TwitchChat
             })
             {
                 licenses.Add(licenseName, new License(licenseName));
+            }
+        }
+
+        private void Awake()
+        {
+            CreateTemplateCanvas();
+        }
+
+        private void CreateTemplateCanvas()
+        {
+            templateCanvas = new GameObject("TemplateCanvas");
+            templateCanvas.SetActive(false);
+            DontDestroyOnLoad(templateCanvas);
+
+            // Setup basic canvas components
+            Canvas canvas = templateCanvas.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.WorldSpace;
+            canvas.sortingOrder = 1000;
+            
+            RectTransform canvasRect = templateCanvas.GetComponent<RectTransform>();
+            canvasRect.sizeDelta = panelConfigs[PanelType.Main].CanvasSize;
+            canvasRect.localScale = Vector3.one * 0.001f;
+            templateCanvas.AddComponent<GraphicRaycaster>();
+
+            // Create template panel
+            GameObject menuPanel = new("MenuPanel");
+            menuPanel.transform.SetParent(templateCanvas.transform, false);
+            RectTransform panelRect = menuPanel.AddComponent<RectTransform>();
+            panelRect.sizeDelta = panelConfigs[PanelType.Main].PanelSize;
+            panelRect.anchorMin = new Vector2(0f, 1f);
+            panelRect.anchorMax = new Vector2(0f, 1f);
+            panelRect.pivot = new Vector2(0.5f, 0.5f);
+            panelRect.localPosition = panelConfigs[PanelType.Main].PanelPosition;
+            panelRect.localRotation = Quaternion.Euler(panelConfigs[PanelType.Main].PanelRotationOffset);
+
+            // Create all panel templates
+            CreatePanelTemplates(menuPanel.transform);
+        }
+
+        private void CreatePanelTemplates(Transform parent)
+        {
+            // Create one of each panel type as templates
+            var mainMenu = new MainMenu(parent, null);
+            var statusMenu = new StatusMenu(parent);
+            var notificationMenu = new NotificationMenu(parent);
+            var largeDisplay = new LargeDisplayBoard(parent);
+            var mediumDisplay = new MediumDisplayBoard(parent);
+            var wideDisplay = new WideDisplayBoard(parent);
+            var smallDisplay = new SmallDisplayBoard(parent);
+            var standardMessages = new StandardMessagesMenu(parent);
+            var commandMessages = new CommandMessagesMenu(parent);
+            var timedMessages = new TimedMessagesMenu(parent);
+            var configuration = new ConfigurationMenu(parent);
+            var debug = new DebugMenu(parent);
+
+            // Hide all template panels
+            foreach (Transform child in parent)
+            {
+                child.gameObject.SetActive(false);
             }
         }
 
@@ -271,99 +331,52 @@ namespace TwitchChat
 
         private void CreateMenuCanvas(License license)
         {
-            string methodName = MethodBase.GetCurrentMethod().Name;
-            Main.LogEntry(methodName, $"Creating menu UI elements for license {license.Name}");
-
-            if (license.MenuCanvas != null)
+            if (templateCanvas == null)
             {
-                Main.LogEntry(methodName, $"Menu for {license.Name} already exists, destroying old instance");
-                Destroy(license.MenuCanvas);
+                Main.LogEntry("CreateMenuCanvas", "Template canvas not found!");
+                return;
             }
 
-            // Create canvas and setup basic components
-            license.MenuCanvas = new GameObject($"MenuCanvas_{license.Name}");
-            if (license.MenuCanvas == null)
-                throw new InvalidOperationException($"Menu canvas {license.Name} is null after creation");
-
-            Canvas canvas = license.MenuCanvas!.AddComponent<Canvas>();
-            canvas.renderMode = RenderMode.WorldSpace;
-            canvas.sortingOrder = 1000;
+            // Clone the template
+            license.MenuCanvas = Instantiate(templateCanvas);
+            license.MenuCanvas.name = $"MenuCanvas_{license.Name}";
             
-            RectTransform canvasRect = license.MenuCanvas!.GetComponent<RectTransform>();
-            canvasRect.sizeDelta = panelConfigs[PanelType.Main].CanvasSize;
-            canvasRect.localScale = Vector3.one * 0.001f;
-
-            license.MenuCanvas!.AddComponent<GraphicRaycaster>();
-
-            // Create panel
-            GameObject menuPanel = new("MenuPanel");
-            menuPanel.transform.SetParent(license.MenuCanvas!.transform, false);
-            RectTransform panelRect = menuPanel.AddComponent<RectTransform>();
-            panelRect.sizeDelta = panelConfigs[PanelType.Main].PanelSize;
-            panelRect.anchorMin = new Vector2(0f, 1f);
-            panelRect.anchorMax = new Vector2(0f, 1f);
-            panelRect.pivot = new Vector2(0.5f, 0.5f);
-            panelRect.localPosition = panelConfigs[PanelType.Main].PanelPosition;
-            panelRect.localRotation = Quaternion.Euler(panelConfigs[PanelType.Main].PanelRotationOffset);
-
-            // Create all panels - ensure they start hidden
-            license.MainMenu = new MainMenu(menuPanel.transform, license);
-            license.MainMenu?.Hide();
+            Transform menuPanel = license.MenuCanvas.transform.Find("MenuPanel");
             
-            license.StatusMenu = new StatusMenu(menuPanel.transform);
-            license.StatusMenu?.Hide();
-            
-            license.NotificationMenu = new NotificationMenu(menuPanel.transform);
-            license.NotificationMenu?.Hide();
-            
-            license.LargeDisplayBoard = new LargeDisplayBoard(menuPanel.transform);
-            license.LargeDisplayBoard?.Hide();
-            
-            license.MediumDisplayBoard = new MediumDisplayBoard(menuPanel.transform);
-            license.MediumDisplayBoard?.Hide();
-            
-            license.WideDisplayBoard = new WideDisplayBoard(menuPanel.transform);
-            license.WideDisplayBoard?.Hide();
-            
-            license.SmallDisplayBoard = new SmallDisplayBoard(menuPanel.transform);
-            license.SmallDisplayBoard?.Hide();
-            
-            license.StandardMessagesMenu = new StandardMessagesMenu(menuPanel.transform);
-            license.StandardMessagesMenu?.Hide();
-            
-            license.CommandMessagesMenu = new CommandMessagesMenu(menuPanel.transform);
-            license.CommandMessagesMenu?.Hide();
-            
-            license.TimedMessagesMenu = new TimedMessagesMenu(menuPanel.transform);
-            license.TimedMessagesMenu?.Hide();
-            
-            license.ConfigurationMenu = new ConfigurationMenu(menuPanel.transform);
-            license.ConfigurationMenu?.Hide();
-            
-            license.DebugMenu = new DebugMenu(menuPanel.transform);
-            license.DebugMenu?.Hide();
+            // Create and wire up all panels from the templates
+            license.MainMenu = new MainMenu(menuPanel, license);
+            license.StatusMenu = new StatusMenu(menuPanel);
+            license.NotificationMenu = new NotificationMenu(menuPanel);
+            license.LargeDisplayBoard = new LargeDisplayBoard(menuPanel);
+            license.MediumDisplayBoard = new MediumDisplayBoard(menuPanel);
+            license.WideDisplayBoard = new WideDisplayBoard(menuPanel);
+            license.SmallDisplayBoard = new SmallDisplayBoard(menuPanel);
+            license.StandardMessagesMenu = new StandardMessagesMenu(menuPanel);
+            license.CommandMessagesMenu = new CommandMessagesMenu(menuPanel);
+            license.TimedMessagesMenu = new TimedMessagesMenu(menuPanel);
+            license.ConfigurationMenu = new ConfigurationMenu(menuPanel);
+            license.DebugMenu = new DebugMenu(menuPanel);
 
             // Wire up back button events
-            if (license.StatusMenu != null) license.StatusMenu!.OnBackButtonClicked += () => ShowPanel("Main", license);
-            if (license.NotificationMenu != null) license.NotificationMenu!.OnBackButtonClicked += () => ShowPanel("Main", license);
-            if (license.LargeDisplayBoard != null) license.LargeDisplayBoard!.OnBackButtonClicked += () => ShowPanel("Main", license);
-            if (license.MediumDisplayBoard != null) license.MediumDisplayBoard!.OnBackButtonClicked += () => ShowPanel("Main", license);
-            if (license.WideDisplayBoard != null) license.WideDisplayBoard!.OnBackButtonClicked += () => ShowPanel("Main", license);
-            if (license.SmallDisplayBoard != null) license.SmallDisplayBoard!.OnBackButtonClicked += () => ShowPanel("Main", license);
-            if (license.StandardMessagesMenu != null) license.StandardMessagesMenu!.OnBackButtonClicked += () => ShowPanel("Main", license);
-            if (license.CommandMessagesMenu != null) license.CommandMessagesMenu!.OnBackButtonClicked += () => ShowPanel("Main", license);
-            if (license.TimedMessagesMenu != null) license.TimedMessagesMenu!.OnBackButtonClicked += () => ShowPanel("Main", license);
-            if (license.ConfigurationMenu != null) license.ConfigurationMenu!.OnBackButtonClicked += () => ShowPanel("Main", license);
-            if (license.DebugMenu != null) license.DebugMenu!.OnBackButtonClicked += () => ShowPanel("Main", license);
+            if (license.StatusMenu != null) license.StatusMenu.OnBackButtonClicked += () => ShowPanel("Main", license);
+            if (license.NotificationMenu != null) license.NotificationMenu.OnBackButtonClicked += () => ShowPanel("Main", license);
+            if (license.LargeDisplayBoard != null) license.LargeDisplayBoard.OnBackButtonClicked += () => ShowPanel("Main", license);
+            if (license.MediumDisplayBoard != null) license.MediumDisplayBoard.OnBackButtonClicked += () => ShowPanel("Main", license);
+            if (license.WideDisplayBoard != null) license.WideDisplayBoard.OnBackButtonClicked += () => ShowPanel("Main", license);
+            if (license.SmallDisplayBoard != null) license.SmallDisplayBoard.OnBackButtonClicked += () => ShowPanel("Main", license);
+            if (license.StandardMessagesMenu != null) license.StandardMessagesMenu.OnBackButtonClicked += () => ShowPanel("Main", license);
+            if (license.CommandMessagesMenu != null) license.CommandMessagesMenu.OnBackButtonClicked += () => ShowPanel("Main", license);
+            if (license.TimedMessagesMenu != null) license.TimedMessagesMenu.OnBackButtonClicked += () => ShowPanel("Main", license);
+            if (license.ConfigurationMenu != null) license.ConfigurationMenu.OnBackButtonClicked += () => ShowPanel("Main", license);
+            if (license.DebugMenu != null) license.DebugMenu.OnBackButtonClicked += () => ShowPanel("Main", license);
 
-            // Show the saved panel or default to main menu
+            // Show initial panel
             string panelToShow = !string.IsNullOrEmpty(Settings.Instance.activePanels[0]) 
                 ? Settings.Instance.activePanels[0] 
                 : "Main";
             ShowPanel(panelToShow, license);
 
-            // Initially disable the canvas until the license is found
-            license.MenuCanvas!.SetActive(false);
+            license.MenuCanvas.SetActive(false);
         }
 
         private void HideAllPanels(License license)
