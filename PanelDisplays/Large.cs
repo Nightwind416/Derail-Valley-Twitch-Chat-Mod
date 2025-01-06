@@ -5,7 +5,7 @@ namespace TwitchChat.PanelDisplays
 {
     public class LargeDisplayPanel : PanelConstructor.BasePanel
     {
-        private int maxMessages = 50;
+        private int maxMessages = 500;
         private int messageCount = 0;
 
         public LargeDisplayPanel(Transform parent) : base(parent)

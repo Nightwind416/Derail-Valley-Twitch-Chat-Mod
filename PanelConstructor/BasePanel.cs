@@ -91,11 +91,14 @@ namespace TwitchChat.PanelConstructor
             scrollViewRect.anchorMax = new Vector2(1, 1);
             scrollViewRect.offsetMin = new Vector2(5, 5);
             scrollViewRect.offsetMax = new Vector2(-5, -35); // Leave space for title and buttons
+            scrollViewRect.sizeDelta = Vector2.zero;
             
             // Add ScrollRect component
             scrollRect = scrollableArea.AddComponent<ScrollRect>();
             scrollRect.horizontal = false;
             scrollRect.vertical = true;
+            scrollRect.movementType = ScrollRect.MovementType.Clamped;
+            scrollRect.inertia = false;
             
             // Add viewport with padding for safety
             GameObject viewport = new("Viewport", typeof(RectTransform));
@@ -107,10 +110,10 @@ namespace TwitchChat.PanelConstructor
             viewportRect.anchorMin = Vector2.zero;
             viewportRect.anchorMax = Vector2.one;
             viewportRect.sizeDelta = Vector2.zero;
-            viewportRect.offsetMin = new Vector2(2, 2); // Add small padding
+            viewportRect.offsetMin = new Vector2(2, 2);
             viewportRect.offsetMax = new Vector2(-2, -2);
             
-            // Add content container with safe area
+            // Add content container
             GameObject content = new("Content", typeof(RectTransform));
             content.transform.SetParent(viewport.transform, false);
             
@@ -121,20 +124,24 @@ namespace TwitchChat.PanelConstructor
             contentRectTransform.sizeDelta = new Vector2(0, 0);
             
             VerticalLayoutGroup layout = content.AddComponent<VerticalLayoutGroup>();
-            layout.padding = new RectOffset(10, 10, 10, 10); // Increased padding
+            layout.padding = new RectOffset(10, 10, 10, 10);
             layout.spacing = 5;
             layout.childAlignment = TextAnchor.UpperLeft;
             layout.childControlHeight = true;
             layout.childControlWidth = true;
             layout.childForceExpandHeight = false;
             layout.childForceExpandWidth = true;
-            
+
             ContentSizeFitter sizeFitter = content.AddComponent<ContentSizeFitter>();
             sizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
             sizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
             
             scrollRect.viewport = viewportRect;
             scrollRect.content = contentRectTransform;
+
+            // Add a mask to the viewport
+            RectMask2D rectMask = viewport.AddComponent<RectMask2D>();
+            rectMask.padding = Vector4.zero;
         }
 
         protected virtual void AddMessage(string username, string message)
@@ -147,8 +154,8 @@ namespace TwitchChat.PanelConstructor
                 string safeMessage = ProcessMessageText($"{username}: {message}");
                 if (string.IsNullOrEmpty(safeMessage)) return;
 
-                // Start coroutine to add message safely
-                UnityMainThreadDispatcher.Instance().StartCoroutine(CreateMessageObject(safeMessage));
+                // Force message to be created on the main thread
+                UnityMainThreadDispatcher.Instance().Enqueue(() => CreateMessageObjectSafe(safeMessage));
             }
             catch (System.Exception ex)
             {
@@ -156,19 +163,13 @@ namespace TwitchChat.PanelConstructor
             }
         }
 
-        private IEnumerator CreateMessageObject(string safeMessage)
+        private void CreateMessageObjectSafe(string safeMessage)
         {
-            if (contentRectTransform == null) yield break;
-
-            yield return CreateMessageObjectInternal(safeMessage);
-        }
-
-        private IEnumerator CreateMessageObjectInternal(string safeMessage)
-        {
-            GameObject? messageObj = null;
             try
             {
-                messageObj = new GameObject($"Message_{Time.time}", typeof(RectTransform));
+                if (contentRectTransform == null) return;
+
+                GameObject messageObj = new GameObject($"Message_{Time.time}", typeof(RectTransform));
                 messageObj.transform.SetParent(contentRectTransform, false);
 
                 // Configure text component with safe defaults
@@ -178,7 +179,7 @@ namespace TwitchChat.PanelConstructor
                 messageText.color = Color.white;
                 messageText.supportRichText = false;
                 messageText.horizontalOverflow = HorizontalWrapMode.Wrap;
-                messageText.verticalOverflow = VerticalWrapMode.Overflow;
+                messageText.verticalOverflow = VerticalWrapMode.Truncate;
                 messageText.raycastTarget = false;
                 messageText.text = safeMessage;
 
@@ -186,51 +187,31 @@ namespace TwitchChat.PanelConstructor
                 RectTransform textRect = messageText.rectTransform;
                 textRect.anchorMin = new Vector2(0, 0);
                 textRect.anchorMax = new Vector2(1, 0);
-                textRect.sizeDelta = new Vector2(0, 20); // Initial height
+                textRect.sizeDelta = new Vector2(0, 20);
 
-                UpdateMessageLayout(messageText, textRect);
+                // Force layout rebuild
+                LayoutRebuilder.ForceRebuildLayoutImmediate(textRect);
+                Canvas.ForceUpdateCanvases();
+
+                // Adjust final height
+                float preferredHeight = Mathf.Max(20, messageText.preferredHeight);
+                textRect.sizeDelta = new Vector2(0, preferredHeight);
+
+                // Update scroll position
+                if (scrollRect != null)
+                {
+                    scrollRect.verticalNormalizedPosition = 0f;
+                }
+
+                // Force content update
+                if (contentRectTransform != null)
+                {
+                    LayoutRebuilder.ForceRebuildLayoutImmediate(contentRectTransform);
+                }
             }
             catch (System.Exception ex)
             {
-                Main.LogEntry("BasePanel.CreateMessageObject", $"Error creating message: {ex.Message}");
-                if (messageObj != null)
-                {
-                    GameObject.Destroy(messageObj);
-                }
-            }
-            yield break;
-        }
-
-        private void UpdateMessageLayout(Text messageText, RectTransform textRect)
-        {
-            // Wait one frame to ensure layout is ready
-            UnityMainThreadDispatcher.Instance().StartCoroutine(UpdateLayoutCoroutine(messageText, textRect));
-        }
-
-        private IEnumerator UpdateLayoutCoroutine(Text messageText, RectTransform textRect)
-        {
-            yield return null;
-
-            // Force layout rebuild
-            LayoutRebuilder.ForceRebuildLayoutImmediate(textRect);
-
-            yield return null; // Wait another frame
-
-            // Set final height with safety check
-            float preferredHeight = Mathf.Max(20, messageText.preferredHeight);
-            textRect.sizeDelta = new Vector2(0, preferredHeight);
-
-            // Update scroll position
-            if (scrollRect != null)
-            {
-                Canvas.ForceUpdateCanvases();
-                scrollRect.verticalNormalizedPosition = 0f;
-            }
-
-            // Force content size update
-            if (contentRectTransform != null)
-            {
-                LayoutRebuilder.ForceRebuildLayoutImmediate(contentRectTransform);
+                Main.LogEntry("BasePanel.CreateMessageObjectSafe", $"Error creating message: {ex.Message}");
             }
         }
 
@@ -241,29 +222,23 @@ namespace TwitchChat.PanelConstructor
 
             try
             {
-                // Limit total length
-                const int maxLength = 200;
-                if (text.Length > maxLength)
-                {
-                    text = text.Substring(0, maxLength) + "...";
-                }
+                // Hard limit on length to prevent layout issues
+                text = text.Length > 200 ? text.Substring(0, 200) + "..." : text;
 
-                // Remove problematic characters
-                text = text.Replace('\u200B', ' ')  // Zero-width space
-                         .Replace('\u200C', ' ')  // Zero-width non-joiner
-                         .Replace('\u200D', ' ')  // Zero-width joiner
-                         .Replace('\u2028', ' ')  // Line separator
-                         .Replace('\u2029', ' ')  // Paragraph separator
-                         .Replace('\t', ' ')      // Tab
-                         .Replace('\r', ' ')      // Carriage return
-                         .Replace('\n', ' ');     // New line
+                // Convert to char array and filter
+                var filtered = text.ToCharArray().Where(c => 
+                    char.IsLetterOrDigit(c) ||
+                    char.IsPunctuation(c) ||
+                    char.IsWhiteSpace(c) ||
+                    c == ':' ||  // Preserve colons for username separator
+                    (c >= 0x20 && c <= 0x7E) // Basic ASCII range
+                ).ToArray();
 
-                // Remove any other control characters and non-printable characters
-                text = new string(text.Where(c => !char.IsControl(c) && 
-                                                (char.IsLetterOrDigit(c) || 
-                                                 char.IsPunctuation(c) || 
-                                                 char.IsWhiteSpace(c) ||
-                                                 char.IsSymbol(c))).ToArray());
+                // Convert back to string and clean up
+                text = new string(filtered)
+                    .Replace("\n", " ")
+                    .Replace("\r", " ")
+                    .Replace("\t", " ");
 
                 // Collapse multiple spaces
                 while (text.Contains("  "))
@@ -271,19 +246,12 @@ namespace TwitchChat.PanelConstructor
                     text = text.Replace("  ", " ");
                 }
 
-                // Add extra safety trim
-                text = text.Trim();
-                
-                // Ensure minimum length
-                if (text.Length < 1)
-                    return "[Empty Message]";
-
-                return text;
+                return text.Trim();
             }
             catch (System.Exception ex)
             {
-                Main.LogEntry("BasePanel.ProcessMessageText", $"Error processing message text: {ex.Message}");
-                return "[Message Processing Error]";
+                Main.LogEntry("BasePanel.ProcessMessageText", $"Error processing text: {ex.Message}");
+                return "[Message Error]";
             }
         }
 
