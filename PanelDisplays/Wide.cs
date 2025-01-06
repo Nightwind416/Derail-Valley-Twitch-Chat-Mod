@@ -23,7 +23,6 @@ namespace TwitchChat.PanelDisplays
                 {
                     verticalLayout.padding = new RectOffset(10, 10, 10, 10);
                     verticalLayout.spacing = 10;
-                    verticalLayout.childAlignment = TextAnchor.MiddleLeft;
                 }
             }
         }

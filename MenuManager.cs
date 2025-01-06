@@ -527,18 +527,11 @@ namespace TwitchChat
                     {
                         try
                         {
-                            // Add message to any visible display panels
-                            if (license.LargeDisplayPanel?.PanelObject.activeSelf == true)
-                                license.LargeDisplayPanel.AddChatMessage(username, message);
-                            
-                            if (license.MediumDisplayPanel?.PanelObject.activeSelf == true)
-                                license.MediumDisplayPanel.AddChatMessage(username, message);
-                            
-                            if (license.WideDisplayPanel?.PanelObject.activeSelf == true)
-                                license.WideDisplayPanel.AddChatMessage(username, message);
-                            
-                            if (license.SmallDisplayPanel?.PanelObject.activeSelf == true)
-                                license.SmallDisplayPanel.AddChatMessage(username, message);
+                            // Add message to all display panels regardless of visibility
+                            license.LargeDisplayPanel?.AddChatMessage(username, message);
+                            license.MediumDisplayPanel?.AddChatMessage(username, message);
+                            license.WideDisplayPanel?.AddChatMessage(username, message);
+                            license.SmallDisplayPanel?.AddChatMessage(username, message);
                         }
                         catch (System.Exception ex)
                         {
