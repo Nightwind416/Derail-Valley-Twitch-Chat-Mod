@@ -517,9 +517,42 @@ namespace TwitchChat
                                          Quaternion.Euler(panelConfigs[PanelType.Main].PanelRotationOffset);
         }
 
-        public void AddMessageToDisplayBoards(string username, string message)
+        public void AddMessageToPanelDisplays(string username, string message)
         {
-            // TODO: Add message to display boards
+            try
+            {
+                foreach (var license in licenses.Values)
+                {
+                    if (license.MenuCanvas != null && license.MenuCanvas.activeSelf)
+                    {
+                        try
+                        {
+                            // Add message to any visible display panels
+                            if (license.LargeDisplayPanel?.PanelObject.activeSelf == true)
+                                license.LargeDisplayPanel.AddChatMessage(username, message);
+                            
+                            if (license.MediumDisplayPanel?.PanelObject.activeSelf == true)
+                                license.MediumDisplayPanel.AddChatMessage(username, message);
+                            
+                            if (license.WideDisplayPanel?.PanelObject.activeSelf == true)
+                                license.WideDisplayPanel.AddChatMessage(username, message);
+                            
+                            if (license.SmallDisplayPanel?.PanelObject.activeSelf == true)
+                                license.SmallDisplayPanel.AddChatMessage(username, message);
+                        }
+                        catch (System.Exception ex)
+                        {
+                            Main.LogEntry("MenuManager.AddMessageToPanelDisplays", 
+                                $"Error adding message to license {license.Name}: {ex.Message}");
+                        }
+                    }
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Main.LogEntry("MenuManager.AddMessageToPanelDisplays", 
+                    $"Error in AddMessageToPanelDisplays: {ex.Message}");
+            }
         }
 
         public void UpdateAllNotificationToggles(bool value)

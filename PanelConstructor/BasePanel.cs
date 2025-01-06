@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
+using System.Linq;
+using System.Collections;
 
 namespace TwitchChat.PanelConstructor
 {
@@ -40,6 +42,8 @@ namespace TwitchChat.PanelConstructor
                     contentRectTransform = scrollRect.content;
                 }
             }
+            
+            CreateScrollView();
         }
 
         protected virtual void CreateBasePanel(Transform parent)
@@ -74,6 +78,213 @@ namespace TwitchChat.PanelConstructor
             minimizeRect.anchorMin = new Vector2(0, 1);
             minimizeRect.anchorMax = new Vector2(0, 1);
             minimizeRect.pivot = new Vector2(0, 1);
+        }
+
+        protected virtual void CreateScrollView()
+        {
+            // Create scroll view container
+            scrollableArea = new GameObject("ScrollView", typeof(RectTransform));
+            scrollableArea.transform.SetParent(panelObject.transform, false);
+            
+            RectTransform scrollViewRect = scrollableArea.GetComponent<RectTransform>();
+            scrollViewRect.anchorMin = new Vector2(0, 0);
+            scrollViewRect.anchorMax = new Vector2(1, 1);
+            scrollViewRect.offsetMin = new Vector2(5, 5);
+            scrollViewRect.offsetMax = new Vector2(-5, -35); // Leave space for title and buttons
+            
+            // Add ScrollRect component
+            scrollRect = scrollableArea.AddComponent<ScrollRect>();
+            scrollRect.horizontal = false;
+            scrollRect.vertical = true;
+            
+            // Add viewport with padding for safety
+            GameObject viewport = new("Viewport", typeof(RectTransform));
+            viewport.transform.SetParent(scrollableArea.transform, false);
+            viewport.AddComponent<Image>().color = new Color(0, 0, 0, 0.1f);
+            viewport.AddComponent<Mask>();
+            
+            RectTransform viewportRect = viewport.GetComponent<RectTransform>();
+            viewportRect.anchorMin = Vector2.zero;
+            viewportRect.anchorMax = Vector2.one;
+            viewportRect.sizeDelta = Vector2.zero;
+            viewportRect.offsetMin = new Vector2(2, 2); // Add small padding
+            viewportRect.offsetMax = new Vector2(-2, -2);
+            
+            // Add content container with safe area
+            GameObject content = new("Content", typeof(RectTransform));
+            content.transform.SetParent(viewport.transform, false);
+            
+            contentRectTransform = content.GetComponent<RectTransform>();
+            contentRectTransform.anchorMin = new Vector2(0, 1);
+            contentRectTransform.anchorMax = new Vector2(1, 1);
+            contentRectTransform.pivot = new Vector2(0.5f, 1);
+            contentRectTransform.sizeDelta = new Vector2(0, 0);
+            
+            VerticalLayoutGroup layout = content.AddComponent<VerticalLayoutGroup>();
+            layout.padding = new RectOffset(10, 10, 10, 10); // Increased padding
+            layout.spacing = 5;
+            layout.childAlignment = TextAnchor.UpperLeft;
+            layout.childControlHeight = true;
+            layout.childControlWidth = true;
+            layout.childForceExpandHeight = false;
+            layout.childForceExpandWidth = true;
+            
+            ContentSizeFitter sizeFitter = content.AddComponent<ContentSizeFitter>();
+            sizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            sizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            
+            scrollRect.viewport = viewportRect;
+            scrollRect.content = contentRectTransform;
+        }
+
+        protected virtual void AddMessage(string username, string message)
+        {
+            if (contentRectTransform == null) return;
+
+            try
+            {
+                // Process message text first before creating any GameObjects
+                string safeMessage = ProcessMessageText($"{username}: {message}");
+                if (string.IsNullOrEmpty(safeMessage)) return;
+
+                // Start coroutine to add message safely
+                UnityMainThreadDispatcher.Instance().StartCoroutine(CreateMessageObject(safeMessage));
+            }
+            catch (System.Exception ex)
+            {
+                Main.LogEntry("BasePanel.AddMessage", $"Critical error in AddMessage: {ex.Message}");
+            }
+        }
+
+        private IEnumerator CreateMessageObject(string safeMessage)
+        {
+            if (contentRectTransform == null) yield break;
+
+            yield return CreateMessageObjectInternal(safeMessage);
+        }
+
+        private IEnumerator CreateMessageObjectInternal(string safeMessage)
+        {
+            GameObject? messageObj = null;
+            try
+            {
+                messageObj = new GameObject($"Message_{Time.time}", typeof(RectTransform));
+                messageObj.transform.SetParent(contentRectTransform, false);
+
+                // Configure text component with safe defaults
+                Text messageText = messageObj.AddComponent<Text>();
+                messageText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+                messageText.fontSize = 14;
+                messageText.color = Color.white;
+                messageText.supportRichText = false;
+                messageText.horizontalOverflow = HorizontalWrapMode.Wrap;
+                messageText.verticalOverflow = VerticalWrapMode.Overflow;
+                messageText.raycastTarget = false;
+                messageText.text = safeMessage;
+
+                // Setup RectTransform with safe values
+                RectTransform textRect = messageText.rectTransform;
+                textRect.anchorMin = new Vector2(0, 0);
+                textRect.anchorMax = new Vector2(1, 0);
+                textRect.sizeDelta = new Vector2(0, 20); // Initial height
+
+                UpdateMessageLayout(messageText, textRect);
+            }
+            catch (System.Exception ex)
+            {
+                Main.LogEntry("BasePanel.CreateMessageObject", $"Error creating message: {ex.Message}");
+                if (messageObj != null)
+                {
+                    GameObject.Destroy(messageObj);
+                }
+            }
+            yield break;
+        }
+
+        private void UpdateMessageLayout(Text messageText, RectTransform textRect)
+        {
+            // Wait one frame to ensure layout is ready
+            UnityMainThreadDispatcher.Instance().StartCoroutine(UpdateLayoutCoroutine(messageText, textRect));
+        }
+
+        private IEnumerator UpdateLayoutCoroutine(Text messageText, RectTransform textRect)
+        {
+            yield return null;
+
+            // Force layout rebuild
+            LayoutRebuilder.ForceRebuildLayoutImmediate(textRect);
+
+            yield return null; // Wait another frame
+
+            // Set final height with safety check
+            float preferredHeight = Mathf.Max(20, messageText.preferredHeight);
+            textRect.sizeDelta = new Vector2(0, preferredHeight);
+
+            // Update scroll position
+            if (scrollRect != null)
+            {
+                Canvas.ForceUpdateCanvases();
+                scrollRect.verticalNormalizedPosition = 0f;
+            }
+
+            // Force content size update
+            if (contentRectTransform != null)
+            {
+                LayoutRebuilder.ForceRebuildLayoutImmediate(contentRectTransform);
+            }
+        }
+
+        private string ProcessMessageText(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return "";
+
+            try
+            {
+                // Limit total length
+                const int maxLength = 200;
+                if (text.Length > maxLength)
+                {
+                    text = text.Substring(0, maxLength) + "...";
+                }
+
+                // Remove problematic characters
+                text = text.Replace('\u200B', ' ')  // Zero-width space
+                         .Replace('\u200C', ' ')  // Zero-width non-joiner
+                         .Replace('\u200D', ' ')  // Zero-width joiner
+                         .Replace('\u2028', ' ')  // Line separator
+                         .Replace('\u2029', ' ')  // Paragraph separator
+                         .Replace('\t', ' ')      // Tab
+                         .Replace('\r', ' ')      // Carriage return
+                         .Replace('\n', ' ');     // New line
+
+                // Remove any other control characters and non-printable characters
+                text = new string(text.Where(c => !char.IsControl(c) && 
+                                                (char.IsLetterOrDigit(c) || 
+                                                 char.IsPunctuation(c) || 
+                                                 char.IsWhiteSpace(c) ||
+                                                 char.IsSymbol(c))).ToArray());
+
+                // Collapse multiple spaces
+                while (text.Contains("  "))
+                {
+                    text = text.Replace("  ", " ");
+                }
+
+                // Add extra safety trim
+                text = text.Trim();
+                
+                // Ensure minimum length
+                if (text.Length < 1)
+                    return "[Empty Message]";
+
+                return text;
+            }
+            catch (System.Exception ex)
+            {
+                Main.LogEntry("BasePanel.ProcessMessageText", $"Error processing message text: {ex.Message}");
+                return "[Message Processing Error]";
+            }
         }
 
         protected virtual void OnMinimizeClick()
