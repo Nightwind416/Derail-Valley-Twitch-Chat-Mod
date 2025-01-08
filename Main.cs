@@ -96,9 +96,6 @@ namespace TwitchChat
                 MenuManager.Instance.gameObject.SetActive(true);
                 LogEntry(methodName, "Menu Manager activated.");
 
-                // VRMenuManager.Instance.gameObject.SetActive(true);
-                // LogEntry(methodName, "VR Menu Manager activated.");
-
                 // Initialize the log files
                 InitializeLogFiles();
                 LogEntry(methodName, "Log files initialized successfully.");

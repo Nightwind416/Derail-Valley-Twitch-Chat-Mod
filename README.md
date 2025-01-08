@@ -10,7 +10,6 @@ A mod that seamlessly integrates Twitch chat into your Derail Valley gameplay ex
 - **Secure Authentication**: Automated OAuth token handling for secure Twitch integration
 - **Message Logging**: Detailed chat logs for post-stream review
 - **Automated Messages**: Schedule periodic announcements to keep your chat informed
-- **VR Compatible**: Notifications display in VR-friendly format
 
 ### Upcoming Features (In Development)
 
@@ -52,7 +51,6 @@ A mod that seamlessly integrates Twitch chat into your Derail Valley gameplay ex
 
 - Messages appear in a comfortable viewing position
 - Multiple messages stack vertically
-- **Note**: Active chats may cause visual clutter in VR
 
 ## Debug & Testing
 
