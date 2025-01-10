@@ -7,8 +7,10 @@ namespace TwitchChat.PanelConstructor
 {
     public static class Button
     {
-        public static UnityEngine.UI.Button Create(Transform parent, string text, int xPosition, int yPosition, Color? textColor = null, UnityAction? onClick = null, int? width = null)
+        public static UnityEngine.UI.Button Create(Transform parent, string text, int xPosition, int yPosition, Color? textColor = null, UnityAction? clicked = null, int? width = null)
         {
+            Main.LogEntry("ButtonCreation", $"Creating button '{text}' - VR Mode: {VRManager.IsVREnabled()}");
+            
             GameObject buttonObj = new($"{text}Button");
             buttonObj.transform.SetParent(parent, false);
 
@@ -26,9 +28,9 @@ namespace TwitchChat.PanelConstructor
             buttonImage.color = new Color(0, 0, 0, 0.75f);
 
             UnityEngine.UI.Button button = buttonObj.AddComponent<UnityEngine.UI.Button>();
-            if (onClick != null)
+            if (clicked != null)
             {
-                button.onClick.AddListener(onClick);
+                button.onClick.AddListener(clicked);
             }
 
             GameObject buttonTextObj = new("Text");

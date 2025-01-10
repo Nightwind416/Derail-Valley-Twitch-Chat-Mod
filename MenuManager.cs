@@ -134,6 +134,10 @@ namespace TwitchChat
 
         private void CreateTemplateCanvas()
         {
+            string methodName = MethodBase.GetCurrentMethod().Name;
+
+            Main.LogEntry(methodName, "Creating template canvas - VR Mode: " + VRManager.IsVREnabled());
+            
             templateCanvas = new GameObject("TemplateCanvas");
             templateCanvas.SetActive(false);
             DontDestroyOnLoad(templateCanvas);
@@ -147,8 +151,10 @@ namespace TwitchChat
             canvasRect.sizeDelta = panelConfigs[PanelType.Main].CanvasSize;
             canvasRect.localScale = Vector3.one * 0.001f;
 
-            // Add GraphicRaycaster
-            templateCanvas.AddComponent<GraphicRaycaster>();
+            // Add GraphicRaycaster with proper VR settings
+            var raycaster = templateCanvas.AddComponent<GraphicRaycaster>();
+            raycaster.ignoreReversedGraphics = true;
+            Main.LogEntry(methodName, "Added GraphicRaycaster to template canvas");
 
             // Only add VRTK components if in VR mode
             if (VRManager.IsVREnabled())
