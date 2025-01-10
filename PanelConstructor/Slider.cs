@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Events;
+using VRTK;
 
 namespace TwitchChat.PanelConstructor
 {
@@ -175,6 +176,10 @@ namespace TwitchChat.PanelConstructor
                 valueRect.anchorMax = new Vector2(normalizedValue, 1);
                 onValueChanged?.Invoke(newValue);
             });
+
+            // Add VRTK_UIPointer component for VR interaction
+            VRTK_UIPointer uiPointer = sliderObj.AddComponent<VRTK_UIPointer>();
+            uiPointer.enabled = true;
 
             return slider;
         }

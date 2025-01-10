@@ -5,6 +5,7 @@ using TwitchChat.PanelMenus;
 using TwitchChat.PanelDisplays;
 using System.Collections.Generic;
 using System;
+using VRTK;
 
 namespace TwitchChat
 {
@@ -146,6 +147,10 @@ namespace TwitchChat
             canvasRect.sizeDelta = panelConfigs[PanelType.Main].CanvasSize;
             canvasRect.localScale = Vector3.one * 0.001f;
             templateCanvas.AddComponent<GraphicRaycaster>();
+
+            // Add VRTK_UICanvas component
+            VRTK_UICanvas vrtkUICanvas = templateCanvas.AddComponent<VRTK_UICanvas>();
+            vrtkUICanvas.enabled = true;
 
             // Create template panel
             GameObject menuPanel = new("MenuPanel");

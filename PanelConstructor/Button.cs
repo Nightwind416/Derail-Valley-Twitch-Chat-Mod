@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Events;
+using VRTK;
 
 namespace TwitchChat.PanelConstructor
 {
@@ -51,6 +52,10 @@ namespace TwitchChat.PanelConstructor
             textRect.anchorMax = Vector2.one;
             textRect.offsetMin = Vector2.zero;
             textRect.offsetMax = Vector2.zero;
+
+            // Add VRTK_UIPointer component for VR interaction
+            VRTK_UIPointer uiPointer = buttonObj.AddComponent<VRTK_UIPointer>();
+            uiPointer.enabled = true;
 
             return button;
         }

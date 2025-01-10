@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Events;
+using VRTK;
 
 namespace TwitchChat.PanelConstructor
 {
@@ -72,6 +73,10 @@ namespace TwitchChat.PanelConstructor
                 toggleText.text = isOn ? textOn : textOff;
                 toggleText.color = isOn ? (color1 ?? Color.white) : (color2 ?? Color.gray);
             });
+
+            // Add VRTK_UIPointer component for VR interaction
+            VRTK_UIPointer uiPointer = toggleObj.AddComponent<VRTK_UIPointer>();
+            uiPointer.enabled = true;
 
             return toggle;
         }
