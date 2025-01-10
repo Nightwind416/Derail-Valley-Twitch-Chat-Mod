@@ -22,7 +22,6 @@ namespace TwitchChat.PanelDisplays
                 if (verticalLayout != null)
                 {
                     verticalLayout.padding = new RectOffset(8, 8, 8, 8);
-                    verticalLayout.spacing = 5;
                 }
             }
         }
