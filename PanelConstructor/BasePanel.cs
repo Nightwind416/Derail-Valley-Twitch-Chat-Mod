@@ -151,11 +151,11 @@ namespace TwitchChat.PanelConstructor
             try
             {
                 // Process message text first before creating any GameObjects
-                string safeMessage = ProcessMessageText($"{username}: {message}");
+                string safeMessage = ProcessMessageText(message);
                 if (string.IsNullOrEmpty(safeMessage)) return;
 
                 // Force message to be created on the main thread
-                UnityMainThreadDispatcher.Instance().Enqueue(() => CreateMessageObjectSafe(safeMessage));
+                UnityMainThreadDispatcher.Instance().Enqueue(() => CreateMessageObjectSafe(username, safeMessage));
             }
             catch (System.Exception ex)
             {
@@ -163,7 +163,7 @@ namespace TwitchChat.PanelConstructor
             }
         }
 
-        private void CreateMessageObjectSafe(string safeMessage)
+        private void CreateMessageObjectSafe(string username, string safeMessage)
         {
             try
             {
@@ -176,12 +176,12 @@ namespace TwitchChat.PanelConstructor
                 Text messageText = messageObj.AddComponent<Text>();
                 messageText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
                 messageText.fontSize = 14;
-                messageText.color = Color.white;
-                messageText.supportRichText = false;
+                messageText.supportRichText = true;
                 messageText.horizontalOverflow = HorizontalWrapMode.Wrap;
                 messageText.verticalOverflow = VerticalWrapMode.Truncate;
                 messageText.raycastTarget = false;
-                messageText.text = safeMessage;
+                messageText.color = Color.white;
+                messageText.text = $"<color=cyan>{username}</color>: {safeMessage}";
 
                 // Setup RectTransform with safe values
                 RectTransform textRect = messageText.rectTransform;
@@ -223,7 +223,7 @@ namespace TwitchChat.PanelConstructor
             try
             {
                 // Hard limit on length to prevent layout issues
-                text = text.Length > 200 ? text.Substring(0, 200) + "..." : text;
+                // text = text.Length > 500 ? text.Substring(0, 500) + "..." : text;
 
                 // Convert to char array and filter
                 var filtered = text.ToCharArray().Where(c => 
