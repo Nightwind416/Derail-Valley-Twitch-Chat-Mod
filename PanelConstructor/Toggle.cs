@@ -74,9 +74,11 @@ namespace TwitchChat.PanelConstructor
                 toggleText.color = isOn ? (color1 ?? Color.white) : (color2 ?? Color.gray);
             });
 
-            // Add VRTK_UIPointer component for VR interaction
-            VRTK_UIPointer uiPointer = toggleObj.AddComponent<VRTK_UIPointer>();
-            uiPointer.enabled = true;
+            // Only add VRTK components if in VR mode
+            if (VRManager.IsVREnabled())
+            {
+                toggleObj.AddComponent<VRTK_BasePointerRenderer>();
+            }
 
             return toggle;
         }

@@ -146,11 +146,27 @@ namespace TwitchChat
             RectTransform canvasRect = templateCanvas.GetComponent<RectTransform>();
             canvasRect.sizeDelta = panelConfigs[PanelType.Main].CanvasSize;
             canvasRect.localScale = Vector3.one * 0.001f;
+
+            // Add GraphicRaycaster
             templateCanvas.AddComponent<GraphicRaycaster>();
 
-            // Add VRTK_UICanvas component
-            VRTK_UICanvas vrtkUICanvas = templateCanvas.AddComponent<VRTK_UICanvas>();
-            vrtkUICanvas.enabled = true;
+            // Only add VRTK components if in VR mode
+            if (VRManager.IsVREnabled())
+            {
+                // Add VRTK UI Canvas component
+                var vrtkCanvas = templateCanvas.AddComponent<VRTK_UICanvas>();
+                vrtkCanvas.clickOnPointerCollision = true;
+                vrtkCanvas.autoActivateWithinDistance = 0.1f;
+
+                // Add BoxCollider for interactions
+                var boxCollider = templateCanvas.AddComponent<BoxCollider>();
+                boxCollider.isTrigger = true;
+
+                // Add Rigidbody for physics interactions
+                var rb = templateCanvas.AddComponent<Rigidbody>();
+                rb.isKinematic = true;
+                rb.useGravity = false;
+            }
 
             // Create template panel
             GameObject menuPanel = new("MenuPanel");

@@ -177,9 +177,11 @@ namespace TwitchChat.PanelConstructor
                 onValueChanged?.Invoke(newValue);
             });
 
-            // Add VRTK_UIPointer component for VR interaction
-            VRTK_UIPointer uiPointer = sliderObj.AddComponent<VRTK_UIPointer>();
-            uiPointer.enabled = true;
+            // Only add VRTK components if in VR mode
+            if (VRManager.IsVREnabled())
+            {
+                sliderObj.AddComponent<VRTK_BasePointerRenderer>();
+            }
 
             return slider;
         }

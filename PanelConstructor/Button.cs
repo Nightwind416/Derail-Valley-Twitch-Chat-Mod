@@ -53,9 +53,11 @@ namespace TwitchChat.PanelConstructor
             textRect.offsetMin = Vector2.zero;
             textRect.offsetMax = Vector2.zero;
 
-            // Add VRTK_UIPointer component for VR interaction
-            VRTK_UIPointer uiPointer = buttonObj.AddComponent<VRTK_UIPointer>();
-            uiPointer.enabled = true;
+            // Only add VRTK components if in VR mode
+            if (VRManager.IsVREnabled())
+            {
+                buttonObj.AddComponent<VRTK_BasePointerRenderer>();
+            }
 
             return button;
         }
