@@ -58,7 +58,7 @@ namespace TwitchChat.PanelMenus
             PanelConstructor.Label.Create(notificationSection.transform, "Duration", 10, 70, Color.white);
             
             // Duration slider
-            notificationDuration = PanelConstructor.Slider.Create(notificationSection.transform, 0, 95, 1, 120, Settings.Instance.notificationDuration);
+            notificationDuration = PanelConstructor.Slider.Create(notificationSection.transform, 0, 95, 10, 120, Settings.Instance.notificationDuration);
             
             notificationDuration.onValueChanged.AddListener((value) => {
                 Settings.Instance.notificationDuration = value;

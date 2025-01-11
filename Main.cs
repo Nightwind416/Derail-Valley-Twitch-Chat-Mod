@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
-using UnityEditor;
 using UnityEngine;
 using UnityModManagerNet;
 
@@ -91,14 +90,13 @@ namespace TwitchChat
                 modEntry.OnSaveGUI = OnSaveGUI;
                 LogEntry(methodName, "GUI methods registered.");
 
-                // Activate Menu Managers
-
-                MenuManager.Instance.gameObject.SetActive(true);
-                LogEntry(methodName, "Menu Manager activated.");
-
                 // Initialize the log files
                 InitializeLogFiles();
                 LogEntry(methodName, "Log files initialized successfully.");
+
+                // Activate Menu Managers
+                MenuManager.Instance.gameObject.SetActive(true);
+                LogEntry(methodName, "Menu Manager activated.");
 
                 ModEntry.Logger.Log("[Load] Load method completed successfully.");
                 LogEntry(methodName, "Load method completed successfully.");

@@ -35,11 +35,16 @@ namespace TwitchChat.PanelMenus
             string methodName = MethodBase.GetCurrentMethod().Name;
             
             Main.LogEntry(methodName, $"Creating button: {text}");
-            Button button = PanelConstructor.Button.Create(panelObject.transform, text, 100, verticalPosition);
-            button.onClick.AddListener(() => {
-                Main.LogEntry(methodName, $"Button clicked: {text}");
-                MenuManager.Instance.OnPanelButtonClicked(text, menuIndex);
-            });
+            Button button = PanelConstructor.Button.Create(
+                panelObject.transform, 
+                text, 
+                100, 
+                verticalPosition,
+                clicked: () => {
+                    Main.LogEntry(methodName, $"Button clicked: {text}");
+                    MenuManager.Instance.OnPanelButtonClicked(text, menuIndex);
+                }
+            );
         }
     }
 }

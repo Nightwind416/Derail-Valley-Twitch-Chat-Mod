@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Events;
-using VRTK;
 
 namespace TwitchChat.PanelConstructor
 {
@@ -34,6 +33,37 @@ namespace TwitchChat.PanelConstructor
 
             UnityEngine.UI.Toggle toggle = toggleObj.AddComponent<UnityEngine.UI.Toggle>();
             toggle.isOn = initialState;
+
+            if (VRManager.IsVREnabled())
+            {
+                BoxCollider boxCollider = toggleObj.AddComponent<BoxCollider>();
+                boxCollider.size = new Vector3(textWidth + 10, 20, 1);
+                
+                WorldUiButtonVr vrButton = toggleObj.AddComponent<WorldUiButtonVr>();
+                vrButton.SetAction(() => {
+                    toggle.isOn = !toggle.isOn;
+                    toggle.onValueChanged?.Invoke(toggle.isOn);
+                });
+
+                // Add tooltip
+                GameObject tooltipObj = new GameObject("Tooltip");
+                tooltipObj.transform.SetParent(toggleObj.transform, false);
+                TMPro.TextMeshPro tooltipText = tooltipObj.AddComponent<TMPro.TextMeshPro>();
+                tooltipText.text = "Click to toggle";
+                tooltipText.fontSize = 12;
+                tooltipText.alignment = TMPro.TextAlignmentOptions.Center;
+                vrButton.tooltipLabel = tooltipText;
+                
+                // Add hover handlers
+                vrButton.Touched += () => {
+                    toggleImage.color = new Color(0.3f, 0.3f, 0.3f, 0.75f);
+                };
+                vrButton.Untouched += () => {
+                    toggleImage.color = new Color(0, 0, 0, 0.75f);
+                };
+                
+                Main.LogEntry("ToggleCreation", $"VR Toggle '{textOn}/{textOff}' created for parent '{parent.name}'");
+            }
 
             GameObject toggleTextObj = new("Text");
             toggleTextObj.transform.SetParent(toggleObj.transform, false);
@@ -74,11 +104,7 @@ namespace TwitchChat.PanelConstructor
                 toggleText.color = isOn ? (color1 ?? Color.white) : (color2 ?? Color.gray);
             });
 
-            // Only add VRTK components if in VR mode
-            if (VRManager.IsVREnabled())
-            {
-                toggleObj.AddComponent<VRTK_BasePointerRenderer>();
-            }
+            Main.LogEntry("ToggleCreation", $"Toggle '{textOn}/{textOff}' created for '{parent.name}'");
 
             return toggle;
         }

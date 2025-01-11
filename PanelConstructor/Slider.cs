@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Events;
-using VRTK;
 
 namespace TwitchChat.PanelConstructor
 {
@@ -163,6 +162,38 @@ namespace TwitchChat.PanelConstructor
             sliderRect.sizeDelta = new Vector2(width, 20);
             sliderRect.anchoredPosition = new Vector2(xPosition, -yPosition);
 
+            if (VRManager.IsVREnabled())
+            {
+                BoxCollider boxCollider = sliderObj.AddComponent<BoxCollider>();
+                boxCollider.size = new Vector3(width, 20, 1);
+                
+                WorldUiButtonVr vrButton = sliderObj.AddComponent<WorldUiButtonVr>();
+                vrButton.SetAction(() => {
+                    // Calculate 10% step size
+                    float stepSize = (maxValue - minValue) / 10f;
+                    // Calculate next step value
+                    float nextValue = slider.value + stepSize;
+                    // If we exceed max value, wrap back to min
+                    if (nextValue > maxValue)
+                    {
+                        nextValue = minValue;
+                    }
+                    slider.value = nextValue;
+                    onValueChanged?.Invoke(slider.value);
+                });
+                
+                // Add hover handlers
+                handleImage = handle.GetComponent<Image>();
+                vrButton.Touched += () => {
+                    handleImage.color = new Color(0.3f, 0.3f, 1f, 1f);
+                };
+                vrButton.Untouched += () => {
+                    handleImage.color = Color.cyan;
+                };
+                
+                Main.LogEntry("SliderCreation", $"VR Slider created for parent '{parent.name}'");
+            }
+
             if (onValueChanged != null)
             {
                 slider.onValueChanged.AddListener(onValueChanged);
@@ -176,12 +207,6 @@ namespace TwitchChat.PanelConstructor
                 valueRect.anchorMax = new Vector2(normalizedValue, 1);
                 onValueChanged?.Invoke(newValue);
             });
-
-            // Only add VRTK components if in VR mode
-            if (VRManager.IsVREnabled())
-            {
-                sliderObj.AddComponent<VRTK_BasePointerRenderer>();
-            }
 
             return slider;
         }

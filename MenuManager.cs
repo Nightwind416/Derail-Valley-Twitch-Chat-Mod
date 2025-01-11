@@ -5,7 +5,6 @@ using TwitchChat.PanelMenus;
 using TwitchChat.PanelDisplays;
 using System.Collections.Generic;
 using System;
-using VRTK;
 
 namespace TwitchChat
 {
@@ -153,26 +152,6 @@ namespace TwitchChat
 
             // Add GraphicRaycaster with proper VR settings
             var raycaster = templateCanvas.AddComponent<GraphicRaycaster>();
-            raycaster.ignoreReversedGraphics = true;
-            Main.LogEntry(methodName, "Added GraphicRaycaster to template canvas");
-
-            // Only add VRTK components if in VR mode
-            if (VRManager.IsVREnabled())
-            {
-                // Add VRTK UI Canvas component
-                var vrtkCanvas = templateCanvas.AddComponent<VRTK_UICanvas>();
-                vrtkCanvas.clickOnPointerCollision = true;
-                vrtkCanvas.autoActivateWithinDistance = 0.1f;
-
-                // Add BoxCollider for interactions
-                var boxCollider = templateCanvas.AddComponent<BoxCollider>();
-                boxCollider.isTrigger = true;
-
-                // Add Rigidbody for physics interactions
-                var rb = templateCanvas.AddComponent<Rigidbody>();
-                rb.isKinematic = true;
-                rb.useGravity = false;
-            }
 
             // Create template panel
             GameObject menuPanel = new("MenuPanel");

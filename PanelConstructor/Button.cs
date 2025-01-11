@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Events;
-using VRTK;
 
 namespace TwitchChat.PanelConstructor
 {
@@ -9,8 +8,7 @@ namespace TwitchChat.PanelConstructor
     {
         public static UnityEngine.UI.Button Create(Transform parent, string text, int xPosition, int yPosition, Color? textColor = null, UnityAction? clicked = null, int? width = null)
         {
-            Main.LogEntry("ButtonCreation", $"Creating button '{text}' - VR Mode: {VRManager.IsVREnabled()}");
-            
+            // Create button
             GameObject buttonObj = new($"{text}Button");
             buttonObj.transform.SetParent(parent, false);
 
@@ -26,6 +24,25 @@ namespace TwitchChat.PanelConstructor
 
             Image buttonImage = buttonObj.AddComponent<Image>();
             buttonImage.color = new Color(0, 0, 0, 0.75f);
+
+            if (VRManager.IsVREnabled())
+            {
+                BoxCollider boxCollider = buttonObj.AddComponent<BoxCollider>();
+                boxCollider.size = new Vector3(textWidth + 10, 20, 1);
+                
+                WorldUiButtonVr vrButton = buttonObj.AddComponent<WorldUiButtonVr>();
+                vrButton.SetAction(() => clicked?.Invoke());
+                
+                // Add hover handlers
+                vrButton.Touched += () => {
+                    buttonImage.color = new Color(0.3f, 0.3f, 0.3f, 0.75f);
+                };
+                vrButton.Untouched += () => {
+                    buttonImage.color = new Color(0, 0, 0, 0.75f);
+                };
+                
+                Main.LogEntry("ButtonCreation", $"VR Button '{text}' created for parent '{parent.name}'");
+            }
 
             UnityEngine.UI.Button button = buttonObj.AddComponent<UnityEngine.UI.Button>();
             if (clicked != null)
@@ -55,11 +72,7 @@ namespace TwitchChat.PanelConstructor
             textRect.offsetMin = Vector2.zero;
             textRect.offsetMax = Vector2.zero;
 
-            // Only add VRTK components if in VR mode
-            if (VRManager.IsVREnabled())
-            {
-                buttonObj.AddComponent<VRTK_BasePointerRenderer>();
-            }
+            Main.LogEntry("ButtonCreation", $"Button '{text}' created for '{parent.name}'");
 
             return button;
         }
