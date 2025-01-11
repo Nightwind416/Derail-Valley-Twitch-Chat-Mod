@@ -191,40 +191,40 @@ namespace TwitchChat
                 GUILayout.Label("Command Messages");
                 GUILayout.Space(10);
                 GUILayout.BeginHorizontal();
-                    Instance.commandsMessageEnabled = GUILayout.Toggle(Instance.commandsMessageEnabled, "", GUILayout.Width(20));
+                    // Instance.commandsMessageEnabled = GUILayout.Toggle(Instance.commandsMessageEnabled, "", GUILayout.Width(20));
                     GUILayout.Label("!Commands Message: ", GUILayout.Width(150));
                     GUILayout.Label(Instance.commandsMessage);
                 GUILayout.EndHorizontal();
                 GUILayout.BeginHorizontal();
                     bool prevInfoActive = Instance.infoMessageEnabled;
-                    Instance.infoMessageEnabled = GUILayout.Toggle(Instance.infoMessageEnabled, "", GUILayout.Width(20));
+                    // Instance.infoMessageEnabled = GUILayout.Toggle(Instance.infoMessageEnabled, "", GUILayout.Width(20));
                     if (prevInfoActive != Instance.infoMessageEnabled)
                         CommandMessages.UpdateCommandsResponse();
                     GUILayout.Label("!Info Message: ", GUILayout.Width(150));
                     Instance.infoMessage = GUILayout.TextField(Instance.infoMessage);
                 GUILayout.EndHorizontal();
-                GUILayout.Space(10);
-                GUILayout.Label("Custom Commands:");
-                GUI.color = Color.yellow;
-                GUILayout.Label("(Custom Commands Currently Disabled - Future Implementation)");
-                GUI.color = Color.white;
-                GUILayout.Label(" On?   Trigger Word       Response");
+                // GUILayout.Space(10);
+                // GUILayout.Label("Custom Commands:");
+                // GUI.color = Color.yellow;
+                // GUILayout.Label("(Custom Commands Currently Disabled - Future Implementation)");
+                // GUI.color = Color.white;
+                // GUILayout.Label(" On?   Trigger Word       Response");
 
-                // Custom Commands
-                for (int i = 1; i <= 5; i++)
-                {
-                    GUILayout.BeginHorizontal();
-                        GUI.enabled = false;  // Disable interaction
-                        bool prevCmdActive = (bool)typeof(Settings).GetField($"customCommand{i}Active").GetValue(Instance);
-                        bool cmdActive = GUILayout.Toggle(prevCmdActive, "", GUILayout.Width(22));
-                        typeof(Settings).GetField($"customCommand{i}Active").SetValue(Instance, cmdActive);
-                        string trigger = (string)typeof(Settings).GetField($"customCommand{i}Trigger").GetValue(Instance);
-                        string response = (string)typeof(Settings).GetField($"customCommand{i}Response").GetValue(Instance);
-                        GUILayout.Label(trigger, GUILayout.Width(100));
-                        GUILayout.Label(response);
-                        GUI.enabled = true;  // Re-enable interaction
-                    GUILayout.EndHorizontal();
-                }
+                // // Custom Commands
+                // for (int i = 1; i <= 5; i++)
+                // {
+                //     GUILayout.BeginHorizontal();
+                //         GUI.enabled = false;  // Disable interaction
+                //         bool prevCmdActive = (bool)typeof(Settings).GetField($"customCommand{i}Active").GetValue(Instance);
+                //         bool cmdActive = GUILayout.Toggle(prevCmdActive, "", GUILayout.Width(22));
+                //         typeof(Settings).GetField($"customCommand{i}Active").SetValue(Instance, cmdActive);
+                //         string trigger = (string)typeof(Settings).GetField($"customCommand{i}Trigger").GetValue(Instance);
+                //         string response = (string)typeof(Settings).GetField($"customCommand{i}Response").GetValue(Instance);
+                //         GUILayout.Label(trigger, GUILayout.Width(100));
+                //         GUILayout.Label(response);
+                //         GUI.enabled = true;  // Re-enable interaction
+                //     GUILayout.EndHorizontal();
+                // }
             GUILayout.EndVertical();
 
             GUILayout.Space(10);
@@ -318,17 +318,17 @@ namespace TwitchChat
 
             GUILayout.Space(10);
 
-            // Dispatcher Mod Integration Section
-            GUILayout.BeginVertical(GUI.skin.box);
-                GUILayout.Label("Dispatcher Mod Integration");
-                GUILayout.Space(10);
-                // Add Dispatcher Messages configuration UI here
-                GUI.color = Color.yellow;
-                GUILayout.Label("(Future Implementation)");
-                GUI.color = Color.white;
-            GUILayout.EndVertical();
+            // // Dispatcher Mod Integration Section
+            // GUILayout.BeginVertical(GUI.skin.box);
+            //     GUILayout.Label("Dispatcher Mod Integration");
+            //     GUILayout.Space(10);
+            //     // Add Dispatcher Messages configuration UI here
+            //     GUI.color = Color.yellow;
+            //     GUILayout.Label("(Future Implementation)");
+            //     GUI.color = Color.white;
+            // GUILayout.EndVertical();
 
-            GUILayout.Space(10);
+            // GUILayout.Space(10);
             
             // Debug Settings Section
             GUILayout.BeginVertical(GUI.skin.box);

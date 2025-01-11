@@ -21,6 +21,12 @@ namespace TwitchChat.PanelMenus
             CreateSettingsSection();
         }
 
+        public void UpdateTimedMessagesEnabled(bool value)
+        {
+            if (timedMessageSystemToggle != null)
+                timedMessageSystemToggle.isOn = value;
+        }
+
         /// <summary>
         /// Creates and initializes the settings section of the panel.
         /// Includes toggle controls and informational text about timed messages.
@@ -39,7 +45,7 @@ namespace TwitchChat.PanelMenus
             timedMessageSystemToggle.onValueChanged.AddListener((value) => {
                 Settings.Instance.timedMessageSystemToggle = value;
                 Settings.Instance.Save(Main.ModEntry);
-                MenuManager.Instance.UpdateAllNotificationToggles(value);
+                MenuManager.Instance.UpdateAllTimedMessageToggles(value);
             });
 
             // Horizontal line

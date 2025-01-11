@@ -718,5 +718,15 @@ namespace TwitchChat
                 }
             }
         }
+        public void UpdateAllTimedMessageToggles(bool value)
+        {
+            foreach (var license in licenses.Values)
+            {
+                if (license.TimedMessagesPanel != null)
+                {
+                    license.TimedMessagesPanel.UpdateTimedMessagesEnabled(value);
+                }
+            }
+        }
     }
 }
