@@ -10,12 +10,12 @@ namespace TwitchChat.PanelMenus
         private Toggle? infoMessageEnabled;
         private Text? infoMessage;
         private GameObject? commandsSettingsSection;
-        private GameObject? customCommandsSection;
+        // private GameObject? customCommandsSection;
 
         public CommandMessagesPanel(Transform parent) : base(parent)
         {
             CreateCommandsSettingsSection();
-            CreateCustomCommandsSection();
+            // CreateCustomCommandsSection();
         }
 
         public void UpdateCommandsMessageEnabled(bool value)
@@ -30,7 +30,7 @@ namespace TwitchChat.PanelMenus
 
         private void CreateCommandsSettingsSection()
         {
-            commandsSettingsSection = PanelConstructor.Section.Create(panelObject.transform, "Commands Settings", 25, 175, false);
+            commandsSettingsSection = PanelConstructor.Section.Create(panelObject.transform, "Commands Settings", 25, 185, false);
             
             // !Commands Message Label
             PanelConstructor.Label.Create(commandsSettingsSection.transform, "!Commands Message", 5, 8);
@@ -46,7 +46,7 @@ namespace TwitchChat.PanelMenus
             });
 
             // Connect Message Text
-            commandsMessage = PanelConstructor.DisplayText.Create(commandsSettingsSection.transform, "", 10, 30, Color.cyan, 2);
+            commandsMessage = PanelConstructor.DisplayText.Create(commandsSettingsSection.transform, "", 10, 30, Color.cyan);
 
             // Horizontal line
             PanelConstructor.HorizontalBar.Create(commandsSettingsSection.transform, 70);
@@ -54,7 +54,7 @@ namespace TwitchChat.PanelMenus
             // !Info Message Label
             PanelConstructor.Label.Create(commandsSettingsSection.transform, "!Info Message", 5, 80);
             
-            // Disconnect Message Toggle
+            // Info Message Toggle
             infoMessageEnabled = PanelConstructor.Toggle.Create(commandsSettingsSection.transform, 135, 87, "Enabled", "Disabled", Settings.Instance.infoMessageEnabled);
 
             // Add listener after toggle creation
@@ -64,18 +64,18 @@ namespace TwitchChat.PanelMenus
                 MenuManager.Instance.UpdateInfoMessageToggles(value);
             });
 
-            // Disconnect Message Text
-            infoMessage = PanelConstructor.DisplayText.Create(commandsSettingsSection.transform, "", 10, 100, Color.cyan, 4);
+            // Info Message Text
+            infoMessage = PanelConstructor.DisplayText.Create(commandsSettingsSection.transform, "", 10, 100, Color.cyan, 6);
         }
-        private void CreateCustomCommandsSection()
-        {
-            customCommandsSection = PanelConstructor.Section.Create(panelObject.transform, "Custom Commands", 225, 50);
+        // private void CreateCustomCommandsSection()
+        // {
+        //     customCommandsSection = PanelConstructor.Section.Create(panelObject.transform, "Custom Commands", 235, 50);
 
-            // Custom Commands
-            PanelConstructor.DisplayText.Create(customCommandsSection.transform, "Future development", 25, 25, Color.yellow);
+        //     // Custom Commands
+        //     PanelConstructor.DisplayText.Create(customCommandsSection.transform, "Future development", 25, 25, Color.yellow);
             
-            // TODO: Add Standard Messages Settings content
-        }
+        //     // TODO: Add Standard Messages Settings content
+        // }
         public void UpdateCommandMessagesPanelValues()
         {
             if (commandsMessage != null) commandsMessage.text = Settings.Instance.commandsMessage;
@@ -86,7 +86,7 @@ namespace TwitchChat.PanelMenus
         {
             base.Show();
             commandsSettingsSection?.SetActive(!isMinimized);
-            customCommandsSection?.SetActive(!isMinimized);
+            // customCommandsSection?.SetActive(!isMinimized);
         }
     }
 }

@@ -3,14 +3,14 @@ using UnityEngine.UI;
 
 namespace TwitchChat.PanelMenus
 {
-    public class NotificationPanel : PanelConstructor.BasePanel
+    public class NotificationsPanel : PanelConstructor.BasePanel
     {
         private Toggle? notificationsEnabled;
         private Slider? notificationDuration;
 
         private GameObject? notificationSection;
 
-        public NotificationPanel(Transform parent) : base(parent)
+        public NotificationsPanel(Transform parent) : base(parent)
         {
             CreateNotificationSettingssSection();
         }

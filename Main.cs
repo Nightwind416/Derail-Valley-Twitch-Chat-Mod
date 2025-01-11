@@ -18,11 +18,10 @@ namespace TwitchChat
     /// </summary>
     public static class Main
     {
-        // private static bool _isEnabled;
         public static bool _dispatcherModDetected;
         public static UnityModManager.ModEntry ModEntry { get; private set; } = null!;
         public static string settingsFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mods", "TwitchChatMod", "Settings.xml");
-        private static string debugLog = string.Empty;
+        public static string debugLog = string.Empty;
         private static string messageLog = string.Empty;
 
         /// <summary>
@@ -183,7 +182,7 @@ namespace TwitchChat
         private static void InitializeLogFiles()
         {
             string logDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mods", "TwitchChatMod", "Logs");
-            string date = DateTime.Now.ToString("yyyy-MM-dd");
+            string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
         
             // Create the directory if it does not exist
             if (!Directory.Exists(logDirectory))
@@ -200,30 +199,41 @@ namespace TwitchChat
                 }
             }
         
-            // Get all debug log files and sort by creation time
-            var debugLogFiles = Directory.GetFiles(logDirectory, "Log - *.txt")
-                                         .OrderByDescending(f => File.GetCreationTime(f))
-                                         .ToList();
+            // Handle Debug Logs - Keep only last 3
+            var debugLogFiles = Directory.GetFiles(logDirectory, "Debug_*.txt")
+                                       .OrderByDescending(f => File.GetCreationTime(f))
+                                       .ToList();
         
-            // Keep only the last 3 log files
-            for (int i = 3; i < debugLogFiles.Count; i++)
+            // Remove excess debug log files (keep only 3 most recent)
+            for (int i = 2; i < debugLogFiles.Count; i++)
             {
-                File.Delete(debugLogFiles[i]);
+                try
+                {
+                    File.Delete(debugLogFiles[i]);
+                }
+                catch (Exception ex)
+                {
+                    ModEntry.Logger.Log($"Failed to delete old debug log: {debugLogFiles[i]}. Exception: {ex.Message}");
+                }
             }
         
-            debugLog = Path.Combine(logDirectory, $"Log - {date}.txt");
-            messageLog = Path.Combine(logDirectory, $"Messages - {date}.txt");
+            // Create new log files with timestamp
+            debugLog = Path.Combine(logDirectory, $"Debug_{timestamp}.txt");
+            messageLog = Path.Combine(logDirectory, $"Messages_{timestamp}.txt");
         
-            ModEntry.Logger.Log($"Initialized log file: {debugLog}");
-            ModEntry.Logger.Log($"Initialized message file: {messageLog}");
-        
-            // Open each of the logs and write a new header (not using logEntry because it will write to the log file)
-            using StreamWriter logHeader = new(debugLog, true);
-            logHeader.WriteLine($"Log file initialized on {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-            using StreamWriter messageHeader = new(messageLog, true);
-            messageHeader.WriteLine($"Message file initialized on {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-        
-            ModEntry.Logger.Log("Log files initialized.");
+            // Create new files with headers
+            try
+            {
+                File.WriteAllText(debugLog, $"Debug log initialized on {DateTime.Now:yyyy-MM-dd HH:mm:ss}\n");
+                File.WriteAllText(messageLog, $"Message log initialized on {DateTime.Now:yyyy-MM-dd HH:mm:ss}\n");
+                
+                ModEntry.Logger.Log($"Initialized new debug log: {debugLog}");
+                ModEntry.Logger.Log($"Initialized new message log: {messageLog}");
+            }
+            catch (Exception ex)
+            {
+                ModEntry.Logger.Log($"Failed to initialize log files. Exception: {ex.Message}");
+            }
         }
 
         /// <summary>

@@ -18,12 +18,13 @@ namespace TwitchChat.PanelMenus
         {
             // Menu buttons
             CreateMenuButton("Status", 35);
-            CreateMenuButton("Notification Settings", 60);
-            CreateMenuButton("Large Display", 85);
-            CreateMenuButton("Wide Display", 110);
+            CreateMenuButton("Notifications", 60);
+            CreateMenuButton("Wide Display", 85);
+            CreateMenuButton("Large Display", 110);
             CreateMenuButton("Medium Display", 135);
             CreateMenuButton("Small Display", 160);
-            CreateMenuButton("Configuration", 185);
+            // CreateMenuButton("Configuration", 185);
+            PanelConstructor.HorizontalBar.Create(panelObject.transform, 185);
             CreateMenuButton("Standard Messages", 210);
             CreateMenuButton("Command Messages", 235);
             CreateMenuButton("Timed Messages", 260);

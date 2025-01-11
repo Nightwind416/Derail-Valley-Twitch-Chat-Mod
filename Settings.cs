@@ -34,7 +34,7 @@ namespace TwitchChat
         public string[] activePanels = new string[] { "Main", "Main", "Main", "Main", "Main", "Main" };
         public bool notificationsEnabled = true;
         public float notificationDuration = 10;
-        public bool processOwn = false;
+        public bool processOwn = true;
         public bool processDuplicates = false;
         
         // Standard Messages Settings
@@ -136,52 +136,40 @@ namespace TwitchChat
 
             // Twitch Username Section
             GUILayout.BeginVertical(GUI.skin.box);
-                
-                GUILayout.Label("Twitch Username");
-
-                GUILayout.Space(10);
-
-                twitchUsername = GUILayout.TextField(twitchUsername, GUILayout.Width(200));
-
-                GUILayout.Space(10);
-            
+                GUILayout.BeginHorizontal();
+                    GUILayout.Label("Twitch Username:", GUILayout.Width(160));
+                    twitchUsername = GUILayout.TextField(twitchUsername);
+                GUILayout.EndHorizontal();
             GUILayout.EndVertical();
 
             GUILayout.Space(10);
 
             // Standard Messages Section
             GUILayout.BeginVertical(GUI.skin.box);
-
                 GUILayout.Label("Standard Messages");
-
                 GUILayout.Space(10);
-
                 GUILayout.BeginHorizontal();
-                    GUILayout.Label("Connect Message: ", GUILayout.Width(160));
+                    GUILayout.Label("Connect Message:", GUILayout.Width(160));
                     Instance.connectMessage = GUILayout.TextField(Instance.connectMessage);
                 GUILayout.EndHorizontal();
-
                 GUILayout.BeginHorizontal();
-                    GUILayout.Label("Disconnect Message: ", GUILayout.Width(160));
+                    GUILayout.Label("Disconnect Message:", GUILayout.Width(160));
                     Instance.disconnectMessage = GUILayout.TextField(Instance.disconnectMessage);
                 GUILayout.EndHorizontal();
-                
                 GUILayout.BeginHorizontal();
-                    GUILayout.Label("New Follower Message: ", GUILayout.Width(160));
+                    GUILayout.Label("New Follower Message:", GUILayout.Width(160));
                     GUILayout.Label(Instance.newFollowerMessage, GUILayout.Width(200));
                     GUI.color = Color.yellow;
                     GUILayout.Label("(Future Implementation)");
                     GUI.color = Color.white;
                 GUILayout.EndHorizontal();
-                
                 GUILayout.BeginHorizontal();
-                    GUILayout.Label("New Subscriber Message: ", GUILayout.Width(160));
+                    GUILayout.Label("New Subscriber Message:", GUILayout.Width(160));
                     GUILayout.Label(Instance.newSubscriberMessage, GUILayout.Width(200));
                     GUI.color = Color.yellow;
                     GUILayout.Label("(Future Implementation)");
                     GUI.color = Color.white;
                 GUILayout.EndHorizontal();
-            
             GUILayout.EndVertical();
 
             GUILayout.Space(10);
@@ -190,13 +178,11 @@ namespace TwitchChat
             GUILayout.BeginVertical(GUI.skin.box);
                 GUILayout.Label("Command Messages");
                 GUILayout.Space(10);
-                
                 GUILayout.BeginHorizontal();
                     Instance.commandsMessageEnabled = GUILayout.Toggle(Instance.commandsMessageEnabled, "", GUILayout.Width(20));
                     GUILayout.Label("!Commands Message: ", GUILayout.Width(150));
                     GUILayout.Label(Instance.commandsMessage);
                 GUILayout.EndHorizontal();
-                
                 GUILayout.BeginHorizontal();
                     bool prevInfoActive = Instance.infoMessageEnabled;
                     Instance.infoMessageEnabled = GUILayout.Toggle(Instance.infoMessageEnabled, "", GUILayout.Width(20));
@@ -205,66 +191,28 @@ namespace TwitchChat
                     GUILayout.Label("!Info Message: ", GUILayout.Width(150));
                     Instance.infoMessage = GUILayout.TextField(Instance.infoMessage);
                 GUILayout.EndHorizontal();
-
                 GUILayout.Space(10);
-                
                 GUILayout.Label("Custom Commands:");
-                
                 GUI.color = Color.yellow;
                 GUILayout.Label("(Custom Commands Currently Disabled - Future Implementation)");
                 GUI.color = Color.white;
+                GUILayout.Label(" On?   Trigger Word       Response");
 
-                GUILayout.Label("On?    Trigger Word     Response");
-
-                // Custom Command 1
-                GUILayout.BeginHorizontal();
-                    GUI.enabled = false;  // Disable interaction
-                    bool prevCmd1Active = Instance.customCommand1Active;
-                    Instance.customCommand1Active = GUILayout.Toggle(Instance.customCommand1Active, "", GUILayout.Width(20));
-                    GUILayout.Label(Instance.customCommand1Trigger, GUILayout.Width(100));
-                    GUILayout.Label(Instance.customCommand1Response);
-                    GUI.enabled = true;  // Re-enable interaction
-                GUILayout.EndHorizontal();
-
-                // Custom Command 2
-                GUILayout.BeginHorizontal();
-                    GUI.enabled = false;
-                    bool prevCmd2Active = Instance.customCommand2Active;
-                    Instance.customCommand2Active = GUILayout.Toggle(Instance.customCommand2Active, "", GUILayout.Width(20));
-                    GUILayout.Label(Instance.customCommand2Trigger, GUILayout.Width(100));
-                    GUILayout.Label(Instance.customCommand2Response);
-                    GUI.enabled = true;
-                GUILayout.EndHorizontal();
-
-                // Custom Command 3
-                GUILayout.BeginHorizontal();
-                    GUI.enabled = false;
-                    bool prevCmd3Active = Instance.customCommand3Active;
-                    Instance.customCommand3Active = GUILayout.Toggle(Instance.customCommand3Active, "", GUILayout.Width(20));
-                    GUILayout.Label(Instance.customCommand3Trigger, GUILayout.Width(100));
-                    GUILayout.Label(Instance.customCommand3Response);
-                    GUI.enabled = true;
-                GUILayout.EndHorizontal();
-
-                // Custom Command 4
-                GUILayout.BeginHorizontal();
-                    GUI.enabled = false;
-                    bool prevCmd4Active = Instance.customCommand4Active;
-                    Instance.customCommand4Active = GUILayout.Toggle(Instance.customCommand4Active, "", GUILayout.Width(20));
-                    GUILayout.Label(Instance.customCommand4Trigger, GUILayout.Width(100));
-                    GUILayout.Label(Instance.customCommand4Response);
-                    GUI.enabled = true;
-                GUILayout.EndHorizontal();
-
-                // Custom Command 5
-                GUILayout.BeginHorizontal();
-                    GUI.enabled = false;
-                    bool prevCmd5Active = Instance.customCommand5Active;
-                    Instance.customCommand5Active = GUILayout.Toggle(Instance.customCommand5Active, "", GUILayout.Width(20));
-                    GUILayout.Label(Instance.customCommand5Trigger, GUILayout.Width(100));
-                    GUILayout.Label(Instance.customCommand5Response);
-                    GUI.enabled = true;
-                GUILayout.EndHorizontal();
+                // Custom Commands
+                for (int i = 1; i <= 5; i++)
+                {
+                    GUILayout.BeginHorizontal();
+                        GUI.enabled = false;  // Disable interaction
+                        bool prevCmdActive = (bool)typeof(Settings).GetField($"customCommand{i}Active").GetValue(Instance);
+                        bool cmdActive = GUILayout.Toggle(prevCmdActive, "", GUILayout.Width(22));
+                        typeof(Settings).GetField($"customCommand{i}Active").SetValue(Instance, cmdActive);
+                        string trigger = (string)typeof(Settings).GetField($"customCommand{i}Trigger").GetValue(Instance);
+                        string response = (string)typeof(Settings).GetField($"customCommand{i}Response").GetValue(Instance);
+                        GUILayout.Label(trigger, GUILayout.Width(100));
+                        GUILayout.Label(response);
+                        GUI.enabled = true;  // Re-enable interaction
+                    GUILayout.EndHorizontal();
+                }
             GUILayout.EndVertical();
 
             GUILayout.Space(10);
@@ -273,7 +221,6 @@ namespace TwitchChat
             GUILayout.BeginVertical(GUI.skin.box);
                 GUILayout.Label("Timed Messages");
                 GUILayout.Space(10);
-                
                 // Always enable the toggle button
                 GUI.enabled = true;
                 if (GUILayout.Button("Toggle System", GUILayout.Width(150)))
@@ -281,14 +228,12 @@ namespace TwitchChat
                     Instance.timedMessageSystemToggle = !Instance.timedMessageSystemToggle;
                     AutomatedMessages.ToggleTimedMessages();
                 }
-                
                 GUILayout.BeginHorizontal();
                     GUILayout.Label("Timed Messaging System is currently:", GUILayout.Width(250));
                     GUI.color = AutomatedMessages.AreTimersRunning ? Color.green : Color.red;
                     GUILayout.Label(AutomatedMessages.AreTimersRunning ? "Enabled" : "Disabled");
                     GUI.color = Color.white;
                 GUILayout.EndHorizontal();
-                
                 // Add warning message when system is running
                 if (AutomatedMessages.AreTimersRunning)
                 {
@@ -296,23 +241,18 @@ namespace TwitchChat
                     GUILayout.Label("⚠️ Disable the system to modify timed message settings");
                     GUI.color = Color.white;
                 }
-
                 GUILayout.BeginHorizontal();
                     GUILayout.Label("Last Message Sent: ", GUILayout.Width(125));
                     GUILayout.Label(Instance.lastTimedMessageSent);
                 GUILayout.EndHorizontal();
-
                 // Disable all controls when system is running
                 GUI.enabled = !AutomatedMessages.AreTimersRunning;
-
                 GUI.color = Color.yellow;
                 GUILayout.Label("Setting type/colors is not implemented yet. All choices will send as regular channel chat messages at their designated intervals.");
                 GUI.color = Color.white;
                 GUILayout.Label("Note 1: Timed messages only require a validated authentication token and can be sent even if not connected to the channel and receiving messages.");
                 GUILayout.Label("Note 2: Set the message timer to '0' to completly ignore a timed message when enabling the system.");
-
                 GUILayout.Label("     Type       Every               Message to Send");
-                
                 GUI.backgroundColor = GetAnnouncementColor(message1ColorIndex);
                 GUILayout.BeginHorizontal();
                     if (GUILayout.Button(ColorOptions[message1ColorIndex], GUILayout.Width(70))) {
@@ -323,7 +263,6 @@ namespace TwitchChat
                     GUILayout.Label("seconds", GUILayout.Width(60));
                     Instance.timedMessage1 = GUILayout.TextField(Instance.timedMessage1);
                 GUILayout.EndHorizontal();
-
                 GUI.backgroundColor = GetAnnouncementColor(message2ColorIndex);
                 GUILayout.BeginHorizontal();
                     if (GUILayout.Button(ColorOptions[message2ColorIndex], GUILayout.Width(70))) {
@@ -333,7 +272,6 @@ namespace TwitchChat
                     GUILayout.Label("seconds", GUILayout.Width(60));
                     Instance.timedMessage2 = GUILayout.TextField(Instance.timedMessage2);
                 GUILayout.EndHorizontal();
-
                 GUI.backgroundColor = GetAnnouncementColor(message3ColorIndex);
                 GUILayout.BeginHorizontal();
                     if (GUILayout.Button(ColorOptions[message3ColorIndex], GUILayout.Width(70))) {
@@ -343,7 +281,6 @@ namespace TwitchChat
                     GUILayout.Label("seconds", GUILayout.Width(60));
                     Instance.timedMessage3 = GUILayout.TextField(Instance.timedMessage3);
                 GUILayout.EndHorizontal();
-
                 GUI.backgroundColor = GetAnnouncementColor(message4ColorIndex);
                 GUILayout.BeginHorizontal();
                     if (GUILayout.Button(ColorOptions[message4ColorIndex], GUILayout.Width(70))) {
@@ -353,7 +290,6 @@ namespace TwitchChat
                     GUILayout.Label("seconds", GUILayout.Width(60));
                     Instance.timedMessage4 = GUILayout.TextField(Instance.timedMessage4);
                 GUILayout.EndHorizontal();
-
                 GUI.backgroundColor = GetAnnouncementColor(message5ColorIndex);
                 GUILayout.BeginHorizontal();
                     if (GUILayout.Button(ColorOptions[message5ColorIndex], GUILayout.Width(70))) {
@@ -363,7 +299,6 @@ namespace TwitchChat
                     GUILayout.Label("seconds", GUILayout.Width(60));
                     Instance.timedMessage5 = GUILayout.TextField(Instance.timedMessage5);
                 GUILayout.EndHorizontal();
-
                 // Reset enabled state and background color after drawing
                 GUI.enabled = true;
                 GUI.backgroundColor = Color.white;

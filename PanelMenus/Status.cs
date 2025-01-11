@@ -29,7 +29,7 @@ namespace TwitchChat.PanelMenus
             // Dimensions - Menu width minus 20
 
             // Authentication Section
-            authSection = PanelConstructor.Section.Create(panelObject.transform, "Twitch Authentication Status", 25, 75);
+            authSection = PanelConstructor.Section.Create(panelObject.transform, "Twitch Authentication", 25, 75);
 
             // Authentication Status Message
             authStatus = PanelConstructor.DisplayText.Create(authSection.transform, Settings.Instance.authentication_status, 15, 25);
@@ -77,7 +77,7 @@ namespace TwitchChat.PanelMenus
             PanelConstructor.HorizontalBar.Create(wsSection.transform, 75);
             
             // Last Message Type
-            PanelConstructor.Label.Create(wsSection.transform, "Last Type Received", 5, 85);
+            PanelConstructor.Label.Create(wsSection.transform, "Last Packet Type Received", 5, 85);
             lastMessageType = PanelConstructor.DisplayText.Create(wsSection.transform, WebSocketManager.lastMessageType, 15, 105);
             
             // Last Chat Message

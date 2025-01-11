@@ -93,14 +93,14 @@ namespace TwitchChat.PanelConstructor
             minText.text = minValue.ToString("0.##");
             minText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
             minText.fontSize = 10;
-            minText.alignment = TextAnchor.MiddleLeft;
+            minText.alignment = TextAnchor.MiddleRight;
             minText.color = Color.white;
             RectTransform minRect = minLabel.GetComponent<RectTransform>();
             minRect.anchorMin = new Vector2(0, 0.5f);
             minRect.anchorMax = new Vector2(0, 0.5f);
             minRect.pivot = new Vector2(1, 0.5f);
             minRect.sizeDelta = new Vector2(40, 20);
-            minRect.anchoredPosition = new Vector2(-30, 0);
+            minRect.anchoredPosition = new Vector2(-5, 0);
 
             // Max Label
             GameObject maxLabel = new("MaxLabel");

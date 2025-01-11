@@ -20,7 +20,7 @@ namespace TwitchChat
         // Panel Menus
         public MainPanel? MainPanel { get; set; }
         public StatusPanel? StatusPanel { get; set; }
-        public NotificationPanel? NotificationPanel { get; set; }
+        public NotificationsPanel? NotificationsPanel { get; set; }
         public StandardMessagesPanel? StandardMessagesPanel { get; set; }
         public CommandMessagesPanel? CommandMessagesPanel { get; set; }
         public TimedMessagesPanel? TimedMessagesPanel { get; set; }
@@ -50,7 +50,7 @@ namespace TwitchChat
         {
             Main,
             Status,
-            NotificationSettings,
+            Notifications,
             LargeDisplay,
             MediumDisplay,
             WideDisplay,
@@ -82,7 +82,7 @@ namespace TwitchChat
         {
             { PanelType.Main, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
             { PanelType.Status, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
-            { PanelType.NotificationSettings, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
+            { PanelType.Notifications, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
             { PanelType.LargeDisplay, new(new Vector2(1200, 650), new Vector2(1200, 650), Vector2.zero, Vector3.zero) },
             { PanelType.MediumDisplay, new(new Vector2(500, 500), new Vector2(500, 500), Vector2.zero, Vector3.zero) },
             { PanelType.WideDisplay, new(new Vector2(900, 220), new Vector2(900, 220), Vector2.zero, Vector3.zero) },
@@ -173,7 +173,7 @@ namespace TwitchChat
             // Create one of each panel type as templates
             var mainPanel = new MainPanel(parent, null);
             var statusPanel = new StatusPanel(parent);
-            var notificationPanel = new NotificationPanel(parent);
+            var notificationsPanel = new NotificationsPanel(parent);
             var largeDisplayPanel = new LargeDisplayPanel(parent);
             var mediumDisplayPanel = new MediumDisplayPanel(parent);
             var wideDisplayPanel = new WideDisplayPanel(parent);
@@ -368,7 +368,7 @@ namespace TwitchChat
             // Create and wire up all panels from the templates
             license.MainPanel = new MainPanel(menuPanel, license);
             license.StatusPanel = new StatusPanel(menuPanel);
-            license.NotificationPanel = new NotificationPanel(menuPanel);
+            license.NotificationsPanel = new NotificationsPanel(menuPanel);
             license.LargeDisplayPanel = new LargeDisplayPanel(menuPanel);
             license.MediumDisplayPanel = new MediumDisplayPanel(menuPanel);
             license.WideDisplayPanel = new WideDisplayPanel(menuPanel);
@@ -384,7 +384,7 @@ namespace TwitchChat
 
             // Wire up back button events
             if (license.StatusPanel != null) license.StatusPanel.OnBackButtonClicked += () => ShowPanel("Main", license);
-            if (license.NotificationPanel != null) license.NotificationPanel.OnBackButtonClicked += () => ShowPanel("Main", license);
+            if (license.NotificationsPanel != null) license.NotificationsPanel.OnBackButtonClicked += () => ShowPanel("Main", license);
             if (license.LargeDisplayPanel != null) license.LargeDisplayPanel.OnBackButtonClicked += () => ShowPanel("Main", license);
             if (license.MediumDisplayPanel != null) license.MediumDisplayPanel.OnBackButtonClicked += () => ShowPanel("Main", license);
             if (license.WideDisplayPanel != null) license.WideDisplayPanel.OnBackButtonClicked += () => ShowPanel("Main", license);
@@ -406,7 +406,7 @@ namespace TwitchChat
         {
             license.MainPanel?.Hide();
             license.StatusPanel?.Hide();
-            license.NotificationPanel?.Hide();
+            license.NotificationsPanel?.Hide();
             license.LargeDisplayPanel?.Hide();
             license.MediumDisplayPanel?.Hide();
             license.WideDisplayPanel?.Hide();
@@ -431,7 +431,7 @@ namespace TwitchChat
             {
                 "Main" => PanelType.Main,
                 "Status" => PanelType.Status,
-                "Notification Settings" => PanelType.NotificationSettings,
+                "Notifications" => PanelType.Notifications,
                 "Large Display" => PanelType.LargeDisplay,
                 "Medium Display" => PanelType.MediumDisplay,
                 "Wide Display" => PanelType.WideDisplay,
@@ -467,8 +467,8 @@ namespace TwitchChat
                 case PanelType.Status:
                     license.StatusPanel?.Show();
                     break;
-                case PanelType.NotificationSettings:
-                    license.NotificationPanel?.Show();
+                case PanelType.Notifications:
+                    license.NotificationsPanel?.Show();
                     break;
                 case PanelType.LargeDisplay:
                     license.LargeDisplayPanel?.Show();
@@ -558,9 +558,9 @@ namespace TwitchChat
         {
             foreach (var license in licenses.Values)
             {
-                if (license.NotificationPanel != null)
+                if (license.NotificationsPanel != null)
                 {
-                    license.NotificationPanel.UpdateNotificationsEnabled(value);
+                    license.NotificationsPanel.UpdateNotificationsEnabled(value);
                 }
             }
         }
@@ -569,9 +569,9 @@ namespace TwitchChat
         {
             foreach (var license in licenses.Values)
             {
-                if (license.NotificationPanel != null)
+                if (license.NotificationsPanel != null)
                 {
-                    license.NotificationPanel.UpdateNotificationDuration(value);
+                    license.NotificationsPanel.UpdateNotificationDuration(value);
                 }
             }
         }
@@ -607,27 +607,27 @@ namespace TwitchChat
             }
         }
 
-        public void UpdateAllNewFollowerMessageEnabledToggles(bool value)
-        {
-            foreach (var license in licenses.Values)
-            {
-                if (license.StandardMessagesPanel != null)
-                {
-                    license.StandardMessagesPanel.UpdateNewFollowerMessageEnabled(value);
-                }
-            }
-        }
+        // public void UpdateAllNewFollowerMessageEnabledToggles(bool value)
+        // {
+        //     foreach (var license in licenses.Values)
+        //     {
+        //         if (license.StandardMessagesPanel != null)
+        //         {
+        //             license.StandardMessagesPanel.UpdateNewFollowerMessageEnabled(value);
+        //         }
+        //     }
+        // }
 
-        public void UpdateAllNewSubscriberMessageEnabledToggles(bool value)
-        {
-            foreach (var license in licenses.Values)
-            {
-                if (license.StandardMessagesPanel != null)
-                {
-                    license.StandardMessagesPanel.UpdateNewSubscriberMessageEnabled(value);
-                }
-            }
-        }
+        // public void UpdateAllNewSubscriberMessageEnabledToggles(bool value)
+        // {
+        //     foreach (var license in licenses.Values)
+        //     {
+        //         if (license.StandardMessagesPanel != null)
+        //         {
+        //             license.StandardMessagesPanel.UpdateNewSubscriberMessageEnabled(value);
+        //         }
+        //     }
+        // }
 
         public void UpdateAllDisconnectMessageEnabledToggles(bool value)
         {
