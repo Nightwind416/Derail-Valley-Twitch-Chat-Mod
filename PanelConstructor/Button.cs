@@ -4,8 +4,23 @@ using UnityEngine.Events;
 
 namespace TwitchChat.PanelConstructor
 {
+    /// <summary>
+    /// Factory class for creating UI buttons with consistent styling and behavior.
+    /// Supports both standard and VR button implementations.
+    /// </summary>
     public static class Button
     {
+        /// <summary>
+        /// Creates a new button with specified text and positioning.
+        /// </summary>
+        /// <param name="parent">Parent transform to attach the button to</param>
+        /// <param name="text">Button label text</param>
+        /// <param name="xPosition">X position relative to parent</param>
+        /// <param name="yPosition">Y position relative to parent</param>
+        /// <param name="textColor">Optional text color</param>
+        /// <param name="clicked">Optional click event handler</param>
+        /// <param name="width">Optional fixed width for the button</param>
+        /// <returns>Created button component</returns>
         public static UnityEngine.UI.Button Create(Transform parent, string text, int xPosition, int yPosition, Color? textColor = null, UnityAction? clicked = null, int? width = null)
         {
             // Create button

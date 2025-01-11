@@ -3,13 +3,19 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Provides a way to execute actions on Unity's main thread from other threads.
-/// This is necessary because Unity's API is not thread-safe and must be called from the main thread.
+/// Provides thread-safe execution of actions on Unity's main thread.
 /// </summary>
+/// <remarks>
+/// Unity's API is not thread-safe and must be accessed from the main thread.
+/// This dispatcher ensures that operations from background threads are properly
+/// queued and executed on the main thread.
+/// </remarks>
 public class UnityMainThreadDispatcher : MonoBehaviour
 {
+    /// <summary>Queue of actions pending execution on the main thread</summary>
     private static readonly Queue<Action> _executionQueue = new();
 
+    /// <summary>Singleton instance of the dispatcher</summary>
     private static UnityMainThreadDispatcher _instance = null!;
 
     /// <summary>

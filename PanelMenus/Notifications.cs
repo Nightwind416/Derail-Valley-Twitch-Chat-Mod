@@ -3,6 +3,10 @@ using UnityEngine.UI;
 
 namespace TwitchChat.PanelMenus
 {
+    /// <summary>
+    /// Panel for managing in-game notification settings.
+    /// Controls notification visibility, duration, and display preferences.
+    /// </summary>
     public class NotificationsPanel : PanelConstructor.BasePanel
     {
         private Toggle? notificationsEnabled;
@@ -15,6 +19,10 @@ namespace TwitchChat.PanelMenus
             CreateNotificationSettingssSection();
         }
 
+        /// <summary>
+        /// Updates the notifications enabled toggle state.
+        /// </summary>
+        /// <param name="value">The new enabled state.</param>
         public void UpdateNotificationsEnabled(bool value)
         {
             if (notificationsEnabled != null)
@@ -23,6 +31,10 @@ namespace TwitchChat.PanelMenus
             }
         }
 
+        /// <summary>
+        /// Updates the notification duration slider value.
+        /// </summary>
+        /// <param name="value">The new duration value.</param>
         public void UpdateNotificationDuration(float value)
         {
             if (notificationDuration != null)
@@ -31,6 +43,10 @@ namespace TwitchChat.PanelMenus
             }
         }
 
+        /// <summary>
+        /// Creates and initializes the notification settings section.
+        /// Includes toggles, sliders, and future configuration options.
+        /// </summary>
         private void CreateNotificationSettingssSection()
         {
             // Dimensions - Menu width minus 20
@@ -87,6 +103,9 @@ namespace TwitchChat.PanelMenus
             // TODO: Add dropdown for limit
         }
 
+        /// <summary>
+        /// Controls the visibility of the panel and its sections.
+        /// </summary>
         public override void Show()
         {
             base.Show();

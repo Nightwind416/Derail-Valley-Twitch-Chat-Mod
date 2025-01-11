@@ -3,6 +3,10 @@ using UnityEngine.UI;
 
 namespace TwitchChat.PanelMenus
 {
+    /// <summary>
+    /// Panel for displaying and managing connection status information.
+    /// Handles authentication status, WebSocket connection state, and related metrics.
+    /// </summary>
     public class StatusPanel : PanelConstructor.BasePanel
     {
         private Button? authButton;
@@ -23,6 +27,10 @@ namespace TwitchChat.PanelMenus
             CreateWebSocketSection();
         }
 
+        /// <summary>
+        /// Creates the authentication section of the panel.
+        /// Includes status display and authentication controls.
+        /// </summary>
         private void CreateAuthenticationSection()
         {;
             
@@ -47,6 +55,11 @@ namespace TwitchChat.PanelMenus
             }
             );
         }
+
+        /// <summary>
+        /// Creates the WebSocket status section of the panel.
+        /// Displays connection status, message statistics, and connection controls.
+        /// </summary>
         private void CreateWebSocketSection()
         {
 
@@ -92,6 +105,10 @@ namespace TwitchChat.PanelMenus
             lastKeepaliveTime = PanelConstructor.DisplayText.Create(wsSection.transform, WebSocketManager.lastKeepaliveTime.ToString("h:mm:ss tt"), 100, 160);
         }
 
+        /// <summary>
+        /// Updates all status indicators and values in the panel.
+        /// Should be called when any relevant status changes occur.
+        /// </summary>
         public void UpdateStatusPanelValues()
         {
             if (authButton != null && authStatus != null && connectButton != null && 
@@ -134,6 +151,9 @@ namespace TwitchChat.PanelMenus
             }
         }
 
+        /// <summary>
+        /// Controls the visibility of the panel and its sections.
+        /// </summary>
         public override void Show()
         {
             base.Show();

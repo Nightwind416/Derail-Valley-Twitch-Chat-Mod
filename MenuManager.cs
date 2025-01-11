@@ -8,6 +8,13 @@ using System;
 
 namespace TwitchChat
 {
+    /// <summary>
+    /// Represents a license instance with associated UI panels and game objects.
+    /// </summary>
+    /// <remarks>
+    /// Manages the relationship between in-game license objects and their corresponding UI elements,
+    /// including menu canvases, panel displays, and sticky tape attachments.
+    /// </remarks>
     public class License
     {
         public string Name { get; private set; }
@@ -40,12 +47,26 @@ namespace TwitchChat
         }
     }
 
+    /// <summary>
+    /// Manages the creation, positioning, and interaction of UI menus and panels for the Twitch Chat mod.
+    /// </summary>
+    /// <remarks>
+    /// This class is responsible for:
+    /// - Creating and managing UI canvases for each license
+    /// - Handling panel visibility and transitions
+    /// - Positioning menus relative to license objects
+    /// - Managing sticky tape attachments and paper visibility
+    /// - Coordinating message displays across all active panels
+    /// </remarks>
     public class MenuManager : MonoBehaviour
     {
         private static MenuManager? instance;
         private readonly Dictionary<string, License> licenses = new();
         private GameObject? templateCanvas;
 
+        /// <summary>
+        /// Defines the types of panels available in the mod interface.
+        /// </summary>
         private enum PanelType
         {
             Main,
@@ -62,6 +83,9 @@ namespace TwitchChat
             Debug
         }
 
+        /// <summary>
+        /// Defines the configuration parameters for panel positioning and sizing.
+        /// </summary>
         private struct PanelConfig
         {
             public Vector2 CanvasSize;
@@ -94,6 +118,10 @@ namespace TwitchChat
             { PanelType.Debug, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) }
         };
 
+        /// <summary>
+        /// Gets the singleton instance of the MenuManager.
+        /// Creates a new instance if one doesn't exist.
+        /// </summary>
         public static MenuManager Instance
         {
             get
@@ -108,6 +136,9 @@ namespace TwitchChat
             }
         }
 
+        /// <summary>
+        /// Initializes a new instance of MenuManager with predefined license configurations.
+        /// </summary>
         public MenuManager()
         {
             // Initialize licenses with their index
@@ -131,6 +162,9 @@ namespace TwitchChat
             CreateTemplateCanvas();
         }
 
+        /// <summary>
+        /// Creates a template canvas that serves as the base for all UI panels.
+        /// </summary>
         private void CreateTemplateCanvas()
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
@@ -168,6 +202,10 @@ namespace TwitchChat
             CreatePanelTemplates(menuPanel.transform);
         }
 
+        /// <summary>
+        /// Creates template instances of all panel types.
+        /// </summary>
+        /// <param name="parent">Parent transform to attach panel templates to.</param>
         private void CreatePanelTemplates(Transform parent)
         {
             // Create one of each panel type as templates
@@ -191,6 +229,9 @@ namespace TwitchChat
             }
         }
 
+        /// <summary>
+        /// Updates the state and visibility of all license objects and their associated UI elements.
+        /// </summary>
         private void Update()
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
@@ -242,6 +283,10 @@ namespace TwitchChat
             }
         }
 
+        /// <summary>
+        /// Updates values displayed on active panels.
+        /// </summary>
+        /// <param name="license">The license containing panels to update.</param>
         private void UpdatePanelValues(License license)
         {
             license.StatusPanel?.UpdateStatusPanelValues();
@@ -249,6 +294,11 @@ namespace TwitchChat
             license.CommandMessagesPanel?.UpdateCommandMessagesPanelValues();
         }
 
+        /// <summary>
+        /// Determines if a license object is currently active in the game world.
+        /// </summary>
+        /// <param name="license">The license GameObject to check.</param>
+        /// <returns>True if the license is active and not in inventory.</returns>
         private bool IsLicenseActive(GameObject license)
         {
             if (!license.activeInHierarchy)
@@ -523,6 +573,11 @@ namespace TwitchChat
                                          Quaternion.Euler(panelConfigs[PanelType.Main].PanelRotationOffset);
         }
 
+        /// <summary>
+        /// Adds a chat message to all active display panels.
+        /// </summary>
+        /// <param name="username">The username of the message sender.</param>
+        /// <param name="message">The chat message content.</param>
         public void AddMessageToPanelDisplays(string username, string message)
         {
             try
@@ -554,6 +609,10 @@ namespace TwitchChat
             }
         }
 
+        /// <summary>
+        /// Updates the notification toggle state across all licenses.
+        /// </summary>
+        /// <param name="value">The new toggle state to apply.</param>
         public void UpdateAllNotificationToggles(bool value)
         {
             foreach (var license in licenses.Values)

@@ -1,10 +1,13 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Linq;
-using System.Collections;
 
 namespace TwitchChat.PanelConstructor
 {
+    /// <summary>
+    /// Base class for all panel implementations providing common functionality for UI panels.
+    /// Handles panel creation, scrolling, message display, and minimization features.
+    /// </summary>
     public abstract class BasePanel
     {
         protected GameObject panelObject;
@@ -46,6 +49,10 @@ namespace TwitchChat.PanelConstructor
             CreateScrollView();
         }
 
+        /// <summary>
+        /// Creates a base panel with standard UI elements including title, back button, and minimize button.
+        /// </summary>
+        /// <param name="parent">Parent transform to attach the panel to</param>
         protected virtual void CreateBasePanel(Transform parent)
         {
             panelObject = new GameObject(GetType().Name);
@@ -80,6 +87,10 @@ namespace TwitchChat.PanelConstructor
             minimizeRect.pivot = new Vector2(0, 1);
         }
 
+        /// <summary>
+        /// Creates a scrollable view area within the panel for content display.
+        /// Configures viewport, content area, and scroll behavior.
+        /// </summary>
         protected virtual void CreateScrollView()
         {
             // Create scroll view container
@@ -144,6 +155,11 @@ namespace TwitchChat.PanelConstructor
             rectMask.padding = Vector4.zero;
         }
 
+        /// <summary>
+        /// Adds a chat message to the panel's content area.
+        /// </summary>
+        /// <param name="username">Username of the message sender</param>
+        /// <param name="message">Content of the message</param>
         protected virtual void AddMessage(string username, string message)
         {
             if (contentRectTransform == null) return;
@@ -163,6 +179,11 @@ namespace TwitchChat.PanelConstructor
             }
         }
 
+        /// <summary>
+        /// Creates a message object in the UI safely on the main thread.
+        /// </summary>
+        /// <param name="username">Username of the message sender</param>
+        /// <param name="safeMessage">Processed and sanitized message content</param>
         private void CreateMessageObjectSafe(string username, string safeMessage)
         {
             try
@@ -215,6 +236,12 @@ namespace TwitchChat.PanelConstructor
             }
         }
 
+        /// <summary>
+        /// Processes and sanitizes message text to ensure safe display in UI.
+        /// Removes invalid characters and applies length limits.
+        /// </summary>
+        /// <param name="text">Raw message text to process</param>
+        /// <returns>Sanitized message text</returns>
         private string ProcessMessageText(string text)
         {
             if (string.IsNullOrEmpty(text))
@@ -255,6 +282,10 @@ namespace TwitchChat.PanelConstructor
             }
         }
 
+        /// <summary>
+        /// Handles the minimize/maximize button click event.
+        /// Toggles between collapsed and expanded panel states.
+        /// </summary>
         protected virtual void OnMinimizeClick()
         {
             if (!isMinimized)

@@ -12,9 +12,9 @@ namespace TwitchChat
 
     /// <summary>
     /// Core module for the Twitch Chat mod.
-    /// Handles mod initialization, lifecycle management, settings persistence,
-    /// and logging functionality. Acts as the central coordinator for all mod components
-    /// and provides integration with Unity Mod Manager.
+    /// Handles mod initialization, lifecycle management, settings persistence, logging, and provides
+    /// centralized coordination for all mod components by integrating with Unity Mod Manager.
+    /// This module manages debug levels, component initialization, and file logging systems.
     /// </summary>
     public static class Main
     {
@@ -298,7 +298,10 @@ namespace TwitchChat
         }
 
         /// <summary>
-        /// List of source/method names that should be logged when debug level is set to Minimal.
+        /// Lists of debug sources used to control logging verbosity.
+        /// MinimalDebug contains sources that should be logged at Minimal level.
+        /// ReducedDebug contains sources that should be excluded at Reduced level.
+        /// These lists help optimize logging performance and output clarity.
         /// </summary>
         private static readonly HashSet<string> MinimalDebug =
         [

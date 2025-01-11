@@ -13,14 +13,17 @@ namespace TwitchChat
 {
     /// <summary>
     /// Manages OAuth authentication flow with Twitch API.
-    /// Handles token acquisition, validation, and storage for secure API access.
-    /// Provides browser-based authentication and token management features.
+    /// Handles secure token acquisition, storage, and validation for Twitch integration.
+    /// Provides browser-based authentication and automatic token refresh functionality.
     /// </summary>
     public class OAuthTokenManager : MonoBehaviour
     {
         /// <summary>
         /// Initiates the OAuth token retrieval process through Twitch authentication.
+        /// Opens a browser window for user authorization and captures the response token.
+        /// Handles token storage and validation after successful authentication.
         /// </summary>
+        /// <returns>An asynchronous task representing the OAuth token retrieval operation.</returns>
         public static async Task GetOathToken()
         {
             string methodName = "GetOathToken";
@@ -158,7 +161,10 @@ namespace TwitchChat
 
         /// <summary>
         /// Validates the stored OAuth token with Twitch API.
+        /// Checks token validity, handles token refresh if needed, and updates authentication status.
+        /// Includes retry logic for failed validation attempts.
         /// </summary>
+        /// <returns>An asynchronous task representing the token validation operation.</returns>
         public static async Task ValidateAuthToken()
         {
             string methodName = "ValidateAuthToken";
@@ -273,6 +279,11 @@ namespace TwitchChat
                 }
             }
         }
+
+        /// <summary>
+        /// HTML template for the authorization response page.
+        /// Provides user feedback and instructions after successful authentication.
+        /// </summary>
         private static readonly string AuthorizationResponse = @"
 <!DOCTYPE html>
 <html>

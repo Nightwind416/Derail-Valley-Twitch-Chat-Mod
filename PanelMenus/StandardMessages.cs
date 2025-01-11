@@ -3,6 +3,10 @@ using UnityEngine.UI;
 
 namespace TwitchChat.PanelMenus
 {
+    /// <summary>
+    /// Panel for managing standard automated messages.
+    /// Handles connect/disconnect messages and future follower/subscriber notifications.
+    /// </summary>
     public class StandardMessagesPanel : PanelConstructor.BasePanel
     {
         private Toggle? connectMessageEnabled;
@@ -43,6 +47,10 @@ namespace TwitchChat.PanelMenus
                 disconnectMessageEnabled.isOn = enabled;
         }
 
+        /// <summary>
+        /// Creates the connect/disconnect message section.
+        /// Includes toggles and message content displays.
+        /// </summary>
         private void CreateConnectDisconnectSection()
         {
 
@@ -125,6 +133,11 @@ namespace TwitchChat.PanelMenus
         //     // newSubscriberMessage = PanelConstructor.DisplayText.Create(newFollowerSubscriberSection.transform, "New Subscriber Message not yet implemented.", 10, 102, Color.cyan, 2, 8);
         //     PanelConstructor.DisplayText.Create(newFollowerSubscriberSection.transform, "Future development", 10, 82, Color.yellow);
         // }
+
+        /// <summary>
+        /// Updates the panel's values to reflect current settings.
+        /// Should be called when settings are changed externally.
+        /// </summary>
         public void UpdateStandardMessagesPanelValues()
         {
             if (connectMessageEnabled != null)
@@ -146,6 +159,9 @@ namespace TwitchChat.PanelMenus
                 disconnectMessage.text = Settings.Instance.disconnectMessage;
         }
 
+        /// <summary>
+        /// Controls the visibility of the panel and its sections.
+        /// </summary>
         public override void Show()
         {
             base.Show();

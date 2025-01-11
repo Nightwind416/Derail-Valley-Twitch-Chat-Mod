@@ -3,8 +3,20 @@ using UnityEngine.UI;
 
 namespace TwitchChat.PanelConstructor
 {
+    /// <summary>
+    /// Factory class for creating text labels with automatic sizing.
+    /// </summary>
     public static class Label
     {
+        /// <summary>
+        /// Creates a new text label with specified text and positioning.
+        /// </summary>
+        /// <param name="parent">Parent transform to attach the label to</param>
+        /// <param name="text">Label text content</param>
+        /// <param name="xPosition">X position relative to parent</param>
+        /// <param name="yPosition">Y position relative to parent</param>
+        /// <param name="textColor">Optional text color</param>
+        /// <returns>Created Text component</returns>
         public static Text Create(Transform parent, string text, int xPosition, int yPosition, Color? textColor = null)
         {
             GameObject labelObj = new($"{text}Label");

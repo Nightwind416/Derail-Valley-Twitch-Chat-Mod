@@ -3,6 +3,11 @@ using UnityEngine.UI;
 
 namespace TwitchChat.PanelMenus
 {
+    /// <summary>
+    /// Manages the debug panel interface in the mod's settings menu.
+    /// Provides controls for debug levels, message processing options,
+    /// and testing functionality for notifications and WebSocket connections.
+    /// </summary>
     public class DebugPanel : PanelConstructor.BasePanel
     {
         private Toggle? processOwn;
@@ -34,6 +39,12 @@ namespace TwitchChat.PanelMenus
                 processDuplicates.isOn = value;
             }
         }
+
+        /// <summary>
+        /// Creates a panel section containing debug level controls and message processing options.
+        /// Includes toggles for processing own messages and duplicate messages,
+        /// as well as a button to cycle through available debug levels.
+        /// </summary>
         private void CreateDebugSetupSection()
         {
             // Dimensions - Menu width minus 20
@@ -82,6 +93,10 @@ namespace TwitchChat.PanelMenus
             });
         }
 
+        /// <summary>
+        /// Cycles through available debug levels (Off, Minimal, Reduced, Full)
+        /// and updates both the settings and UI to reflect the new level.
+        /// </summary>
         private void CycleDebugLevel()
         {
             // Get current debug level and calculate next level
@@ -99,6 +114,10 @@ namespace TwitchChat.PanelMenus
             }
         }
 
+        /// <summary>
+        /// Creates a section containing buttons for testing the notification system.
+        /// Includes tests for direct notification attachment and message queue functionality.
+        /// </summary>
         private void CreateNotificationTestsSection()
         {
             // Dimensions - Menu width minus 20
@@ -112,6 +131,11 @@ namespace TwitchChat.PanelMenus
             // Mesage Queue Notification Test
             PanelConstructor.Button.Create(notificationTestsSection.transform, "Message Queue Test", 90, 60, Color.white, () => NotificationManager.WebSocketNotificationTest());
         }
+
+        /// <summary>
+        /// Creates a section for testing WebSocket functionality,
+        /// including the ability to send test messages to verify connection status.
+        /// </summary>
         private void CreateTestSendSection()
         {
             // Dimensions - Menu width minus 20

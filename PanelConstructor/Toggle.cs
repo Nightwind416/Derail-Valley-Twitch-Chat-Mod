@@ -4,8 +4,25 @@ using UnityEngine.Events;
 
 namespace TwitchChat.PanelConstructor
 {
+    /// <summary>
+    /// Factory class for creating UI toggles with consistent styling and behavior.
+    /// Supports both standard and VR toggle implementations with different states.
+    /// </summary>
     public static class Toggle
     {
+        /// <summary>
+        /// Creates a new toggle with specified labels and positioning.
+        /// </summary>
+        /// <param name="parent">Parent transform to attach the toggle to</param>
+        /// <param name="xPosition">X position relative to parent</param>
+        /// <param name="yPosition">Y position relative to parent</param>
+        /// <param name="textOn">Label text for enabled state</param>
+        /// <param name="textOff">Label text for disabled state</param>
+        /// <param name="initialState">Initial state of the toggle</param>
+        /// <param name="color1">Optional color for enabled state</param>
+        /// <param name="color2">Optional color for disabled state</param>
+        /// <param name="onValueChanged">Optional callback for state change events</param>
+        /// <returns>Created Toggle component</returns>
         public static UnityEngine.UI.Toggle Create(Transform parent, int xPosition, int yPosition, string textOn, string textOff, bool initialState = true, Color? color1 = null, Color? color2 = null, UnityAction<bool>? onValueChanged = null)
         {
             GameObject toggleObj = new($"{textOn}/{textOff}Toggle");

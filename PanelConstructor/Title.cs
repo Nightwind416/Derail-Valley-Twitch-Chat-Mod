@@ -3,8 +3,19 @@ using UnityEngine.UI;
 
 namespace TwitchChat.PanelConstructor
 {
+    /// <summary>
+    /// Factory class for creating panel titles with consistent styling.
+    /// </summary>
     public static class Title
     {
+        /// <summary>
+        /// Creates a new title element with specified text and formatting.
+        /// </summary>
+        /// <param name="parent">Parent transform to attach the title to</param>
+        /// <param name="titleText">Text content of the title</param>
+        /// <param name="fontSize">Font size in pixels</param>
+        /// <param name="textColor">Optional text color</param>
+        /// <param name="textAlignment">Text alignment within the title area</param>
         public static void Create(Transform parent, string titleText, int fontSize = 16, Color? textColor = null, TextAnchor textAlignment = TextAnchor.UpperCenter)
         {
             GameObject titleObj = new("Title");

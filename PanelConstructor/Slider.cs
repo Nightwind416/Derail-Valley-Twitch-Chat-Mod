@@ -4,8 +4,23 @@ using UnityEngine.Events;
 
 namespace TwitchChat.PanelConstructor
 {
+    /// <summary>
+    /// Factory class for creating UI sliders with consistent styling and behavior.
+    /// Supports both standard and VR slider implementations with value labels and tick marks.
+    /// </summary>
     public static class Slider
     {
+        /// <summary>
+        /// Creates a new slider with specified range and positioning.
+        /// </summary>
+        /// <param name="parent">Parent transform to attach the slider to</param>
+        /// <param name="xPosition">X position relative to parent</param>
+        /// <param name="yPosition">Y position relative to parent</param>
+        /// <param name="minValue">Minimum value of the slider</param>
+        /// <param name="maxValue">Maximum value of the slider</param>
+        /// <param name="value">Initial value of the slider</param>
+        /// <param name="onValueChanged">Optional callback for value change events</param>
+        /// <returns>Created Slider component</returns>
         public static UnityEngine.UI.Slider Create(Transform parent, int xPosition, int yPosition, float minValue = 0f, float maxValue = 1f, float value = 0.5f, UnityAction<float>? onValueChanged = null)
         {
             GameObject sliderObj = new("Slider");

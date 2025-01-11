@@ -7,14 +7,21 @@ using UnityEngine;
 namespace TwitchChat
 {
     /// <summary>
-    /// Manages Twitch chat messages and in-game notifications.
-    /// Handles message queuing, processing, and display of notifications
-    /// in the game world. Provides parsing and filtering of incoming chat messages
-    /// and manages notification attachments to game objects.
+    /// Manages in-game notifications and Twitch chat message display.
+    /// Handles message queuing, processing, and visual presentation of notifications.
+    /// Provides real-time chat integration and notification attachment to game objects.
     /// </summary>
     public class NotificationManager
     {
+        /// <summary>
+        /// Counter for testing message queue functionality.
+        /// </summary>
         private static int messageQueueTestCounter = 1;
+
+        /// <summary>
+        /// Queue storing different types of notifications for processing.
+        /// Keys represent notification types, values store the notification messages.
+        /// </summary>
         public static Dictionary<string, string> NewNotificationQueue = new()
         {
             { "webSocketNotification", "" },
@@ -23,10 +30,11 @@ namespace TwitchChat
         };
 
         /// <summary>
-        /// Sets a notification variable in the queue.
+        /// Sets a notification message in the queue for processing.
+        /// Updates existing notifications or adds new ones as needed.
         /// </summary>
-        /// <param name="notification_type">The notification type.</param>
-        /// <param name="message">The notification message.</param>
+        /// <param name="notification_type">Type identifier for the notification.</param>
+        /// <param name="message">Content of the notification message.</param>
         public static void SetVariable(string notification_type, string message)
         {
             if (NewNotificationQueue.ContainsKey(notification_type))

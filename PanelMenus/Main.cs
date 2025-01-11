@@ -4,16 +4,28 @@ using UnityEngine.UI;
 
 namespace TwitchChat.PanelMenus
 {
+    /// <summary>
+    /// Main navigation panel for the mod's interface.
+    /// Provides access to all other panels and functionality.
+    /// </summary>
     public class MainPanel : PanelConstructor.BasePanel
     {
         private readonly License menuIndex;
 
+        /// <summary>
+        /// Initializes a new instance of the MainPanel.
+        /// </summary>
+        /// <param name="parent">The parent transform this panel will be attached to.</param>
+        /// <param name="index">The license index for the menu.</param>
         public MainPanel(Transform parent, License index) : base(parent)
         {
             menuIndex = index;
             CreateMainMenu();
         }
 
+        /// <summary>
+        /// Creates the main menu interface with navigation buttons.
+        /// </summary>
         private void CreateMainMenu()
         {
             // Menu buttons
@@ -31,6 +43,11 @@ namespace TwitchChat.PanelMenus
             CreateMenuButton("Debug", 285);
         }
 
+        /// <summary>
+        /// Creates a navigation button with the specified text and position.
+        /// </summary>
+        /// <param name="text">The button text.</param>
+        /// <param name="verticalPosition">The vertical position of the button.</param>
         private void CreateMenuButton(string text, int verticalPosition)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;

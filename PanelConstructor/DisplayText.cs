@@ -3,8 +3,23 @@ using UnityEngine.UI;
 
 namespace TwitchChat.PanelConstructor
 {
+    /// <summary>
+    /// Factory class for creating text display elements with configurable size and wrapping.
+    /// Handles text truncation and multi-line display.
+    /// </summary>
     public static class DisplayText
     {
+        /// <summary>
+        /// Creates a new text display element with specified formatting and positioning.
+        /// </summary>
+        /// <param name="parent">Parent transform to attach the text to</param>
+        /// <param name="text">Content to display</param>
+        /// <param name="xPosition">X position relative to parent</param>
+        /// <param name="yPosition">Y position relative to parent</param>
+        /// <param name="textColor">Optional text color</param>
+        /// <param name="lines">Number of lines to display</param>
+        /// <param name="fontSize">Font size in pixels</param>
+        /// <returns>Created Text component</returns>
         public static Text Create(Transform parent, string text, int xPosition, int yPosition, Color? textColor = null, int lines = 1, int fontSize = 12)
         {
             GameObject textObj = new($"{text}TextDisplay");
@@ -46,6 +61,9 @@ namespace TwitchChat.PanelConstructor
             return displayText;
         }
 
+        /// <summary>
+        /// Calculates the approximate number of lines needed for the text.
+        /// </summary>
         private static int GetApproximateLineCount(string text, Text textComponent)
         {
             float width = textComponent.GetComponent<RectTransform>().sizeDelta.x;
@@ -54,6 +72,9 @@ namespace TwitchChat.PanelConstructor
             return Mathf.CeilToInt((float)text.Length / charsPerLine);
         }
 
+        /// <summary>
+        /// Truncates text to fit within specified number of lines.
+        /// </summary>
         private static string TruncateText(string text, Text textComponent, int maxLines)
         {
             float width = textComponent.GetComponent<RectTransform>().sizeDelta.x;

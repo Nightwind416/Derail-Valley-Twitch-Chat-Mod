@@ -7,26 +7,38 @@ using UnityModManagerNet;
 namespace TwitchChat
 {
     /// <summary>
-    /// Defines the level of debug information to be logged
+    /// Defines the level of debug information logging
     /// </summary>
     public enum DebugLevel
     {
+        /// <summary>No debug logging</summary>
         Off,
+        /// <summary>Basic error and connection status logging</summary>
         Minimal,
+        /// <summary>Intermediate level of operational logging</summary>
         Reduced,
+        /// <summary>Comprehensive debug information</summary>
         Full
     }
 
     /// <summary>
-    /// Handles the mod settings and UI configuration for the Twitch Chat integration.
-    /// Implements UnityModManager.ModSettings for save/load functionality and IDrawable for UI rendering.
+    /// Manages mod settings and configuration UI.
     /// </summary>
+    /// <remarks>
+    /// This class handles:
+    /// - Mod configuration persistence
+    /// - Settings UI rendering and interaction
+    /// - Message templates and automation settings
+    /// - Integration settings for other mods
+    /// </remarks>
     [DrawFields(DrawFieldMask.Public)]
     [Serializable]
     public class Settings : UnityModManager.ModSettings, IDrawable
     {
-        // Main Settings
+        /// <summary>Singleton instance of Settings</summary>
         public static Settings Instance { get; set; } = null!;
+        
+        /// <summary>User's Twitch username</summary>
         public string twitchUsername = string.Empty;
         public string authentication_status = "Unverified or not set";
         public string EncodedOAuthToken = string.Empty;
@@ -381,23 +393,15 @@ namespace TwitchChat
     }
 
     /// <summary>
-    /// Manages standard welcome and event messages.
-    /// Provides access to configured messages for new followers, subscribers, and general welcomes.
+    /// Manages chat command responses and configurations.
     /// </summary>
-    // public class StandardMessages
-    // {
-    //     // public static string welcomeMessage => Settings.Instance.welcomeMessage;
-    //     public static string newFollowerMessage => Settings.Instance.newFollowerMessage;
-    //     public static string newSubscriberMessage => Settings.Instance.newSubscriberMessage;
-    // }
-
-    /// <summary>
-    /// Manages chat command messages and responses.
-    /// Handles command registration, response configuration, and message updates
-    /// for interactive chat commands.
-    /// </summary>
+    /// <remarks>
+    /// Handles registration and updates of chat commands,
+    /// maintaining the list of available commands and their responses.
+    /// </remarks>
     public class CommandMessages
     {
+        /// <summary>Current commands help message</summary>
         public static string commandMessage => Settings.Instance.commandsMessage;
         public static string infoMessage => Settings.Instance.infoMessage;
         public static void UpdateCommandsResponse()
@@ -417,11 +421,15 @@ namespace TwitchChat
     }
 
     /// <summary>
-    /// Manages periodic automated message configurations.
-    /// Provides access to timed message settings and scheduling information.
+    /// Manages automated message scheduling and configuration.
     /// </summary>
+    /// <remarks>
+    /// Handles periodic message settings, timing, and color configurations
+    /// for automated channel messages.
+    /// </remarks>
     public class TimedMessages
     {
+        /// <summary>Indicates if the timed message system is active</summary>
         public static bool TimedMessageSystemToggle => Settings.Instance.timedMessageSystemToggle;
         public static string lastTimedMessageSent => Settings.Instance.lastTimedMessageSent;
         public static string TimedMessage1 => Settings.Instance.timedMessage1;
@@ -440,13 +448,4 @@ namespace TwitchChat
         public static float TimedMessage5Timer => Settings.Instance.timedMessage5Timer;
         public static string TimedMessage5Color = "Normal";
     }
-
-    /// <summary>
-    /// Manages integration with the Dispatcher Mod.
-    /// Handles message routing and configuration when the Dispatcher Mod is present.
-    /// </summary>
-    // public class DispatcherModMessages
-    // {
-    //     public static string dispatcherMessage => Settings.Instance.dispatcherMessage;
-    // }
 }

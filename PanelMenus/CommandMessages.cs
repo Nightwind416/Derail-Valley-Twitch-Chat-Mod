@@ -3,6 +3,10 @@ using UnityEngine.UI;
 
 namespace TwitchChat.PanelMenus
 {
+    /// <summary>
+    /// Panel for managing command messages and their settings.
+    /// Handles the configuration of command responses and info messages.
+    /// </summary>
     public class CommandMessagesPanel : PanelConstructor.BasePanel
     {
         private Toggle? commandsMessageEnabled;
@@ -18,16 +22,28 @@ namespace TwitchChat.PanelMenus
             // CreateCustomCommandsSection();
         }
 
+        /// <summary>
+        /// Updates the enabled state of the commands message toggle.
+        /// </summary>
+        /// <param name="value">The new enabled state.</param>
         public void UpdateCommandsMessageEnabled(bool value)
         {
             if (commandsMessageEnabled != null) commandsMessageEnabled.isOn = value;
         }
 
+        /// <summary>
+        /// Updates the enabled state of the info message toggle.
+        /// </summary>
+        /// <param name="value">The new enabled state.</param>
         public void UpdateInfoMessageEnabled(bool value)
         {
             if (infoMessageEnabled != null) infoMessageEnabled.isOn = value;
         }
 
+        /// <summary>
+        /// Creates and configures the commands settings section of the panel.
+        /// Sets up toggles and message displays for commands and info messages.
+        /// </summary>
         private void CreateCommandsSettingsSection()
         {
             commandsSettingsSection = PanelConstructor.Section.Create(panelObject.transform, "Commands Settings", 25, 200, false);
@@ -67,21 +83,20 @@ namespace TwitchChat.PanelMenus
             // Info Message Text
             infoMessage = PanelConstructor.DisplayText.Create(commandsSettingsSection.transform, "", 10, 102, Color.cyan, 7);
         }
-        // private void CreateCustomCommandsSection()
-        // {
-        //     customCommandsSection = PanelConstructor.Section.Create(panelObject.transform, "Custom Commands", 235, 50);
 
-        //     // Custom Commands
-        //     PanelConstructor.DisplayText.Create(customCommandsSection.transform, "Future development", 25, 25, Color.yellow);
-            
-        //     // TODO: Add Standard Messages Settings content
-        // }
+        /// <summary>
+        /// Updates the displayed values for command messages and info messages.
+        /// Should be called when settings are changed.
+        /// </summary>
         public void UpdateCommandMessagesPanelValues()
         {
             if (commandsMessage != null) commandsMessage.text = Settings.Instance.commandsMessage;
             if (infoMessage != null) infoMessage.text = Settings.Instance.infoMessage;
         }
 
+        /// <summary>
+        /// Controls the visibility of the panel and its sections.
+        /// </summary>
         public override void Show()
         {
             base.Show();

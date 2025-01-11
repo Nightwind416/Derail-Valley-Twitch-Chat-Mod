@@ -11,16 +11,32 @@ namespace TwitchChat
 {
     /// <summary>
     /// Manages WebSocket connections and message handling for Twitch chat integration.
-    /// Handles connection establishment, monitoring, reconnection, and message processing.
-    /// Provides real-time communication with Twitch's EventSub service.
     /// </summary>
+    /// <remarks>
+    /// This class is responsible for:
+    /// - Establishing and maintaining WebSocket connections to Twitch's EventSub service
+    /// - Handling connection monitoring and automatic reconnection
+    /// - Processing incoming messages and events
+    /// - Managing connection state and health checks
+    /// </remarks>
     public class WebSocketManager
     {
+        /// <summary>The WebSocket client instance for Twitch communication</summary>
         private static ClientWebSocket webSocketClient = new();
+        
+        /// <summary>The current session ID from Twitch</summary>
         private static string session_id = string.Empty;
+        
+        /// <summary>Timestamp of the last received keepalive message</summary>
         public static DateTime lastKeepaliveTime = DateTime.UtcNow;
+        
+        /// <summary>Indicates whether the connection is currently healthy</summary>
         private static bool isConnectionHealthy = false;
+        
+        /// <summary>Timer for monitoring connection health</summary>
         private static Timer? connectionMonitorTimer;
+        
+        /// <summary>Public accessor for connection health status</summary>
         public static bool IsConnectionHealthy => isConnectionHealthy;
 
         public static string lastMessageType = "None";
