@@ -161,27 +161,31 @@ namespace TwitchChat
                 GUILayout.Label("Standard Messages");
                 GUILayout.Space(10);
                 GUILayout.BeginHorizontal();
+                    GUI.color = Instance.connectMessageEnabled ? Color.green : Color.red;
                     GUILayout.Label("Connect Message:", GUILayout.Width(160));
                     Instance.connectMessage = GUILayout.TextField(Instance.connectMessage);
+                    GUI.color = Color.white;
                 GUILayout.EndHorizontal();
                 GUILayout.BeginHorizontal();
+                    GUI.color = Instance.disconnectMessageEnabled ? Color.green : Color.red;
                     GUILayout.Label("Disconnect Message:", GUILayout.Width(160));
                     Instance.disconnectMessage = GUILayout.TextField(Instance.disconnectMessage);
-                GUILayout.EndHorizontal();
-                GUILayout.BeginHorizontal();
-                    GUILayout.Label("New Follower Message:", GUILayout.Width(160));
-                    GUILayout.Label(Instance.newFollowerMessage, GUILayout.Width(200));
-                    GUI.color = Color.yellow;
-                    GUILayout.Label("(Future Implementation)");
                     GUI.color = Color.white;
                 GUILayout.EndHorizontal();
-                GUILayout.BeginHorizontal();
-                    GUILayout.Label("New Subscriber Message:", GUILayout.Width(160));
-                    GUILayout.Label(Instance.newSubscriberMessage, GUILayout.Width(200));
-                    GUI.color = Color.yellow;
-                    GUILayout.Label("(Future Implementation)");
-                    GUI.color = Color.white;
-                GUILayout.EndHorizontal();
+                // GUILayout.BeginHorizontal();
+                //     GUILayout.Label("New Follower Message:", GUILayout.Width(160));
+                //     GUILayout.Label(Instance.newFollowerMessage, GUILayout.Width(200));
+                //     GUI.color = Color.yellow;
+                //     GUILayout.Label("(Future Implementation)");
+                //     GUI.color = Color.white;
+                // GUILayout.EndHorizontal();
+                // GUILayout.BeginHorizontal();
+                //     GUILayout.Label("New Subscriber Message:", GUILayout.Width(160));
+                //     GUILayout.Label(Instance.newSubscriberMessage, GUILayout.Width(200));
+                //     GUI.color = Color.yellow;
+                //     GUILayout.Label("(Future Implementation)");
+                //     GUI.color = Color.white;
+                // GUILayout.EndHorizontal();
             GUILayout.EndVertical();
 
             GUILayout.Space(10);
@@ -191,17 +195,21 @@ namespace TwitchChat
                 GUILayout.Label("Command Messages");
                 GUILayout.Space(10);
                 GUILayout.BeginHorizontal();
+                    GUI.color = Instance.commandsMessageEnabled ? Color.green : Color.red;
                     // Instance.commandsMessageEnabled = GUILayout.Toggle(Instance.commandsMessageEnabled, "", GUILayout.Width(20));
                     GUILayout.Label("!Commands Message: ", GUILayout.Width(150));
                     GUILayout.Label(Instance.commandsMessage);
+                    GUI.color = Color.white;
                 GUILayout.EndHorizontal();
                 GUILayout.BeginHorizontal();
                     bool prevInfoActive = Instance.infoMessageEnabled;
+                    GUI.color = Instance.infoMessageEnabled ? Color.green : Color.red;
                     // Instance.infoMessageEnabled = GUILayout.Toggle(Instance.infoMessageEnabled, "", GUILayout.Width(20));
                     if (prevInfoActive != Instance.infoMessageEnabled)
                         CommandMessages.UpdateCommandsResponse();
                     GUILayout.Label("!Info Message: ", GUILayout.Width(150));
                     Instance.infoMessage = GUILayout.TextField(Instance.infoMessage);
+                    GUI.color = Color.white;
                 GUILayout.EndHorizontal();
                 // GUILayout.Space(10);
                 // GUILayout.Label("Custom Commands:");
@@ -237,8 +245,11 @@ namespace TwitchChat
                 GUI.enabled = true;
                 if (GUILayout.Button("Toggle System", GUILayout.Width(150)))
                 {
-                    Instance.timedMessageSystemToggle = !Instance.timedMessageSystemToggle;
+                    bool newState = !Instance.timedMessageSystemToggle;
+                    Instance.timedMessageSystemToggle = newState;
                     AutomatedMessages.ToggleTimedMessages();
+                    Instance.Save(Main.ModEntry);
+                    MenuManager.Instance.UpdateAllTimedMessageToggles(newState);
                 }
                 GUILayout.BeginHorizontal();
                     GUILayout.Label("Timed Messaging System is currently:", GUILayout.Width(250));

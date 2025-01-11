@@ -82,25 +82,25 @@ namespace TwitchChat.PanelMenus
                 MenuManager.Instance.UpdateAllNotificationDurations(value);
             });
 
-            // Horizontal line
-            PanelConstructor.HorizontalBar.Create(notificationSection.transform, 130);
+            // // Horizontal line
+            // PanelConstructor.HorizontalBar.Create(notificationSection.transform, 130);
             
-            // Always or only away from display boards?
-            PanelConstructor.Label.Create(notificationSection.transform, "Min distance from boards", 10, 140, Color.white);
+            // // Always or only away from display boards?
+            // PanelConstructor.Label.Create(notificationSection.transform, "Min distance from boards", 10, 140, Color.white);
 
-            // Location multi-selction
-            PanelConstructor.DisplayText.Create(notificationSection.transform, "Future development", 25, 160, Color.yellow);
-            // TODO: Add multi-selection dropdown for location
+            // // Location multi-selction
+            // PanelConstructor.DisplayText.Create(notificationSection.transform, "Future development", 25, 160, Color.yellow);
+            // // TODO: Add multi-selection dropdown for location
             
-            // Horizontal line
-            PanelConstructor.HorizontalBar.Create(notificationSection.transform, 185);
+            // // Horizontal line
+            // PanelConstructor.HorizontalBar.Create(notificationSection.transform, 185);
             
-            // Limit number of messages displayed?
-            PanelConstructor.Label.Create(notificationSection.transform, "Limit number displayed", 10, 195, Color.white);
+            // // Limit number of messages displayed?
+            // PanelConstructor.Label.Create(notificationSection.transform, "Limit number displayed", 10, 195, Color.white);
 
-            // Limit dropdown
-            PanelConstructor.DisplayText.Create(notificationSection.transform, "Future development", 25, 215, Color.yellow);
-            // TODO: Add dropdown for limit
+            // // Limit dropdown
+            // PanelConstructor.DisplayText.Create(notificationSection.transform, "Future development", 25, 215, Color.yellow);
+            // // TODO: Add dropdown for limit
         }
 
         /// <summary>
