@@ -7,20 +7,25 @@ using System.Timers;
 namespace TwitchChat
 {
     /// <summary>
-    /// Manages automated message system and command processing.
-    /// Handles timed message scheduling, command responses, and automated
-    /// message delivery. Provides timer management and command parsing functionality
-    /// for both periodic messages and user commands.
+    /// Manages automated messaging system and chat command processing.
+    /// Handles scheduled messages, command responses, and timed broadcasts.
+    /// Provides configuration and control of automated chat interactions.
     /// </summary>
     public class AutomatedMessages
     {
+        /// <summary>
+        /// Collection of active message timers.
+        /// </summary>
         private static readonly List<Timer> activeTimers = new();
         
+        /// <summary>
+        /// Indicates whether any message timers are currently active and running.
+        /// </summary>
         public static bool AreTimersRunning => activeTimers.Count > 0 && activeTimers.Any(t => t.Enabled);
 
         /// <summary>
-        /// Initializes the timed message system by reading configurations from XML
-        /// and setting up message timers
+        /// Initializes the timed message system from configuration.
+        /// Sets up message schedules and starts timer operations.
         /// </summary>
         private static void TimedMessagesInit()
         {
@@ -134,13 +139,13 @@ namespace TwitchChat
             {
                 string lowerMessage = message.ToLower();
                 
-                if (lowerMessage == "!commands" && settings.commandMessageActive)
+                if (lowerMessage == "!commands" && settings.commandsMessageEnabled)
                 {
-                    _ = TwitchEventHandler.SendWhisper(sender, settings.commandMessage);
+                    _ = TwitchEventHandler.SendWhisper(sender, settings.commandsMessage);
                     return;
                 }
                 
-                if (lowerMessage == "!info" && settings.infoMessageActive)
+                if (lowerMessage == "!info" && settings.infoMessageEnabled)
                 {
                     _ = TwitchEventHandler.SendWhisper(sender, settings.infoMessage);
                     return;

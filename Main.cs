@@ -9,19 +9,19 @@ using UnityModManagerNet;
 
 namespace TwitchChat
 {
+
     /// <summary>
     /// Core module for the Twitch Chat mod.
-    /// Handles mod initialization, lifecycle management, settings persistence,
-    /// and logging functionality. Acts as the central coordinator for all mod components
-    /// and provides integration with Unity Mod Manager.
+    /// Handles mod initialization, lifecycle management, settings persistence, logging, and provides
+    /// centralized coordination for all mod components by integrating with Unity Mod Manager.
+    /// This module manages debug levels, component initialization, and file logging systems.
     /// </summary>
     public static class Main
     {
-        // private static bool _isEnabled;
         public static bool _dispatcherModDetected;
         public static UnityModManager.ModEntry ModEntry { get; private set; } = null!;
-        public static string settingsFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mods", "TwitchChatMod", "Settings.xml");
-        private static string debugLog = string.Empty;
+        public static string settingsFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mods", "TwitchChat", "Settings.xml");
+        public static string debugLog = string.Empty;
         private static string messageLog = string.Empty;
 
         /// <summary>
@@ -31,47 +31,81 @@ namespace TwitchChat
         /// <returns>True if initialization was successful, false otherwise.</returns>
         private static bool Load(UnityModManager.ModEntry modEntry)
         {
-            string methodName = MethodBase.GetCurrentMethod().Name;
             ModEntry = modEntry;
-
             ModEntry.Logger.Log("[Load] Load method started.");
 
-            // Initialize UnityMainThreadDispatcher
-            GameObject dispatcherObject = new("UnityMainThreadDispatcher");
-            dispatcherObject.AddComponent<UnityMainThreadDispatcher>();
-            UnityEngine.Object.DontDestroyOnLoad(dispatcherObject);
-            ModEntry.Logger.Log("[Load] UnityMainThreadDispatcher initialized.");
-
-            // Check for RemoteDispatch Mod
-            var remoteDispatchMod = UnityModManager.modEntries.FirstOrDefault(mod => mod.Info.Id == "RemoteDispatch");
-            if (remoteDispatchMod != null)
+            try
             {
-                ModEntry.Logger.Log("[Load] RemoteDispatch Mod detected.");
-                _dispatcherModDetected = true;
+                // Initialize settings
+                Settings.Instance = UnityModManager.ModSettings.Load<Settings>(modEntry);
+                if (Settings.Instance == null)
+                {
+                    Settings.Instance = new Settings();
+                    Settings.Instance.debugLevel = DebugLevel.Minimal; // Set default debug level
+                }
+                Settings.Instance.authentication_status = "Unverified or not set";
+
+                // Begin using LogEntry
+                string methodName = MethodBase.GetCurrentMethod().Name;
+                LogEntry(methodName, "Load method started.");
+
+                // Initialize UnityMainThreadDispatcher Object
+                GameObject dispatcherObject = new("UnityMainThreadDispatcher");
+                dispatcherObject.AddComponent<UnityMainThreadDispatcher>();
+                UnityEngine.Object.DontDestroyOnLoad(dispatcherObject);
+                ModEntry.Logger.Log("[Load] UnityMainThreadDispatcher initialized.");
+                LogEntry(methodName, "UnityMainThreadDispatcher initialized successfully.");
+
+                // Initialize TwitchChat Menu Object
+                GameObject menuObject = new("TwitchChatMenu");
+                LogEntry(methodName, "TwitchChatMenu object created.");
+
+                // Check for RemoteDispatch Mod
+                var remoteDispatchMod = UnityModManager.modEntries.FirstOrDefault(mod => mod.Info.Id == "RemoteDispatch");
+                if (remoteDispatchMod != null)
+                {
+                    ModEntry.Logger.Log("[Load] RemoteDispatch Mod detected.");
+                    LogEntry(methodName, "RemoteDispatch Mod detected and verified.");
+                    _dispatcherModDetected = true;
+                }
+                else
+                {
+                    ModEntry.Logger.Log("[Load] RemoteDispatch Mod not detected.");
+                    LogEntry(methodName, "RemoteDispatch Mod not found - mod will operate in standalone mode.");
+                }
+
+                // Register the mod's toggle and update methods
+                ModEntry.OnToggle = OnToggle;
+                ModEntry.OnUpdate = OnUpdate;
+                LogEntry(methodName, "Registered mod toggle and update methods.");
+                
+                // Load the mod's settings
+                Settings.Instance = UnityModManager.ModSettings.Load<Settings>(modEntry);
+                Settings.Instance.authentication_status = "Unverified or not set";
+                LogEntry(methodName, "Settings loaded and initialized.");
+                
+                // Register the mod's GUI methods
+                modEntry.OnGUI = OnGUI;
+                modEntry.OnSaveGUI = OnSaveGUI;
+                LogEntry(methodName, "GUI methods registered.");
+
+                // Initialize the log files
+                InitializeLogFiles();
+                LogEntry(methodName, "Log files initialized successfully.");
+
+                // Activate Menu Managers
+                MenuManager.Instance.gameObject.SetActive(true);
+                LogEntry(methodName, "Menu Manager activated.");
+
+                ModEntry.Logger.Log("[Load] Load method completed successfully.");
+                LogEntry(methodName, "Load method completed successfully.");
+                return true;
             }
-            else
+            catch (Exception ex)
             {
-                ModEntry.Logger.Log("[Load] RemoteDispatch Mod not detected.");
+                ModEntry.Logger.Log($"[Load] Critical error during mod initialization: {ex}");
+                return false;
             }
-
-            // Register the mod's toggle and update methods
-            ModEntry.OnToggle = OnToggle;
-            ModEntry.OnUpdate = OnUpdate;
-            
-            // Load the mod's settings
-            Settings.Instance = UnityModManager.ModSettings.Load<Settings>(modEntry);
-            Settings.Instance.authentication_status = "Unverified or not set";
-            
-            // Register the mod's GUI methods
-            modEntry.OnGUI = OnGUI;
-            modEntry.OnSaveGUI = OnSaveGUI;
-
-            // Initialize the log files
-            InitializeLogFiles();
-
-            ModEntry.Logger.Log("[Load] Load method completed successfully.");
-            LogEntry(methodName, "Load method completed successfullyy.");
-            return true;
         }
 
         /// <summary>
@@ -106,13 +140,13 @@ namespace TwitchChat
             string methodName = MethodBase.GetCurrentMethod().Name;
             if (ModEntry.Enabled)
             {
-                MessageHandler.AttachNotification("TwitchChatMod is now receiving message notifications from your channel.", "null");
+                NotificationManager.AttachNotification("The TwitchChat mod is now receiving message notifications from your channel.", "null");
                 LogEntry(methodName, "Mod Enabled!");
                 ModEntry.Enabled = true;
             }
             else
             {
-                MessageHandler.AttachNotification("TwitchChatMod is no longer receiving message notifications from your Channel.", "null");
+                NotificationManager.AttachNotification("The TwitchChat mod is no longer receiving message notifications from your Channel.", "null");
                 LogEntry(methodName, "Mod Disabled!");
                 ModEntry.Enabled = false;
             }
@@ -147,8 +181,8 @@ namespace TwitchChat
         /// </summary>
         private static void InitializeLogFiles()
         {
-            string logDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mods", "TwitchChatMod", "Logs");
-            string date = DateTime.Now.ToString("yyyy-MM-dd");
+            string logDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mods", "TwitchChat", "Logs");
+            string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
         
             // Create the directory if it does not exist
             if (!Directory.Exists(logDirectory))
@@ -165,30 +199,41 @@ namespace TwitchChat
                 }
             }
         
-            // Get all debug log files and sort by creation time
-            var debugLogFiles = Directory.GetFiles(logDirectory, "Log - *.txt")
-                                         .OrderByDescending(f => File.GetCreationTime(f))
-                                         .ToList();
+            // Handle Debug Logs - Keep only last 3
+            var debugLogFiles = Directory.GetFiles(logDirectory, "Debug_*.txt")
+                                       .OrderByDescending(f => File.GetCreationTime(f))
+                                       .ToList();
         
-            // Keep only the last 3 log files
-            for (int i = 3; i < debugLogFiles.Count; i++)
+            // Remove excess debug log files (keep only 3 most recent)
+            for (int i = 2; i < debugLogFiles.Count; i++)
             {
-                File.Delete(debugLogFiles[i]);
+                try
+                {
+                    File.Delete(debugLogFiles[i]);
+                }
+                catch (Exception ex)
+                {
+                    ModEntry.Logger.Log($"Failed to delete old debug log: {debugLogFiles[i]}. Exception: {ex.Message}");
+                }
             }
         
-            debugLog = Path.Combine(logDirectory, $"Log - {date}.txt");
-            messageLog = Path.Combine(logDirectory, $"Messages - {date}.txt");
+            // Create new log files with timestamp
+            debugLog = Path.Combine(logDirectory, $"Debug_{timestamp}.txt");
+            messageLog = Path.Combine(logDirectory, $"Messages_{timestamp}.txt");
         
-            ModEntry.Logger.Log($"Initialized log file: {debugLog}");
-            ModEntry.Logger.Log($"Initialized message file: {messageLog}");
-        
-            // Open each of the logs and write a new header (not using logEntry because it will write to the log file)
-            using StreamWriter logHeader = new(debugLog, true);
-            logHeader.WriteLine($"Log file initialized on {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-            using StreamWriter messageHeader = new(messageLog, true);
-            messageHeader.WriteLine($"Message file initialized on {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-        
-            ModEntry.Logger.Log("Log files initialized.");
+            // Create new files with headers
+            try
+            {
+                File.WriteAllText(debugLog, $"Debug log initialized on {DateTime.Now:yyyy-MM-dd HH:mm:ss}\n");
+                File.WriteAllText(messageLog, $"Message log initialized on {DateTime.Now:yyyy-MM-dd HH:mm:ss}\n");
+                
+                ModEntry.Logger.Log($"Initialized new debug log: {debugLog}");
+                ModEntry.Logger.Log($"Initialized new message log: {messageLog}");
+            }
+            catch (Exception ex)
+            {
+                ModEntry.Logger.Log($"Failed to initialize log files. Exception: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -197,8 +242,15 @@ namespace TwitchChat
         /// </summary>
         /// <param name="source">The source (method) of the log entry, also determines which log file to use.</param>
         /// <param name="message">The message to be logged.</param>
-        public static void LogEntry(string source, string message)
+        public static void LogEntry(string source, string message)  // TODO: Refactor for better level use and general cleanup across entire mod
         {
+            // Ensure Settings.Instance is initialized
+            if (Settings.Instance == null)
+            {
+                ModEntry?.Logger.Log($"[{source}] Cannot log: Settings.Instance is null");
+                return;
+            }
+
             string selected_log = (source == "ReceivedMessage" || source == "SentMessage") ? messageLog : debugLog;
 
             // Early return if this is a debug message and debug logging is off
@@ -246,7 +298,10 @@ namespace TwitchChat
         }
 
         /// <summary>
-        /// List of source/method names that should be logged when debug level is set to Minimal.
+        /// Lists of debug sources used to control logging verbosity.
+        /// MinimalDebug contains sources that should be logged at Minimal level.
+        /// ReducedDebug contains sources that should be excluded at Reduced level.
+        /// These lists help optimize logging performance and output clarity.
         /// </summary>
         private static readonly HashSet<string> MinimalDebug =
         [

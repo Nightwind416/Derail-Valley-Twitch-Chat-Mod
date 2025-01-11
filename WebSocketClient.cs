@@ -11,24 +11,41 @@ namespace TwitchChat
 {
     /// <summary>
     /// Manages WebSocket connections and message handling for Twitch chat integration.
-    /// Handles connection establishment, monitoring, reconnection, and message processing.
-    /// Provides real-time communication with Twitch's EventSub service.
     /// </summary>
+    /// <remarks>
+    /// This class is responsible for:
+    /// - Establishing and maintaining WebSocket connections to Twitch's EventSub service
+    /// - Handling connection monitoring and automatic reconnection
+    /// - Processing incoming messages and events
+    /// - Managing connection state and health checks
+    /// </remarks>
     public class WebSocketManager
     {
+        /// <summary>The WebSocket client instance for Twitch communication</summary>
         private static ClientWebSocket webSocketClient = new();
+        
+        /// <summary>The current session ID from Twitch</summary>
         private static string session_id = string.Empty;
-        private static DateTime lastKeepaliveTime = DateTime.UtcNow;
+        
+        /// <summary>Timestamp of the last received keepalive message</summary>
+        public static DateTime lastKeepaliveTime = DateTime.UtcNow;
+        
+        /// <summary>Indicates whether the connection is currently healthy</summary>
         private static bool isConnectionHealthy = false;
+        
+        /// <summary>Timer for monitoring connection health</summary>
         private static Timer? connectionMonitorTimer;
+        
+        /// <summary>Public accessor for connection health status</summary>
         public static bool IsConnectionHealthy => isConnectionHealthy;
 
-        private static string lastMessageType = "None";
-        private static string lastChatMessage = "No messages received";
-        public static string LastMessageType => lastMessageType;
-        public static string LastChatMessage => lastChatMessage;
+        public static string lastMessageType = "None";
+        public static string lastChatMessage = "No messages received";
+        // public static string LastMessageType => lastMessageType;
+        // public static string LastChatMessage => lastChatMessage;
+        public static DateTime lastTypeReceivedTime = DateTime.UtcNow;
 
-        private static readonly SemaphoreSlim reconnectLock = new SemaphoreSlim(1, 1);
+        private static readonly SemaphoreSlim reconnectLock = new(1, 1);
         private static int reconnectAttempts = 0;
         private static readonly int maxReconnectAttempts = 5;
         private static readonly TimeSpan reconnectDelay = TimeSpan.FromSeconds(5);
@@ -44,21 +61,21 @@ namespace TwitchChat
             if (string.IsNullOrEmpty(Settings.Instance.twitchUsername))
             {
                 Main.LogEntry(methodName, "Twitch username is empty. Cannot attempt connection to WebSocket.");
-                MessageHandler.SetVariable("alertMessage", "Twitch username is empty. Cannot attempt connection to WebSocket.");
+                NotificationManager.SetVariable("alertMessage", "Twitch username is empty. Cannot attempt connection to WebSocket.");
                 return;
             }
 
             if (string .IsNullOrEmpty(Settings.Instance.EncodedOAuthToken))
             {
                 Main.LogEntry(methodName, "Access token is empty. Cannot attempt connection to WebSocket.");
-                MessageHandler.SetVariable("alertMessage", "Access token is empty. Cannot attempt connection to WebSocket.");
+                NotificationManager.SetVariable("alertMessage", "Access token is empty. Cannot attempt connection to WebSocket.");
                 return;
             }
 
             if (webSocketClient.State == WebSocketState.Open)
             {
                 Main.LogEntry(methodName, "WebSocket is already open. Cannot attempt connection to WebSocket.");
-                MessageHandler.SetVariable("alertMessage", "WebSocket is already open. Cannot attempt connection to WebSocket.");
+                NotificationManager.SetVariable("alertMessage", "WebSocket is already open. Cannot attempt connection to WebSocket.");
                 return;
             }
 
@@ -191,7 +208,7 @@ namespace TwitchChat
                             string userName = ExtractValue(Encoding.UTF8.GetString(buffer, 0, result.Count), "chatter_user_name");
                             string chatMessage = ExtractValue(Encoding.UTF8.GetString(buffer, 0, result.Count), "text");
                             lastChatMessage = $"{userName}: {chatMessage}";
-                            MessageHandler.HandleNotification(Encoding.UTF8.GetString(buffer, 0, result.Count));
+                            NotificationManager.HandleNotification(Encoding.UTF8.GetString(buffer, 0, result.Count));
                             break;
 
                         case "session_keepalive":
@@ -311,9 +328,9 @@ namespace TwitchChat
             else
             {
                 Main.LogEntry(methodName, "Subscribed to channel.chat.message.");
-                if (!string.IsNullOrEmpty(Settings.Instance.welcomeMessage))
+                if (!string.IsNullOrEmpty(Settings.Instance.connectMessage) && Settings.Instance.connectMessageEnabled)
                 {
-                    await TwitchEventHandler.SendMessage(Settings.Instance.welcomeMessage);
+                    await TwitchEventHandler.SendMessage(Settings.Instance.connectMessage);
                 }
             }
         }
@@ -329,7 +346,11 @@ namespace TwitchChat
             {
                 if (!string.IsNullOrEmpty(Settings.Instance.disconnectMessage))
                 {
-                    await TwitchEventHandler.SendMessage(Settings.Instance.disconnectMessage);
+                    if (Settings.Instance.disconnectMessageEnabled)
+                    {
+                        await TwitchEventHandler.SendMessage(Settings.Instance.disconnectMessage);
+                    }
+                    
                     // Small delay to ensure the message is sent before closing
                     await Task.Delay(500);
                 }

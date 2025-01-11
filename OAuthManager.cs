@@ -13,14 +13,17 @@ namespace TwitchChat
 {
     /// <summary>
     /// Manages OAuth authentication flow with Twitch API.
-    /// Handles token acquisition, validation, and storage for secure API access.
-    /// Provides browser-based authentication and token management features.
+    /// Handles secure token acquisition, storage, and validation for Twitch integration.
+    /// Provides browser-based authentication and automatic token refresh functionality.
     /// </summary>
     public class OAuthTokenManager : MonoBehaviour
     {
         /// <summary>
         /// Initiates the OAuth token retrieval process through Twitch authentication.
+        /// Opens a browser window for user authorization and captures the response token.
+        /// Handles token storage and validation after successful authentication.
         /// </summary>
+        /// <returns>An asynchronous task representing the OAuth token retrieval operation.</returns>
         public static async Task GetOathToken()
         {
             string methodName = "GetOathToken";
@@ -158,7 +161,10 @@ namespace TwitchChat
 
         /// <summary>
         /// Validates the stored OAuth token with Twitch API.
+        /// Checks token validity, handles token refresh if needed, and updates authentication status.
+        /// Includes retry logic for failed validation attempts.
         /// </summary>
+        /// <returns>An asynchronous task representing the token validation operation.</returns>
         public static async Task ValidateAuthToken()
         {
             string methodName = "ValidateAuthToken";
@@ -180,14 +186,14 @@ namespace TwitchChat
                     Main.LogEntry(methodName, $"Error decoding saved token: {ex.Message}");
                     Settings.Instance.EncodedOAuthToken = string.Empty;
                     Settings.Save(Settings.Instance, Main.ModEntry);
-                    Settings.Instance.authentication_status = "Authorization failed. Please try again.";
+                    Settings.Instance.authentication_status = "Error decoding saved token. Please try again.";
                     return;
                 }
             }
             else
             {
                 Main.LogEntry(methodName, "No saved token found.");
-                Settings.Instance.authentication_status = "Authorization failed. Please try again.";
+                Settings.Instance.authentication_status = "No saved token found. Please try again.";
                 return;
             }
             
@@ -234,6 +240,7 @@ namespace TwitchChat
                 catch (HttpRequestException ex)
                 {
                     Main.LogEntry(methodName, $"HTTP request error: {ex.Message}");
+                    Settings.Instance.authentication_status = "HTTP request error";
                     if (ex.InnerException != null)
                     {
                         Main.LogEntry(methodName, $"Inner exception: {ex.InnerException.Message}");
@@ -242,6 +249,7 @@ namespace TwitchChat
                 catch (TaskCanceledException ex)
                 {
                     Main.LogEntry(methodName, $"Request timed out: {ex.Message}");
+                    Settings.Instance.authentication_status = "Request timed out";
                     if (ex.InnerException != null)
                     {
                         Main.LogEntry(methodName, $"Inner exception: {ex.InnerException.Message}");
@@ -250,6 +258,7 @@ namespace TwitchChat
                 catch (Exception ex)
                 {
                     Main.LogEntry(methodName, $"Unexpected error: {ex.Message}");
+                    Settings.Instance.authentication_status = "Unexpected error";
                     if (ex.InnerException != null)
                     {
                         Main.LogEntry(methodName, $"Inner exception: {ex.InnerException.Message}");
@@ -260,31 +269,33 @@ namespace TwitchChat
                 if (i < retryCount - 1)
                 {
                     Main.LogEntry(methodName, "Retrying...");
+                    Settings.Instance.authentication_status = "Retrying";
                     await Task.Delay(2000); // Wait for 2 seconds before retrying
                 }
                 else
                 {
                     Main.LogEntry(methodName, "Max retry attempts reached. Giving up.");
+                    Settings.Instance.authentication_status = "Max retry attempts reached. Giving up.";
                 }
             }
         }
+
+        /// <summary>
+        /// HTML template for the authorization response page.
+        /// Provides user feedback and instructions after successful authentication.
+        /// </summary>
         private static readonly string AuthorizationResponse = @"
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Derail Valley TwitchChat Authorization</title>
+    <title>Derail Valley TwitchChat Mod Authorization</title>
     <meta charset='UTF-8'>
     <style>
-        .holiday-effects {
-            z-index: 1;
-            position: relative;
-        }
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
             margin: 0;
             background-color: #1a1a1a;
             color: #e0e0e0;
@@ -293,79 +304,29 @@ namespace TwitchChat
             text-align: center;
             padding: 2.5em;
             background-color: #0a0909;
-            border-radius: 12px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.4);
             max-width: 800px;
             width: 90%;
         }
-        h1 {
-            color: #35eae4;
-            margin-bottom: 0.5em;
-            font-size: 2em;
-        }
         h2 {
             color: #31e5e5;
-            margin-bottom: 0.5em;
-            font-size: 1.5em;
-        }
-        .success-message {
-            color: #43d299;
-            font-weight: bold;
-            margin-bottom: 1.5em;
-        }
-        .link-list {
-            margin: 1.5em 0;
-            padding: 1em;
-            background-color: #363636;
-            border-radius: 8px;
+            font-size: 2.0em;
         }
         a {
             color: #1596ff;
             text-decoration: none;
-            transition: color 0.3s;
+            transition: color 0.4s;
         }
         a:hover {
             color: #43ed36;
             text-decoration: underline;
         }
-        .close-note {
-            font-size: 0.9em;
-            color: #a0a0a0;
-            margin-top: 1.5em;
-            padding-top: 1.5em;
-            z-index: 1000;
-        }
-        .revoke-section {
-            margin-top: 1.5em;
-            padding: 1em;
+        .section {
+            margin-top: 1.0em;
             background-color: #363636;
-            border-radius: 5px;
-            border: 1px solid #404040;
-            text-align: left;
+            border-radius: 50px;
             position: relative;
-            z-index: 10;
-        }
-        .revoke-section h2 {
-            text-align: center;
-            color:rgb(237, 73, 55);
-            font-size: 1.2em;
-            margin-bottom: 0.5em;
-        }
-        .details-section {
-            margin: 1.5em 0;
-            padding: 1em;
-            background-color: #363636;
-            border-radius: 8px;
-            position: relative;
-            z-index: 10;
-        }
-        .donation-section {
-            margin: 1.5em 0;
-            padding: 1em;
-            background-color: #363636;
-            border-radius: 8px;
-            position: relative;
-            z-index: 10;
+            border: 5px solid #04051b;
         }
         .paypal-button {
             padding: 8px 16px;
@@ -373,163 +334,51 @@ namespace TwitchChat
             border-radius: 4px;
             color: white !important;
         }
-        .disclaimer-section {
-            font-size: 0.9em;
-            color: #a0a0a0;
-            margin-top: 1.5em;
-            padding-top: 1.5em;
-            z-index: 1000;
-        }
-        
-        /* Holiday Effects */
-        .snow-container, .confetti-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        /* holiday Lights Effect */
-        .holiday-lights {
-            position: relative;
-        }
-
-        .holiday-lights::before,
-        .holiday-lights::after {
-            content: '';
-            position: absolute;
-            left: -15px;
-            right: -15px;
-            height: 6px;
-        }
-
-        .holiday-lights::before {
-            top: -15px;
-            background: repeating-linear-gradient(
-                90deg,
-                transparent,
-                transparent 12px,
-                #222 12px,
-                #222 17px
-            );
-        }
-
-        .holiday-lights::after {
-            top: -12px;
-            z-index: 2;
-            background-image: 
-                radial-gradient(circle, red 2px, transparent 3px),
-                radial-gradient(circle, green 2px, transparent 3px),
-                radial-gradient(circle, blue 2px, transparent 3px),
-                radial-gradient(circle, yellow 2px, transparent 3px);
-            background-size: 17px 6px;
-            background-position: 0 0, 4px 0, 8px 0, 12px 0;
-            animation: lightTwinkle 1s infinite;
-        }
-
-        @keyframes lightTwinkle {
-            0%, 100% {
-                opacity: 0.9;
-                filter: brightness(1);
-            }
-            50% {
-                opacity: 0.5;
-                filter: brightness(0.75);
-            }
-        }
-
-        .holiday-lights .light {
-            position: absolute;
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            animation: twinkle var(--twinkle-duration) infinite;
-            animation-delay: var(--twinkle-delay);
-        }
-        
-        .snowflake, .confetti {
-            position: absolute;
-            color: #fff;
-            animation-timing-function: linear;
-            animation-iteration-count: infinite;
-        }
-        
-        .snowflake {
-            animation-name: snowfall;
-            will-change: transform;
-            filter: drop-shadow(0 0 2px rgba(255,255,255,0.2));
-        }
-        
-        .confetti {
-            width: 10px;
-            height: 10px;
-            animation-name: confettifall;
-            transform-origin: center;
-            will-change: transform;
-        }
-        
-        @keyframes snowfall {
-            0% { transform: translateY(-100vh) translateX(0) rotate(0deg); }
-            25% { transform: translateY(-50vh) translateX(var(--drift1)) rotate(90deg); }
-            50% { transform: translateY(0vh) translateX(var(--drift2)) rotate(180deg); }
-            75% { transform: translateY(50vh) translateX(var(--drift3)) rotate(270deg); }
-            100% { transform: translateY(100vh) translateX(var(--drift4)) rotate(360deg); }
-        }
-        
-        @keyframes confettifall {
-            0% {
-                transform: translateY(-100vh) rotate(0deg) translateX(0);
-            }
-            100% {
-                transform: translateY(100vh) rotate(var(--spin)) translateX(var(--drift));
-            }
-        }
     </style>
 </head>
+
 <body>
-    <div id='effects-container'></div>
     <div class='container'>
-        <h1>Authorization Successful</h1>        
-        <p class='success-message'>TwitchChat Authentication Token Received!</p>
-        <p class='close-note'>(It is safe to close this window and return to the game at this time.)</p>
+        <div>
+            <h1 style='color: #35eae4; font-size: 3em;'>Authorization Successful</h1>        
+            <p style='color: #43d299; font-weight: bold; font-size: 1.3em;'>TwitchChat Authentication Token Received!</p>
+            <p  style='color: #a0a0a0; font-size: 0.9em;'>Your Derail Valley game is now able to receive Twitch messages while in game. Make sure to finish enabling the mod using the in game mod menus. (It is safe to close this window and return to the game at this time.)</p>
+        </div>
         
-        <div class='revoke-section'>
-            <h2>Managing Your Twitch Authorization</h2>
+        <div class='section' style='text-align: left; padding: 0em 2em 0em 2em;'>
+            <h2 style='color:rgb(237, 73, 55); font-size: 2.0em; text-align: center; margin-bottom: 0.5em;'>Managing Your Twitch Authorization</h2>
+            <p>Authentication Tokens are typically good for 30 days, but may be revoked or cancelled for any number of reasons, including by 'you'. If your Token is not validated, you can simply request a new one in the same way as the initial request that got you here.</p>
             <p>If you ever need or want to revoke access/remove authorization:</p>
             <ol>
-                <li>Visit the official <a href='https://www.twitch.tv/settings/connections' target='_blank'>Twitch Connection Settings</a> page</li>
-                <li>Find DerailValleyChatMod under the Other Connections section, lower on the page</li>
-                <li>Click Disconnect</li>
+            <li>Visit the official <a href='https://www.twitch.tv/settings/connections' target='_blank'>Twitch Connection Settings</a> page</li>
+            <li>Find DerailValleyChatMod under the Other Connections section, lower on the page</li>
+            <li>Click Disconnect</li>
             </ol>
             <p>You can always re-authorize the mod by requesting a new Authorization Token through the in-game settings menu.</p>
         </div>
+
+        <div class='section' style='padding: 0em 0em 1.5em 0em;'>
+            <h2>Donations</h2>
+            <div style='display: flex; justify-content: center; align-items: center; gap: 10px;'>
+            <a href='https://ko-fi.com/A0A217PWSY' target='_blank'><img src='https://storage.ko-fi.com/cdn/kofi5.png?v=6' style='height: 40px !important;border:0px;height:36px;' alt='Buy Me a Coffee at ko-fi.com' /></a>
+            <a href='https://www.buymeacoffee.com/christophe1xf' target='_blank'><img src='https://cdn.buymeacoffee.com/buttons/v2/default-blue.png' style='height: 60px !important;width: 217px !important;' ></a>
+            <a href='https://paypal.me/Nightwind416?country.x=US&locale.x=en_US' target='_blank' class='paypal-button'>PayPal.me Donation</a>                
+            </div>
+        </div>
         
-        <div class='details-section'>
-            <h2>TwitchChatMod Details</h2>
-        <div class='link-list'>
+        <div class='section'>
+            <h2>TwitchChat Mod Details</h2>
+        <div>
             <a href='https://www.nexusmods.com/derailvalley/mods/1069' target='_blank'>Nexus Mods Page</a> |
             <a href='https://github.com/Nightwind416/Derail-Valley-Twitch-Chat-Mod' target='_blank'>GitHub Repository</a> |
             <a href='https://github.com/Nightwind416/Derail-Valley-Twitch-Chat-Mod/issues' target='_blank'>Issues and Suggestions</a>
         </div>
-            <p>Your Derail Valley game is now hooked up to Twitch to enable in-game messaging and alerts. Make sure to finish configuring and enabling the mod using the in game settings. Authentication Tokens are typically good for 30 days, but may be revoked or cancelled for any number of reasons. If your Token is not validated, you can request a new one using the same in-game process.</p>
             <h2>Created By</h2>
             <p>Derail Valley TwitchChat Mod developed by Nightwind</p>
             <p>Follow <a href='https://www.twitch.tv/nightwind416' target='_blank'>Nightwind's Twitch Channel</a> to see the mod in action</p>
         </div>
-
-        <div class='donation-section'>
-            <h2>Donations</h2>
-            <div style='display: flex; justify-content: center; align-items: center; gap: 10px;'>
-                <a href='https://ko-fi.com/A0A217PWSY' target='_blank'><img src='https://storage.ko-fi.com/cdn/kofi5.png?v=6' style='height: 40px !important;border:0px;height:36px;' alt='Buy Me a Coffee at ko-fi.com' /></a>
-                <a href='https://www.buymeacoffee.com/christophe1xf' target='_blank'><img src='https://cdn.buymeacoffee.com/buttons/v2/default-blue.png' style='height: 60px !important;width: 217px !important;' ></a>
-                <a href='https://paypal.me/Nightwind416?country.x=US&locale.x=en_US' target='_blank' class='paypal-button'>PayPal.me Donation</a>                
-            </div>
-        </div>
         
-        <div class='disclaimer-section'>
+        <div style='color: #a0a0a0; font-size: 0.9em;'>
             <p>This is a third-party modification created by an independent developer and not affiliated with or endorsed by <a href='https://www.altfuture.gg' target='_blank'>Altfuture</a> or the <a href='https://www.derailvalley.com' target='_blank'>Derail Valley</a> development team.</p>
         </div>
     </div>
@@ -539,84 +388,6 @@ namespace TwitchChat
         var xhr = new XMLHttpRequest();
         xhr.open('GET', 'http://localhost/?' + window.location.hash.substring(1), true);
         xhr.send();
-        
-        // Holiday effects
-        function checkHoliday() {
-            const date = new Date();
-            const month = date.getMonth();
-            const day = date.getDate();
-            
-            // Show snow in December and January
-            if (month === 11 || month === 0) {
-                document.body.classList.add('holiday-active');
-                const container = document.getElementById('effects-container');
-                createSnow(container);
-            }
-            
-            // Add holiday lights around christmas time
-            if (month === 11 && day >= 21 && day <= 29) {
-                const sections = document.querySelectorAll('.revoke-section, .details-section, .donation-section');
-                sections.forEach(section => {
-                    section.classList.add('holiday-lights');
-                    // Add random twinkle animation delays
-                    const lights = section.querySelectorAll('.light');
-                    lights.forEach(light => {
-                        light.style.setProperty('--twinkle-duration', `${0.5 + Math.random() * 1}s`);
-                        light.style.setProperty('--twinkle-delay', `${Math.random() * 1}s`);
-                    });
-                });
-            }
-            
-            // Show confetti for New Year's
-            if ((month === 11 && day === 31) || (month === 0 && day === 1)) {
-                const container = document.getElementById('effects-container');
-                createConfetti(container);
-            }
-        }
-        
-        function createSnow(container) {
-            container.className = 'snow-container';
-            for (let i = 0; i < 250; i++) {
-                const snowflake = document.createElement('div');
-                snowflake.className = 'snowflake';
-                snowflake.style.left = `${Math.random() * 100}%`;
-                snowflake.style.fontSize = `${Math.random() * (2.5 - 0.4) + 0.4}em`;
-                snowflake.style.animationDuration = `${15 + Math.random() * 50}s`;
-                
-                // Set multiple random drift points for more natural movement
-                snowflake.style.setProperty('--drift1', `${-50 + Math.random() * 100}px`);
-                snowflake.style.setProperty('--drift2', `${-50 + Math.random() * 100}px`);
-                snowflake.style.setProperty('--drift3', `${-50 + Math.random() * 100}px`);
-                snowflake.style.setProperty('--drift4', `${-50 + Math.random() * 100}px`);
-                
-                snowflake.innerHTML = '&#10052;';
-                container.appendChild(snowflake);
-            }
-        }
-        
-        function createConfetti(container) {
-            container.className = 'confetti-container';
-            const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff'];
-            for (let i = 0; i < 500; i++) {
-                const confetti = document.createElement('div');
-                confetti.className = 'confetti';
-                confetti.style.left = `${Math.random() * 100}%`;
-                // Random size between 5px and 15px
-                const size = 5 + Math.random() * 10;
-                confetti.style.width = `${size}px`;
-                confetti.style.height = `${size}px`;
-                // Random fall duration between 6s and 12s
-                confetti.style.animationDuration = `${6 + Math.random() * 6}s`;
-                // Random rotation between 360 and 720 degrees
-                confetti.style.setProperty('--spin', `${360 + Math.random() * 360}deg`);
-                // Random horizontal drift between -100px and 100px
-                confetti.style.setProperty('--drift', `${-100 + Math.random() * 200}px`);
-                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                container.appendChild(confetti);
-            }
-        }
-        
-        checkHoliday();
     </script>
 </body>
 </html>";

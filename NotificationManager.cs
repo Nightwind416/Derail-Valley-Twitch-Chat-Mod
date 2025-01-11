@@ -3,19 +3,25 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
-using DV.UIFramework;
 
 namespace TwitchChat
 {
     /// <summary>
-    /// Manages Twitch chat messages and in-game notifications.
-    /// Handles message queuing, processing, and display of notifications
-    /// in the game world. Provides parsing and filtering of incoming chat messages
-    /// and manages notification attachments to game objects.
+    /// Manages in-game notifications and Twitch chat message display.
+    /// Handles message queuing, processing, and visual presentation of notifications.
+    /// Provides real-time chat integration and notification attachment to game objects.
     /// </summary>
-    public class MessageHandler
+    public class NotificationManager
     {
+        /// <summary>
+        /// Counter for testing message queue functionality.
+        /// </summary>
         private static int messageQueueTestCounter = 1;
+
+        /// <summary>
+        /// Queue storing different types of notifications for processing.
+        /// Keys represent notification types, values store the notification messages.
+        /// </summary>
         public static Dictionary<string, string> NewNotificationQueue = new()
         {
             { "webSocketNotification", "" },
@@ -24,10 +30,11 @@ namespace TwitchChat
         };
 
         /// <summary>
-        /// Sets a notification variable in the queue.
+        /// Sets a notification message in the queue for processing.
+        /// Updates existing notifications or adds new ones as needed.
         /// </summary>
-        /// <param name="notification_type">The notification type.</param>
-        /// <param name="message">The notification message.</param>
+        /// <param name="notification_type">Type identifier for the notification.</param>
+        /// <param name="message">Content of the notification message.</param>
         public static void SetVariable(string notification_type, string message)
         {
             if (NewNotificationQueue.ContainsKey(notification_type))
@@ -90,6 +97,15 @@ namespace TwitchChat
         public static void HandleNotification(dynamic jsonMessage)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
+
+            Main.LogEntry(methodName, "Attempting to handle notification...");
+
+            // if (Settings.Instance.notificationsEnabled == false)
+            // {
+            //     Main.LogEntry(methodName, "Notification system disabled, skipping.");
+            //     return;
+            // }
+            // Main.LogEntry(methodName, "Notification system enabled, continuing...");
         
             try
             {
@@ -116,7 +132,7 @@ namespace TwitchChat
                 }
 
                 // Skip processing if message is from ourselves (unless debug setting is enabled)
-                if (chatterId == TwitchEventHandler.user_id && !Settings.Instance.processOwnMessages)
+                if (chatterId == TwitchEventHandler.user_id && !Settings.Instance.processOwn)
                 {
                     Main.LogEntry($"{methodName}", $"Skipping message from self (ID: {chatterId})");
                     return;
@@ -133,7 +149,24 @@ namespace TwitchChat
                         return;
                     }
 
-                    // Show notification only for non-command messages
+                    // Add message to in-game display boards
+                    try
+                    {
+                        MenuManager.Instance.AddMessageToPanelDisplays(chatter, text);
+                    }
+                    catch (Exception ex)
+                    {
+                        Main.LogEntry($"{methodName}", $"Failed to add message to display boards: {ex.Message}");
+                    }
+
+                    // Check if notification system is enabled
+                    if (Settings.Instance.notificationsEnabled == false)
+                    {
+                        Main.LogEntry(methodName, "Notification system disabled, skipping.");
+                        return;
+                    }
+                    Main.LogEntry(methodName, "Notification system enabled, continuing...");
+
                     try
                     {
                         Main.LogEntry($"{methodName}", "Attempting to queue notification...");
@@ -246,7 +279,7 @@ namespace TwitchChat
             }
 
             // Find NotificationManager in the scene
-            NotificationManager notificationManager = UnityEngine.Object.FindObjectOfType<NotificationManager>();
+            DV.UIFramework.NotificationManager notificationManager = UnityEngine.Object.FindObjectOfType<DV.UIFramework.NotificationManager>();
             if (notificationManager == null)
             {
                 Main.LogEntry(methodName, "NotificationManager not found in the scene.");
@@ -274,7 +307,7 @@ namespace TwitchChat
                 var notification = notificationManager.ShowNotification(
                     displayed_text,                     // Text
                     null,                               // Localization parameters
-                    Settings.Instance.messageDuration,  // Duration
+                    Settings.Instance.notificationDuration,  // Duration
                     false,                              // Clear existing notifications
                     // found_object?.transform,         // Attach to GameObject if not null
                     null,                               // Temp force null for GameObject.transform

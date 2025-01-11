@@ -8,12 +8,21 @@ namespace TwitchChat
 {
     /// <summary>
     /// Manages Twitch API interactions and event handling.
-    /// Provides methods for user authentication, sending messages, announcements, whispers,
-    /// and handling various Twitch API endpoints.
     /// </summary>
+    /// <remarks>
+    /// This class handles:
+    /// - User authentication and validation
+    /// - Chat message sending and receiving
+    /// - Channel announcements and whispers
+    /// - API endpoint communication
+    /// - Event subscription management
+    /// </remarks>
     public class TwitchEventHandler
     {
+        /// <summary>Shared HttpClient instance for API requests</summary>
         public static readonly HttpClient httpClient = new();
+        
+        /// <summary>Current user's Twitch ID</summary>
         public static string user_id = string.Empty;
 
         /// <summary>

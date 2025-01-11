@@ -9,7 +9,7 @@
 		<DerailValleyManagedAssets>D:\SteamLibrary\steamapps\common\Derail Valley\DerailValley_Data\Managed\</DerailValleyManagedAssets> <!-- Change to local game install path during build -->
 		<CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
 		<DebugType>none</DebugType>
-		<ModVersion>2.0.0</ModVersion>
+		<ModVersion>3.0.0</ModVersion>
 		<ModAuthor>Nightwind416</ModAuthor>
 		<GameVersion>build 99.3</GameVersion>
 		<EntryMethod>TwitchChat.Main.Load</EntryMethod>
@@ -50,6 +50,34 @@
 		</Reference>
 		<Reference Include="UnityEngine.InputLegacyModule">
 			<HintPath>$(DerailValleyManagedAssets)UnityEngine.InputLegacyModule.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="DV.UI">
+			<HintPath>$(DerailValleyManagedAssets)DV.UI.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="DV.Utils">
+			<HintPath>$(DerailValleyManagedAssets)DV.Utils.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="UnityEngine.UI">
+			<HintPath>$(DerailValleyManagedAssets)UnityEngine.UI.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="UnityEngine.TextRenderingModule">
+			<HintPath>$(DerailValleyManagedAssets)UnityEngine.TextRenderingModule.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="Unity.TextMeshPro.dll">
+			<HintPath>$(DerailValleyManagedAssets)Unity.TextMeshPro.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="UnityEngine.PhysicsModule">
+			<HintPath>$(DerailValleyManagedAssets)UnityEngine.PhysicsModule.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="UnityEngine.EventSystems">
+			<HintPath>$(DerailValleyManagedAssets)UnityEngine.EventSystems.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
 	</ItemGroup>
@@ -118,8 +146,15 @@
 	</Target>
 
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
-		<!-- Package after Release build -->
-		<Exec Condition="'$(ConfigurationName)' == 'Release' And '$(OS)' == 'Windows_NT'" Command="powershell -executionpolicy bypass -Command &quot;./package.ps1&quot;" />
-		<Exec Condition="'$(ConfigurationName)' == 'Release' And '$(OS)' != 'Windows_NT'" Command="pwsh -Command &quot;./package.ps1&quot;" />
+		 <!-- Copy to game mods folder -->
+        <PropertyGroup>
+            <ModOutputPath>D:\SteamLibrary\steamapps\common\Derail Valley\Mods\TwitchChat</ModOutputPath>
+        </PropertyGroup>
+        <MakeDir Directories="$(ModOutputPath)" />
+        <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll;$(OutputPath)info.json" DestinationFolder="$(ModOutputPath)" />
+        
+        <!-- Package after Release build -->
+        <Exec Condition="'$(ConfigurationName)' == 'Release' And '$(OS)' == 'Windows_NT'" Command="powershell -executionpolicy bypass -Command &quot;./package.ps1&quot;" />
+        <Exec Condition="'$(ConfigurationName)' == 'Release' And '$(OS)' != 'Windows_NT'" Command="pwsh -Command &quot;./package.ps1&quot;" />
 	</Target>
 </Project>
