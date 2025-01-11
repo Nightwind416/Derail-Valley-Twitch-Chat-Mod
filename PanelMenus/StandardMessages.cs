@@ -81,7 +81,7 @@ namespace TwitchChat.PanelMenus
             });
 
             // Disconnect Message Text
-            disconnectMessage = PanelConstructor.DisplayText.Create(connectDisconnectSection.transform, "", 10, 130, Color.cyan, 5, 10);
+            disconnectMessage = PanelConstructor.DisplayText.Create(connectDisconnectSection.transform, "", 10, 135, Color.cyan, 5, 10);
         }
         // private void CreateNewFollowerSubscriberSection()
         // {

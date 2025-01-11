@@ -30,12 +30,12 @@ namespace TwitchChat.PanelMenus
 
         private void CreateCommandsSettingsSection()
         {
-            commandsSettingsSection = PanelConstructor.Section.Create(panelObject.transform, "Commands Settings", 25, 185, false);
+            commandsSettingsSection = PanelConstructor.Section.Create(panelObject.transform, "Commands Settings", 25, 200, false);
             
             // !Commands Message Label
             PanelConstructor.Label.Create(commandsSettingsSection.transform, "!Commands Message", 5, 8);
             
-            // Connect Message Toggle
+            // Commands Message Toggle
             commandsMessageEnabled = PanelConstructor.Toggle.Create(commandsSettingsSection.transform, 155, 15, "Enabled", "Disabled", Settings.Instance.commandsMessageEnabled);
 
             // Add listener after toggle creation
@@ -45,8 +45,8 @@ namespace TwitchChat.PanelMenus
                 MenuManager.Instance.UpdateCommandsMessageToggles(value);
             });
 
-            // Connect Message Text
-            commandsMessage = PanelConstructor.DisplayText.Create(commandsSettingsSection.transform, "", 10, 30, Color.cyan);
+            // Commands Message Text
+            commandsMessage = PanelConstructor.DisplayText.Create(commandsSettingsSection.transform, "", 10, 33, Color.cyan, 2);
 
             // Horizontal line
             PanelConstructor.HorizontalBar.Create(commandsSettingsSection.transform, 70);
@@ -65,7 +65,7 @@ namespace TwitchChat.PanelMenus
             });
 
             // Info Message Text
-            infoMessage = PanelConstructor.DisplayText.Create(commandsSettingsSection.transform, "", 10, 100, Color.cyan, 6);
+            infoMessage = PanelConstructor.DisplayText.Create(commandsSettingsSection.transform, "", 10, 102, Color.cyan, 7);
         }
         // private void CreateCustomCommandsSection()
         // {

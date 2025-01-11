@@ -15,7 +15,7 @@ namespace TwitchChat.PanelMenus
 
         private void CreateSettingsSection()
         {
-            settingsSection = PanelConstructor.Section.Create(panelObject.transform, "Settings", 25, 175, false);
+            settingsSection = PanelConstructor.Section.Create(panelObject.transform, "Settings", 25, 200, false);
 
             // Timed Messages label
             PanelConstructor.Label.Create(settingsSection.transform, "Toggle", 10, 10, Color.white);
@@ -33,7 +33,7 @@ namespace TwitchChat.PanelMenus
             // Horizontal line
             PanelConstructor.HorizontalBar.Create(settingsSection.transform, 60);
             
-            PanelConstructor.DisplayText.Create(settingsSection.transform, "Timed Messages message editing has not yet been integrated into the in-game panel system. Utilize the Unity Mod Manager menu or edit the settings.xml and restart the game.", 10, 70, Color.yellow, 8);
+            PanelConstructor.DisplayText.Create(settingsSection.transform, "Timed Messages interval and text editing has not yet been integrated into the in-game panel system. Utilize the Unity Mod Manager menu or edit the TwitchChatMod settings.xml and restart the game.", 10, 70, Color.yellow, 9, 10);
         }
 
         public override void Show()

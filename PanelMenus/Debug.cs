@@ -44,10 +44,10 @@ namespace TwitchChat.PanelMenus
             // Debug Level button - modify the button creation
             debugLevelButton = PanelConstructor.Button.Create(debugLevelSection.transform, $"{Settings.Instance.debugLevel}", 35, 17, Color.yellow, () => {
                 CycleDebugLevel();
-            });
+            }, 50);
             
             // Debug Level label
-            // PanelConstructor.Label.Create(debugLevelSection.transform, "Debug Level", 70, 10);
+            PanelConstructor.Label.Create(debugLevelSection.transform, "Debug Level", 70, 10);
 
             // Horizontal line
             PanelConstructor.HorizontalBar.Create(debugLevelSection.transform, 35);

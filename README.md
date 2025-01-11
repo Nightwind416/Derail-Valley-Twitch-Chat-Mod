@@ -39,6 +39,7 @@ A mod that seamlessly integrates Twitch chat into your Derail Valley gameplay ex
 2. Click "Request Authorization Token"
 3. Complete the OAuth authentication in your browser
 4. Token is securely saved and valid for ~30 days
+TODO: Improve websocket error/bad authentication response
 
 ### Settings Configuration
 

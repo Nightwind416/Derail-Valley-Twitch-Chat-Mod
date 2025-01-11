@@ -180,14 +180,14 @@ namespace TwitchChat
                     Main.LogEntry(methodName, $"Error decoding saved token: {ex.Message}");
                     Settings.Instance.EncodedOAuthToken = string.Empty;
                     Settings.Save(Settings.Instance, Main.ModEntry);
-                    Settings.Instance.authentication_status = "Authorization failed. Please try again.";
+                    Settings.Instance.authentication_status = "Error decoding saved token. Please try again.";
                     return;
                 }
             }
             else
             {
                 Main.LogEntry(methodName, "No saved token found.");
-                Settings.Instance.authentication_status = "Authorization failed. Please try again.";
+                Settings.Instance.authentication_status = "No saved token found. Please try again.";
                 return;
             }
             
@@ -234,6 +234,7 @@ namespace TwitchChat
                 catch (HttpRequestException ex)
                 {
                     Main.LogEntry(methodName, $"HTTP request error: {ex.Message}");
+                    Settings.Instance.authentication_status = "HTTP request error";
                     if (ex.InnerException != null)
                     {
                         Main.LogEntry(methodName, $"Inner exception: {ex.InnerException.Message}");
@@ -242,6 +243,7 @@ namespace TwitchChat
                 catch (TaskCanceledException ex)
                 {
                     Main.LogEntry(methodName, $"Request timed out: {ex.Message}");
+                    Settings.Instance.authentication_status = "Request timed out";
                     if (ex.InnerException != null)
                     {
                         Main.LogEntry(methodName, $"Inner exception: {ex.InnerException.Message}");
@@ -250,6 +252,7 @@ namespace TwitchChat
                 catch (Exception ex)
                 {
                     Main.LogEntry(methodName, $"Unexpected error: {ex.Message}");
+                    Settings.Instance.authentication_status = "Unexpected error";
                     if (ex.InnerException != null)
                     {
                         Main.LogEntry(methodName, $"Inner exception: {ex.InnerException.Message}");
@@ -260,11 +263,13 @@ namespace TwitchChat
                 if (i < retryCount - 1)
                 {
                     Main.LogEntry(methodName, "Retrying...");
+                    Settings.Instance.authentication_status = "Retrying";
                     await Task.Delay(2000); // Wait for 2 seconds before retrying
                 }
                 else
                 {
                     Main.LogEntry(methodName, "Max retry attempts reached. Giving up.");
+                    Settings.Instance.authentication_status = "Max retry attempts reached. Giving up.";
                 }
             }
         }

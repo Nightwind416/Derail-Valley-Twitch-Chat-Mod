@@ -70,7 +70,7 @@ namespace TwitchChat.PanelMenus
                 else
                 _ = WebSocketManager.ConnectToWebSocket();
             },
-            80  // Fixed width that accommodates both "Connect" and "Disconnect"
+            70
             );
 
             // Horizontal line
