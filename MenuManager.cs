@@ -128,7 +128,7 @@ namespace TwitchChat
             {
                 if (instance == null)
                 {
-                    GameObject go = new("TwitchChatModMenuManager");
+                    GameObject go = new("TwitchChatMenuManager");
                     instance = go.AddComponent<MenuManager>();
                     DontDestroyOnLoad(go);
                 }

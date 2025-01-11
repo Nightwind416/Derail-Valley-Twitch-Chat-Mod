@@ -288,7 +288,7 @@ namespace TwitchChat
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Derail Valley TwitchChatMod Authorization</title>
+    <title>Derail Valley TwitchChat Mod Authorization</title>
     <meta charset='UTF-8'>
     <style>
         body {
@@ -367,7 +367,7 @@ namespace TwitchChat
         </div>
         
         <div class='section'>
-            <h2>TwitchChatMod Details</h2>
+            <h2>TwitchChat Mod Details</h2>
         <div>
             <a href='https://www.nexusmods.com/derailvalley/mods/1069' target='_blank'>Nexus Mods Page</a> |
             <a href='https://github.com/Nightwind416/Derail-Valley-Twitch-Chat-Mod' target='_blank'>GitHub Repository</a> |

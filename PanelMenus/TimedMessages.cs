@@ -52,7 +52,7 @@ namespace TwitchChat.PanelMenus
             // Horizontal line
             PanelConstructor.HorizontalBar.Create(settingsSection.transform, 60);
             
-            PanelConstructor.DisplayText.Create(settingsSection.transform, "Timed Messages interval and text editing has not yet been integrated into the in-game panel system. Utilize the Unity Mod Manager menu or edit the TwitchChatMod settings.xml and restart the game.", 10, 70, Color.yellow, 9, 10);
+            PanelConstructor.DisplayText.Create(settingsSection.transform, "Timed Messages interval and text editing has not yet been integrated into the in-game panel system. Utilize the Unity Mod Manager menu or edit the TwitchChat mod settings.xml and restart the game.", 10, 70, Color.yellow, 9, 10);
         }
 
         /// <summary>

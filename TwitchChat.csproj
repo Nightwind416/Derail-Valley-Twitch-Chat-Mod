@@ -9,7 +9,7 @@
 		<DerailValleyManagedAssets>D:\SteamLibrary\steamapps\common\Derail Valley\DerailValley_Data\Managed\</DerailValleyManagedAssets> <!-- Change to local game install path during build -->
 		<CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
 		<DebugType>none</DebugType>
-		<ModVersion>2.0.0</ModVersion>
+		<ModVersion>3.0.0</ModVersion>
 		<ModAuthor>Nightwind416</ModAuthor>
 		<GameVersion>build 99.3</GameVersion>
 		<EntryMethod>TwitchChat.Main.Load</EntryMethod>
@@ -148,7 +148,7 @@
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
 		 <!-- Copy to game mods folder -->
         <PropertyGroup>
-            <ModOutputPath>D:\SteamLibrary\steamapps\common\Derail Valley\Mods\TwitchChatMod</ModOutputPath>
+            <ModOutputPath>D:\SteamLibrary\steamapps\common\Derail Valley\Mods\TwitchChat</ModOutputPath>
         </PropertyGroup>
         <MakeDir Directories="$(ModOutputPath)" />
         <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll;$(OutputPath)info.json" DestinationFolder="$(ModOutputPath)" />

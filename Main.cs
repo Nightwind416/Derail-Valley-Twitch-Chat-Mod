@@ -20,7 +20,7 @@ namespace TwitchChat
     {
         public static bool _dispatcherModDetected;
         public static UnityModManager.ModEntry ModEntry { get; private set; } = null!;
-        public static string settingsFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mods", "TwitchChatMod", "Settings.xml");
+        public static string settingsFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mods", "TwitchChat", "Settings.xml");
         public static string debugLog = string.Empty;
         private static string messageLog = string.Empty;
 
@@ -140,13 +140,13 @@ namespace TwitchChat
             string methodName = MethodBase.GetCurrentMethod().Name;
             if (ModEntry.Enabled)
             {
-                NotificationManager.AttachNotification("TwitchChatMod is now receiving message notifications from your channel.", "null");
+                NotificationManager.AttachNotification("The TwitchChat mod is now receiving message notifications from your channel.", "null");
                 LogEntry(methodName, "Mod Enabled!");
                 ModEntry.Enabled = true;
             }
             else
             {
-                NotificationManager.AttachNotification("TwitchChatMod is no longer receiving message notifications from your Channel.", "null");
+                NotificationManager.AttachNotification("The TwitchChat mod is no longer receiving message notifications from your Channel.", "null");
                 LogEntry(methodName, "Mod Disabled!");
                 ModEntry.Enabled = false;
             }
@@ -181,7 +181,7 @@ namespace TwitchChat
         /// </summary>
         private static void InitializeLogFiles()
         {
-            string logDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mods", "TwitchChatMod", "Logs");
+            string logDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mods", "TwitchChat", "Logs");
             string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
         
             // Create the directory if it does not exist

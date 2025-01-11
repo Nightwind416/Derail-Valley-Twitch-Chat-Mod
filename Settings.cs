@@ -51,13 +51,13 @@ namespace TwitchChat
         
         // Standard Messages Settings
         public bool connectMessageEnabled = true;
-        public string connectMessage = "TwitchChatMod connected! Messages are being relayed to in-game panels.";
+        public string connectMessage = "TwitchChat mod connected! Messages are being relayed to in-game panels.";
         public bool newFollowerMessageEnabled = true;
         public string newFollowerMessage = "Welcome to the crew!";
         public bool newSubscriberMessageEnabled = true;
         public string newSubscriberMessage = "Thank you for subscribing!";
         public bool disconnectMessageEnabled = true;
-        public string disconnectMessage = "TwitchChatMod disconnected! Messages are no longer being relayed to in-game panels.";
+        public string disconnectMessage = "TwitchChat mod disconnected! Messages are no longer being relayed to in-game panels.";
 
         // Command Messages Settings
         public bool commandsMessageEnabled = true;
@@ -271,7 +271,9 @@ namespace TwitchChat
                 // Disable all controls when system is running
                 GUI.enabled = !AutomatedMessages.AreTimersRunning;
                 GUI.color = Color.yellow;
-                GUILayout.Label("Setting type/colors is not implemented yet. All choices will send as regular channel chat messages at their designated intervals.");
+                GUILayout.Label("Colors/types are not fully implemented yet, except 'Blue'.");
+                GUILayout.Label("Blue will send as a channel 'announcment' type, at the given interval.");
+                GUILayout.Label("All other color choices will send a regular chat message, at their designated intervals.");
                 GUI.color = Color.white;
                 GUILayout.Label("Note 1: Timed messages only require a validated authentication token and can be sent even if not connected to the channel and receiving messages.");
                 GUILayout.Label("Note 2: Set the message timer to '0' to completly ignore a timed message when enabling the system.");
