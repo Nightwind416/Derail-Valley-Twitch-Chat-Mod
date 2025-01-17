@@ -5,6 +5,7 @@ using TwitchChat.PanelMenus;
 using TwitchChat.PanelDisplays;
 using System.Collections.Generic;
 using System;
+using DV.Booklets;
 
 namespace TwitchChat
 {
@@ -31,7 +32,8 @@ namespace TwitchChat
         public StandardMessagesPanel? StandardMessagesPanel { get; set; }
         public CommandMessagesPanel? CommandMessagesPanel { get; set; }
         public TimedMessagesPanel? TimedMessagesPanel { get; set; }
-        public ConfigurationPanel? ConfigurationPanel { get; set; }
+        public Config1Panel? Config1Panel { get; set; }
+        public Config2Panel? Config2Panel { get; set; }
         public DebugPanel? DebugPanel { get; set; }
 
         // Panel Displays
@@ -79,7 +81,8 @@ namespace TwitchChat
             StandardMessages,
             CommandMessages,
             TimedMessages,
-            Configuration,
+            Config1,
+            Config2,
             Debug
         }
 
@@ -114,7 +117,8 @@ namespace TwitchChat
             { PanelType.StandardMessages, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
             { PanelType.CommandMessages, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
             { PanelType.TimedMessages, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
-            { PanelType.Configuration, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
+            { PanelType.Config1, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
+            { PanelType.Config2, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
             { PanelType.Debug, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) }
         };
 
@@ -142,14 +146,14 @@ namespace TwitchChat
         public MenuManager()
         {
             // Initialize licenses with their index
-            string[] licenseNames = {
+            string[] licenseNames = [
                 "LicenseTrainDriver",
                 "LicenseShunting",
                 "LicenseLocomotiveDE2",
                 "LicenseMuseumCitySouth",
                 "LicenseFreightHaul",
                 "LicenseDispatcher1"
-            };
+            ];
 
             for (int i = 0; i < licenseNames.Length; i++)
             {
@@ -219,7 +223,8 @@ namespace TwitchChat
             var standardMessagesPanel = new StandardMessagesPanel(parent);
             var commandMessagesPanel = new CommandMessagesPanel(parent);
             var timedMessagesPanel = new TimedMessagesPanel(parent);
-            var configurationPanel = new ConfigurationPanel(parent);
+            var config1Panel = new Config1Panel(parent);
+            var config2Panel = new Config2Panel(parent);
             var debugPanel = new DebugPanel(parent);
 
             // Hide all template panels
@@ -426,7 +431,8 @@ namespace TwitchChat
             license.StandardMessagesPanel = new StandardMessagesPanel(menuPanel);
             license.CommandMessagesPanel = new CommandMessagesPanel(menuPanel);
             license.TimedMessagesPanel = new TimedMessagesPanel(menuPanel);
-            license.ConfigurationPanel = new ConfigurationPanel(menuPanel);
+            license.Config1Panel = new Config1Panel(menuPanel);
+            license.Config2Panel = new Config2Panel(menuPanel);
             license.DebugPanel = new DebugPanel(menuPanel);
 
             // Explicitly hide all panels immediately after creation
@@ -442,7 +448,8 @@ namespace TwitchChat
             if (license.StandardMessagesPanel != null) license.StandardMessagesPanel.OnBackButtonClicked += () => ShowPanel("Main", license);
             if (license.CommandMessagesPanel != null) license.CommandMessagesPanel.OnBackButtonClicked += () => ShowPanel("Main", license);
             if (license.TimedMessagesPanel != null) license.TimedMessagesPanel.OnBackButtonClicked += () => ShowPanel("Main", license);
-            if (license.ConfigurationPanel != null) license.ConfigurationPanel.OnBackButtonClicked += () => ShowPanel("Main", license);
+            if (license.Config1Panel != null) license.Config1Panel.OnBackButtonClicked += () => ShowPanel("Main", license);
+            if (license.Config2Panel != null) license.Config2Panel.OnBackButtonClicked += () => ShowPanel("Main", license);
             if (license.DebugPanel != null) license.DebugPanel.OnBackButtonClicked += () => ShowPanel("Main", license);
 
             // Show initial panel
@@ -464,7 +471,8 @@ namespace TwitchChat
             license.StandardMessagesPanel?.Hide();
             license.CommandMessagesPanel?.Hide();
             license.TimedMessagesPanel?.Hide();
-            license.ConfigurationPanel?.Hide();
+            license.Config1Panel?.Hide();
+            license.Config2Panel?.Hide();
             license.DebugPanel?.Hide();
         }
 
@@ -489,7 +497,8 @@ namespace TwitchChat
                 "Standard Messages" => PanelType.StandardMessages,
                 "Command Messages" => PanelType.CommandMessages,
                 "Timed Messages" => PanelType.TimedMessages,
-                "Configuration" => PanelType.Configuration,
+                "Config1" => PanelType.Config1,
+                "Config2" => PanelType.Config2,
                 "Debug" => PanelType.Debug,
                 _ => PanelType.Main
             };
@@ -541,8 +550,11 @@ namespace TwitchChat
                 case PanelType.TimedMessages:
                     license.TimedMessagesPanel?.Show();
                     break;
-                case PanelType.Configuration:
-                    license.ConfigurationPanel?.Show();
+                case PanelType.Config1:
+                    license.Config1Panel?.Show();
+                    break;
+                case PanelType.Config2:
+                    license.Config2Panel?.Show();
                     break;
                 case PanelType.Debug:
                     license.DebugPanel?.Show();
@@ -725,6 +737,87 @@ namespace TwitchChat
                 if (license.TimedMessagesPanel != null)
                 {
                     license.TimedMessagesPanel.UpdateTimedMessagesEnabled(value);
+                }
+            }
+        }
+        public void UpdateAllPanelBackgrounds()
+        {
+            foreach (var license in licenses.Values)
+            {
+                if (license.MenuCanvas != null)
+                {
+                    // Update menu panel background
+                    Transform menuPanel = license.MenuCanvas.transform.Find("MenuPanel");
+                    if (menuPanel != null)
+                    {
+                        // Update the main panel background
+                        Image panelImage = menuPanel.GetComponent<Image>();
+                        if (panelImage != null)
+                        {
+                            panelImage.color = Settings.Instance.panelColor;
+                        }
+
+                        // Find all panel backgrounds (direct children of MenuPanel only)
+                        foreach (Transform child in menuPanel)
+                        {
+                            // Only update if it's a panel (contains "Panel" in name)
+                            if (child.name.Contains("Panel"))
+                            {
+                                Image childImage = child.GetComponent<Image>();
+                                if (childImage != null)
+                                {
+                                    childImage.color = Settings.Instance.panelColor;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        public void UpdateAllSectionBackgrounds()
+        {
+            foreach (var license in licenses.Values)
+            {
+                if (license.MenuCanvas != null)
+                {
+                    // Update menu panel background
+                    Transform menuPanel = license.MenuCanvas.transform.Find("MenuPanel");
+                    if (menuPanel != null)
+                    {
+                        // Find all section backgrounds recursively
+                        Image[] sectionImages = menuPanel.GetComponentsInChildren<Image>(true);
+                        foreach (Image image in sectionImages)
+                        {
+                            // Check if this image belongs to a section (parent GameObject name ends with "Section")
+                            if (image.gameObject.name.EndsWith("Section"))
+                            {
+                                image.color = Settings.Instance.sectionColor;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        public void UpdateAllButtonColors()
+        {
+            foreach (var license in licenses.Values)
+            {
+                if (license.MenuCanvas != null)
+                {
+                    Transform menuPanel = license.MenuCanvas.transform.Find("MenuPanel");
+                    if (menuPanel != null)
+                    {
+                        // Find all button images recursively
+                        Image[] buttonImages = menuPanel.GetComponentsInChildren<Image>(true);
+                        foreach (Image image in buttonImages)
+                        {
+                            // Only update images that are attached to buttons
+                            if (image.GetComponent<Button>() != null)
+                            {
+                                image.color = Settings.Instance.buttonColor;
+                            }
+                        }
+                    }
                 }
             }
         }

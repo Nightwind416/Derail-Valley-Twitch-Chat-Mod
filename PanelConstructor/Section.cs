@@ -19,7 +19,7 @@ namespace TwitchChat.PanelConstructor
         /// <returns>Created section GameObject</returns>
         public static GameObject Create(Transform parent, string name, int yPosition, int height, bool createLabel = true)
         {
-            GameObject section = new(name);
+            GameObject section = new($"{name}Section");
             section.transform.SetParent(parent, false);
 
             Image sectionImage = section.AddComponent<Image>();

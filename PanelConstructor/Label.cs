@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.UI;
 
+// TODO: Remove this namespace and class, and replace with DisplayText
+
 namespace TwitchChat.PanelConstructor
 {
     /// <summary>

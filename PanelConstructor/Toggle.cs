@@ -63,7 +63,7 @@ namespace TwitchChat.PanelConstructor
                 });
 
                 // Add tooltip
-                GameObject tooltipObj = new GameObject("Tooltip");
+                GameObject tooltipObj = new("Tooltip");
                 tooltipObj.transform.SetParent(toggleObj.transform, false);
                 TMPro.TextMeshPro tooltipText = tooltipObj.AddComponent<TMPro.TextMeshPro>();
                 tooltipText.text = "Click to toggle";

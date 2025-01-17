@@ -59,7 +59,7 @@ namespace TwitchChat.PanelConstructor
             panelObject.transform.SetParent(parent, false);
             
             Image panelImage = panelObject.AddComponent<Image>();
-            panelImage.color = new Color(0, 0, 0, 0.3f);
+            panelImage.color = Settings.Instance.panelColor;
             
             rectTransform = panelObject.GetComponent<RectTransform>();
             rectTransform.anchorMin = new Vector2(0, 0);
@@ -114,7 +114,7 @@ namespace TwitchChat.PanelConstructor
             // Add viewport with padding for safety
             GameObject viewport = new("Viewport", typeof(RectTransform));
             viewport.transform.SetParent(scrollableArea.transform, false);
-            viewport.AddComponent<Image>().color = new Color(0, 0, 0, 0.1f);
+            viewport.AddComponent<Image>().color = new Color(0, 0, 0, 0.0f);
             viewport.AddComponent<Mask>();
             
             RectTransform viewportRect = viewport.GetComponent<RectTransform>();
@@ -190,7 +190,7 @@ namespace TwitchChat.PanelConstructor
             {
                 if (contentRectTransform == null) return;
 
-                GameObject messageObj = new GameObject($"Message_{Time.time}", typeof(RectTransform));
+                GameObject messageObj = new($"Message_{Time.time}", typeof(RectTransform));
                 messageObj.transform.SetParent(contentRectTransform, false);
 
                 // Configure text component with safe defaults

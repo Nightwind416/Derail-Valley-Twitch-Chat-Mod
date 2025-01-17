@@ -43,11 +43,16 @@ namespace TwitchChat
         public string authentication_status = "Unverified or not set";
         public string EncodedOAuthToken = string.Empty;
         public DebugLevel debugLevel = DebugLevel.Minimal;
-        public string[] activePanels = new string[] { "Main", "Main", "Main", "Main", "Main", "Main" };
+        public string[] activePanels = ["Main", "Main", "Main", "Main", "Main", "Main"];
         public bool notificationsEnabled = true;
         public float notificationDuration = 10;
         public bool processOwn = true;
         public bool processDuplicates = false;
+        
+        // Panel UI Settings
+        public Color panelColor = new(0, 0, 0, 0.3f);
+        public Color sectionColor = new(0, 0, 0, 0.1f);
+        public Color buttonColor = new(0, 0, 0, 0.5f);
         
         // Standard Messages Settings
         public bool connectMessageEnabled = true;

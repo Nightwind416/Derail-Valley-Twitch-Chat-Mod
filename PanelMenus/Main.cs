@@ -31,16 +31,20 @@ namespace TwitchChat.PanelMenus
             // Menu buttons
             CreateMenuButton("Status", 35);
             CreateMenuButton("Notifications", 60);
-            CreateMenuButton("Wide Display", 85);
-            CreateMenuButton("Large Display", 110);
-            CreateMenuButton("Medium Display", 135);
-            CreateMenuButton("Small Display", 160);
-            // CreateMenuButton("Configuration", 185);
-            PanelConstructor.HorizontalBar.Create(panelObject.transform, 185);
-            CreateMenuButton("Standard Messages", 210);
-            CreateMenuButton("Command Messages", 235);
-            CreateMenuButton("Timed Messages", 260);
-            CreateMenuButton("Debug", 285);
+            CreateMenuButton("Standard Messages", 85);
+            CreateMenuButton("Command Messages", 110);
+            CreateMenuButton("Timed Messages", 135);
+            CreateMenuButton("Debug", 160);
+            
+            // Config buttons side by side
+            CreateMenuButton("Config1", 185, -35); // Offset to the left
+            CreateMenuButton("Config2", 185, 35);  // Offset to the right
+            
+            // Display buttons
+            CreateMenuButton("Wide Display", 210);
+            CreateMenuButton("Large Display", 235);
+            CreateMenuButton("Medium Display", 260);
+            CreateMenuButton("Small Display", 285);
         }
 
         /// <summary>
@@ -48,7 +52,8 @@ namespace TwitchChat.PanelMenus
         /// </summary>
         /// <param name="text">The button text.</param>
         /// <param name="verticalPosition">The vertical position of the button.</param>
-        private void CreateMenuButton(string text, int verticalPosition)
+        /// <param name="horizontalOffset">The horizontal offset of the button.</param>
+        private void CreateMenuButton(string text, int verticalPosition, float horizontalOffset = 0)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
             
@@ -56,7 +61,7 @@ namespace TwitchChat.PanelMenus
             Button button = PanelConstructor.Button.Create(
                 panelObject.transform, 
                 text, 
-                100, 
+                (int)(100 + horizontalOffset),  // Add horizontal offset to base position
                 verticalPosition,
                 clicked: () => {
                     Main.LogEntry(methodName, $"Button clicked: {text}");

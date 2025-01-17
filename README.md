@@ -11,6 +11,7 @@ A mod that seamlessly integrates Twitch chat into your Derail Valley gameplay ex
 - **Message Logging**: Detailed chat logs for post-stream review
 - **Automated Messages**: Schedule periodic announcements to keep your chat informed
 - **Display Panels**: Wide, Large, Medium, and Small sized message display panels
+- **Color Customization**: Ability to customize panel, section, and button coloring
 
 ### Upcoming Features (In Development)
 
@@ -53,6 +54,9 @@ A mod that seamlessly integrates Twitch chat into your Derail Valley gameplay ex
 -- Large - Approx same size as the DE2 back window
 -- Medium - About double the license size
 -- Small - Same size as the license
+- Config Panels
+-- Config1 - Customize background panel and section coloring
+-- Config2 - Customize button coloring and reset color cusotmizations
 - Menu Panels
 -- Main - Access all other panels from here
 -- Notifications - Enable/Disable the notification popups when new messges are received and set duration
@@ -107,7 +111,13 @@ Access advanced options by expanding the "Debug and Troubleshooting" section in 
 
 ## Version History
 
-### 3.0.0 (January 11, 2024)
+### 3.1.0 (January 16,2025)
+
+- Color Customization settings added
+-- 2 new 'Config' panels added with options to change the panel background, section, and button coloring
+-- Reset buttons to 'reset' the colors back to 'default'
+
+### 3.0.0 (January 11, 2025)
 
 - Another major code overhaul to introduce:
 -- Full in-game message panel displays
