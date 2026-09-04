@@ -45,7 +45,7 @@ namespace TwitchChat.PanelMenus
             timedMessageSystemToggle.onValueChanged.AddListener((value) => {
                 Settings.Instance.timedMessageSystemToggle = value;
                 AutomatedMessages.ToggleTimedMessages();
-                Settings.Instance.Save(Main.ModEntry);
+                Settings.Instance.RequestSave();
                 MenuManager.Instance.UpdateAllTimedMessageToggles(value);
             });
 

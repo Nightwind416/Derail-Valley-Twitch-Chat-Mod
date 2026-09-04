@@ -57,7 +57,7 @@ namespace TwitchChat.PanelMenus
             // Add listener after toggle creation
             commandsMessageEnabled.onValueChanged.AddListener((value) => {
                 Settings.Instance.commandsMessageEnabled = value;
-                Settings.Instance.Save(Main.ModEntry);
+                Settings.Instance.RequestSave();
                 MenuManager.Instance.UpdateCommandsMessageToggles(value);
             });
 
@@ -76,7 +76,7 @@ namespace TwitchChat.PanelMenus
             // Add listener after toggle creation
             infoMessageEnabled.onValueChanged.AddListener((value) => {
                 Settings.Instance.infoMessageEnabled = value;
-                Settings.Instance.Save(Main.ModEntry);
+                Settings.Instance.RequestSave();
                 MenuManager.Instance.UpdateInfoMessageToggles(value);
             });
 

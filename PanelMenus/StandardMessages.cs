@@ -65,7 +65,7 @@ namespace TwitchChat.PanelMenus
             // Add listener after toggle creation
             connectMessageEnabled.onValueChanged.AddListener((value) => {
                 Settings.Instance.connectMessageEnabled = value;
-                Settings.Instance.Save(Main.ModEntry);
+                Settings.Instance.RequestSave();
                 MenuManager.Instance.UpdateAllConnectMessageEnabledToggles(value);
             });
 
@@ -84,7 +84,7 @@ namespace TwitchChat.PanelMenus
             // Add listener after toggle creation
             disconnectMessageEnabled.onValueChanged.AddListener((value) => {
                 Settings.Instance.disconnectMessageEnabled = value;
-                Settings.Instance.Save(Main.ModEntry);
+                Settings.Instance.RequestSave();
                 MenuManager.Instance.UpdateAllDisconnectMessageEnabledToggles(value);
             });
 
@@ -105,7 +105,7 @@ namespace TwitchChat.PanelMenus
         //     // // Add listener after toggle creation
         //     // newFollowerMessageEnabled.onValueChanged.AddListener((value) => {
         //     //     Settings.Instance.newFollowerMessageEnabled = value;
-        //     //     Settings.Instance.Save(Main.ModEntry);
+        //     //     Settings.Instance.RequestSave();
         //     //     MenuManager.Instance.UpdateAllNewFollowerMessageEnabledToggles(value);
         //     // });
 
@@ -125,7 +125,7 @@ namespace TwitchChat.PanelMenus
         //     // // Add listener after toggle creation
         //     // newSubscriberMessageEnabled.onValueChanged.AddListener((value) => {
         //     //     Settings.Instance.newSubscriberMessageEnabled = value;
-        //     //     Settings.Instance.Save(Main.ModEntry);
+        //     //     Settings.Instance.RequestSave();
         //     //     MenuManager.Instance.UpdateAllNewSubscriberMessageEnabledToggles(value);
         //     // });
 

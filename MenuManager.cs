@@ -1,70 +1,66 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using DV.CabControls;
+using DV.Items;
+using DV.Utils;
+using TwitchChat.PanelDisplays;
+using TwitchChat.PanelMenus;
 using UnityEngine;
 using UnityEngine.UI;
-using System.Reflection;
-using TwitchChat.PanelMenus;
-using TwitchChat.PanelDisplays;
-using System.Collections.Generic;
-using System;
-using DV.Booklets;
+using VRTK;
 
 namespace TwitchChat
 {
     /// <summary>
-    /// Represents a license instance with associated UI panels and game objects.
-    /// </summary>
-    /// <remarks>
-    /// Manages the relationship between in-game license objects and their corresponding UI elements,
-    /// including menu canvases, panel displays, and sticky tape attachments.
-    /// </remarks>
-    public class License
-    {
-        public string Name { get; private set; }
-        public int LicenseIndex { get; private set; }  // Add this property
-        public GameObject? LicenseObject { get; set; }
-        public GameObject? MenuCanvas { get; set; }
-        public bool AttachedToStickyTape { get; set; }
-        public GameObject? StickyTapeBase { get; set; }
-
-        // Panel Menus
-        public MainPanel? MainPanel { get; set; }
-        public StatusPanel? StatusPanel { get; set; }
-        public NotificationsPanel? NotificationsPanel { get; set; }
-        public StandardMessagesPanel? StandardMessagesPanel { get; set; }
-        public CommandMessagesPanel? CommandMessagesPanel { get; set; }
-        public TimedMessagesPanel? TimedMessagesPanel { get; set; }
-        public Config1Panel? Config1Panel { get; set; }
-        public Config2Panel? Config2Panel { get; set; }
-        public DebugPanel? DebugPanel { get; set; }
-
-        // Panel Displays
-        public LargeDisplayPanel? LargeDisplayPanel { get; set; }
-        public MediumDisplayPanel? MediumDisplayPanel { get; set; }
-        public SmallDisplayPanel? SmallDisplayPanel { get; set; }
-        public WideDisplayPanel? WideDisplayPanel { get; set; }
-
-        public License(string name, int index)  // Update constructor
-        {
-            Name = name;
-            LicenseIndex = index;
-        }
-    }
-
-    /// <summary>
     /// Manages the creation, positioning, and interaction of UI menus and panels for the Twitch Chat mod.
     /// </summary>
     /// <remarks>
-    /// This class is responsible for:
-    /// - Creating and managing UI canvases for each license
-    /// - Handling panel visibility and transitions
-    /// - Positioning menus relative to license objects
-    /// - Managing sticky tape attachments and paper visibility
-    /// - Coordinating message displays across all active panels
+    /// Three kinds of host carry the panel stack:
+    /// - Cab display: one canvas parented to the current locomotive interior, placed where the player is looking.
+    ///   Its pose is remembered per locomotive type and restored when the player enters that type again.
+    /// - Wrist panel: one canvas parented to a VR controller so it can be glanced at like a watch.
+    /// - License papers (legacy, optional): canvases riding on the six license items. Items are found through the
+    ///   game's storage system by prefab name, so the object name and hierarchy no longer matter.
     /// </remarks>
     public class MenuManager : MonoBehaviour
     {
+        private const float LicenseScanInterval = 1f;
+        private const float WristSearchInterval = 2f;
+        private const float BaseCanvasScale = 0.001f;
+        private const string PaperFallbackPath = "Pivot/TempPaper(Clone)(Clone) 0/Paper";
+
         private static MenuManager? instance;
-        private readonly Dictionary<string, License> licenses = new();
+        private readonly Dictionary<string, LicenseHost> licenses = new();
+        private readonly CabDisplayHost cabDisplay = new();
+        private readonly WristPanelHost wristPanel = new();
+        private readonly HashSet<string> paperLookupFailed = new();
         private GameObject? templateCanvas;
+
+        private float nextLicenseScanTime;
+        private bool licenseInventoryLogged;
+        private TrainCar? cabDisplayCar;
+        private Transform? wristAnchor;
+        private float nextWristSearchTime;
+
+        private KeyCode placeKey = KeyCode.None;
+        private KeyCode toggleKey = KeyCode.None;
+        private string parsedPlaceKey = string.Empty;
+        private string parsedToggleKey = string.Empty;
+
+        /// <summary>Every host, whether or not its canvas currently exists.</summary>
+        private IEnumerable<PanelHost> AllHosts
+        {
+            get
+            {
+                foreach (LicenseHost license in licenses.Values)
+                {
+                    yield return license;
+                }
+                yield return cabDisplay;
+                yield return wristPanel;
+            }
+        }
 
         /// <summary>
         /// Defines the types of panels available in the mod interface.
@@ -107,7 +103,7 @@ namespace TwitchChat
 
         private readonly Dictionary<PanelType, PanelConfig> panelConfigs = new()
         {
-            { PanelType.Main, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
+            { PanelType.Main, new(new Vector2(200, 330), new Vector2(200, 330), Vector2.zero, Vector3.zero) },
             { PanelType.Status, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
             { PanelType.Notifications, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
             { PanelType.LargeDisplay, new(new Vector2(1200, 650), new Vector2(1200, 650), Vector2.zero, Vector3.zero) },
@@ -141,12 +137,12 @@ namespace TwitchChat
         }
 
         /// <summary>
-        /// Initializes a new instance of MenuManager with predefined license configurations.
+        /// Initializes a new instance of MenuManager with the legacy license hosts.
         /// </summary>
         public MenuManager()
         {
-            // Initialize licenses with their index
-            string[] licenseNames = [
+            string[] licenseNames =
+            [
                 "LicenseTrainDriver",
                 "LicenseShunting",
                 "LicenseLocomotiveDE2",
@@ -157,13 +153,24 @@ namespace TwitchChat
 
             for (int i = 0; i < licenseNames.Length; i++)
             {
-                licenses.Add(licenseNames[i], new License(licenseNames[i], i));
+                licenses.Add(licenseNames[i], new LicenseHost(licenseNames[i], i));
             }
         }
 
         private void Awake()
         {
             CreateTemplateCanvas();
+            PlayerManager.CarChanged += OnPlayerCarChanged;
+        }
+
+        private void OnDestroy()
+        {
+            PlayerManager.CarChanged -= OnPlayerCarChanged;
+        }
+
+        private void OnApplicationQuit()
+        {
+            Settings.Instance.FlushPendingSave(force: true);
         }
 
         /// <summary>
@@ -171,10 +178,10 @@ namespace TwitchChat
         /// </summary>
         private void CreateTemplateCanvas()
         {
-            string methodName = MethodBase.GetCurrentMethod().Name;
+            string methodName = "CreateTemplateCanvas";
 
             Main.LogEntry(methodName, "Creating template canvas - VR Mode: " + VRManager.IsVREnabled());
-            
+
             templateCanvas = new GameObject("TemplateCanvas");
             templateCanvas.SetActive(false);
             DontDestroyOnLoad(templateCanvas);
@@ -183,13 +190,13 @@ namespace TwitchChat
             Canvas canvas = templateCanvas.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.WorldSpace;
             canvas.sortingOrder = 1000;
-            
+
             RectTransform canvasRect = templateCanvas.GetComponent<RectTransform>();
             canvasRect.sizeDelta = panelConfigs[PanelType.Main].CanvasSize;
-            canvasRect.localScale = Vector3.one * 0.001f;
+            canvasRect.localScale = Vector3.one * BaseCanvasScale;
 
-            // Add GraphicRaycaster with proper VR settings
-            var raycaster = templateCanvas.AddComponent<GraphicRaycaster>();
+            // Add GraphicRaycaster for non-VR clicks
+            templateCanvas.AddComponent<GraphicRaycaster>();
 
             // Create template panel
             GameObject menuPanel = new("MenuPanel");
@@ -212,20 +219,19 @@ namespace TwitchChat
         /// <param name="parent">Parent transform to attach panel templates to.</param>
         private void CreatePanelTemplates(Transform parent)
         {
-            // Create one of each panel type as templates
-            var mainPanel = new MainPanel(parent, null);
-            var statusPanel = new StatusPanel(parent);
-            var notificationsPanel = new NotificationsPanel(parent);
-            var largeDisplayPanel = new LargeDisplayPanel(parent);
-            var mediumDisplayPanel = new MediumDisplayPanel(parent);
-            var wideDisplayPanel = new WideDisplayPanel(parent);
-            var smallDisplayPanel = new SmallDisplayPanel(parent);
-            var standardMessagesPanel = new StandardMessagesPanel(parent);
-            var commandMessagesPanel = new CommandMessagesPanel(parent);
-            var timedMessagesPanel = new TimedMessagesPanel(parent);
-            var config1Panel = new Config1Panel(parent);
-            var config2Panel = new Config2Panel(parent);
-            var debugPanel = new DebugPanel(parent);
+            _ = new MainPanel(parent, null);
+            _ = new StatusPanel(parent);
+            _ = new NotificationsPanel(parent);
+            _ = new LargeDisplayPanel(parent);
+            _ = new MediumDisplayPanel(parent);
+            _ = new WideDisplayPanel(parent);
+            _ = new SmallDisplayPanel(parent);
+            _ = new StandardMessagesPanel(parent);
+            _ = new CommandMessagesPanel(parent);
+            _ = new TimedMessagesPanel(parent);
+            _ = new Config1Panel(parent);
+            _ = new Config2Panel(parent);
+            _ = new DebugPanel(parent);
 
             // Hide all template panels
             foreach (Transform child in parent)
@@ -235,178 +241,601 @@ namespace TwitchChat
         }
 
         /// <summary>
-        /// Updates the state and visibility of all license objects and their associated UI elements.
+        /// Drives all hosts once per frame.
         /// </summary>
         private void Update()
         {
-            string methodName = MethodBase.GetCurrentMethod().Name;
+            // Write any coalesced settings changes from the panels once they have settled
+            Settings.Instance.FlushPendingSave();
+            HandleHotkeys();
 
-            foreach (var license in licenses.Values)
+            bool inSession = PlayerManager.PlayerTransform != null;
+
+            if (inSession && Settings.Instance.licensePanelsEnabled)
             {
-                if (license.LicenseObject == null)
-                {
-                    license.LicenseObject = GameObject.Find(license.Name);
-                    if (license.LicenseObject != null)
-                    {
-                        Main.LogEntry(methodName, $"Attaching menu canvas to {license.Name}");
-                        
-                        if (license.MenuCanvas == null)
-                        {
-                            Main.LogEntry(methodName, $"Menu canvas for {license.Name} was null, creating...");
-                            CreateMenuCanvas(license);
-                        }
-                    }
-                }
-
-                if (license.LicenseObject != null)
-                {
-                    bool isLicenseActive = IsLicenseActive(license.LicenseObject);
-                    if (license.MenuCanvas != null)
-                    {
-                        // Only update canvas visibility if it's changed
-                        if (license.MenuCanvas.activeSelf != isLicenseActive)
-                        {
-                            license.MenuCanvas.SetActive(isLicenseActive);
-                            if (isLicenseActive)
-                            {
-                                // Re-show the active panel when canvas becomes visible
-                                string panelToShow = !string.IsNullOrEmpty(Settings.Instance.activePanels[license.LicenseIndex]) 
-                                    ? Settings.Instance.activePanels[license.LicenseIndex] 
-                                    : "Main";
-                                ShowPanel(panelToShow, license);
-                            }
-                        }
-                    }
-
-                    if (isLicenseActive)
-                    {
-                        UpdatePanelValues(license);
-                        HandleLicenseAttachment(license);
-                        HandlePaperVisibility(license);
-                    }
-                }
+                UpdateLicenseHosts();
             }
-        }
-
-        /// <summary>
-        /// Updates values displayed on active panels.
-        /// </summary>
-        /// <param name="license">The license containing panels to update.</param>
-        private void UpdatePanelValues(License license)
-        {
-            license.StatusPanel?.UpdateStatusPanelValues();
-            license.StandardMessagesPanel?.UpdateStandardMessagesPanelValues();
-            license.CommandMessagesPanel?.UpdateCommandMessagesPanelValues();
-        }
-
-        /// <summary>
-        /// Determines if a license object is currently active in the game world.
-        /// </summary>
-        /// <param name="license">The license GameObject to check.</param>
-        /// <returns>True if the license is active and not in inventory.</returns>
-        private bool IsLicenseActive(GameObject license)
-        {
-            if (!license.activeInHierarchy)
-                return false;
-
-            // Check if the license is in inventory by looking at its parent hierarchy
-            Transform current = license.transform;
-            while (current.parent != null)
+            else
             {
-                // Check for common inventory container names
-                if (current.parent.name.Contains("Inventory") || 
-                    current.parent.name.Contains("Storage") ||
-                    current.parent.name.Contains("Container"))
-                {
-                    return false;
-                }
-                current = current.parent;
+                ReleaseLicenseHosts();
             }
 
-            return true;
-        }
-
-        // BUG: Sticky tape returns after away from loco, detact/reattach fixes it
-        private void HandleLicenseAttachment(License license)
-        {
-            // Bounds checking for all arrays
-            if (license.LicenseObject == null)
-            {
-                Main.LogEntry("MenuManager.HandleLicenseAttachment", $"Invalid index or null object: {license.Name}");
-                return;
-            }
-
-            try
-            {
-                Transform current = license.LicenseObject!.transform;
-                bool currentlyAttached = false;
-                GameObject? newStickyTapeBase = null;
-                
-                while (current.parent != null)
-                {
-                    if (current.parent.name.Contains("StickyTape_Gadget"))
-                    {
-                        currentlyAttached = true;
-                        Transform baseTransform = current.parent.Find("LOD gadget_sticker_base");
-                        if (baseTransform != null)
-                        {
-                            newStickyTapeBase = baseTransform.gameObject;
-                        }
-                        break;
-                    }
-                    current = current.parent;
-                }
-
-                if (currentlyAttached != license.AttachedToStickyTape)
-                {
-                    license.AttachedToStickyTape = currentlyAttached;
-                    Main.LogEntry("HandleLicenseAttachment", $"License {license.Name} attachment to sticky tape changed: {license.AttachedToStickyTape}");
-                    
-                    if (license.AttachedToStickyTape && newStickyTapeBase != null)
-                    {
-                        license.StickyTapeBase = newStickyTapeBase;
-                        license.StickyTapeBase!.SetActive(false);
-                    }
-                    else if (!license.AttachedToStickyTape && license.StickyTapeBase != null)
-                    {
-                        license.StickyTapeBase!.SetActive(true);
-                        license.StickyTapeBase = null;
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                Main.LogEntry("MenuManager.HandleLicenseAttachment", $"Error: {e.Message}");
-            }
-        }
-
-        private void HandlePaperVisibility(License license)
-        {
-            if (license.LicenseObject != null)
-            {
-                Transform paperTransform = license.LicenseObject!.transform.Find("Pivot/TempPaper(Clone)(Clone) 0/Paper");
-                paperTransform?.gameObject.SetActive(false);
-            }
+            UpdateCabDisplay(inSession);
+            UpdateWristPanel(inSession);
         }
 
         private void LateUpdate()
         {
-            foreach (var license in licenses.Values)
+            foreach (LicenseHost license in licenses.Values)
             {
-                if (license.LicenseObject != null && license.MenuCanvas != null)
+                if (license.LicenseObject != null && license.MenuCanvas != null && license.MenuCanvas.activeSelf)
                 {
                     PositionNearObject(license);
                 }
             }
+
+            if (wristAnchor != null && wristPanel.MenuCanvas != null && wristPanel.MenuCanvas.activeSelf)
+            {
+                ApplyWristPose();
+            }
         }
 
-        public void OnPanelButtonClicked(string panelName, License license)
+        // ------------------------------------------------------------------
+        // Hotkeys (flat mode, or VR with a keyboard in reach)
+        // ------------------------------------------------------------------
+
+        private void HandleHotkeys()
         {
-            Main.LogEntry("OnPanelButtonClicked", $"Panel button clicked: {panelName} for license: {license.Name}");
-            ShowPanel(panelName, license);
+            placeKey = ParseKey(Settings.Instance.placeDisplayKey, ref parsedPlaceKey, placeKey);
+            toggleKey = ParseKey(Settings.Instance.toggleDisplayKey, ref parsedToggleKey, toggleKey);
+
+            if (placeKey != KeyCode.None && Input.GetKeyDown(placeKey))
+            {
+                PlaceCabDisplay();
+            }
+            if (toggleKey != KeyCode.None && Input.GetKeyDown(toggleKey))
+            {
+                ToggleCabDisplay();
+            }
         }
 
-        private void CreateMenuCanvas(License license)
+        private static KeyCode ParseKey(string name, ref string cachedName, KeyCode cached)
+        {
+            if (name == cachedName)
+            {
+                return cached;
+            }
+            cachedName = name;
+            return Enum.TryParse(name, true, out KeyCode key) ? key : KeyCode.None;
+        }
+
+        // ------------------------------------------------------------------
+        // Legacy license hosts
+        // ------------------------------------------------------------------
+
+        private void UpdateLicenseHosts()
+        {
+            if (Time.unscaledTime >= nextLicenseScanTime)
+            {
+                nextLicenseScanTime = Time.unscaledTime + LicenseScanInterval;
+                ScanForLicenseItems();
+            }
+
+            foreach (LicenseHost license in licenses.Values)
+            {
+                bool visible = license.LicenseObject != null && license.LicenseObject.activeInHierarchy;
+
+                if (license.MenuCanvas != null && license.MenuCanvas.activeSelf != visible)
+                {
+                    license.MenuCanvas.SetActive(visible);
+                    if (visible)
+                    {
+                        ShowPanel(license.ActivePanel, license);
+                    }
+                }
+
+                if (visible)
+                {
+                    UpdatePanelValues(license);
+                    HandleLicenseAttachment(license);
+                    HandlePaperVisibility(license);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Looks the six license items up through the game's storage system, which tracks every item
+        /// regardless of its GameObject name or where it is parented.
+        /// </summary>
+        private void ScanForLicenseItems()
+        {
+            string methodName = "LicenseScan";
+
+            StorageController storage = SingletonBehaviour<StorageController>.Instance;
+            if (storage == null)
+            {
+                return;
+            }
+
+            List<ItemBase> items;
+            try
+            {
+                items = storage.GetAllStorageItems();
+            }
+            catch (Exception ex)
+            {
+                Main.LogEntry(methodName, $"Could not list storage items: {ex.Message}");
+                return;
+            }
+
+            if (!licenseInventoryLogged)
+            {
+                licenseInventoryLogged = true;
+                List<string> licenseNames = items
+                    .Where(i => i != null && i.InventorySpecs != null)
+                    .Select(i => i.InventorySpecs.ItemPrefabName)
+                    .Where(n => !string.IsNullOrEmpty(n) && n.IndexOf("License", StringComparison.OrdinalIgnoreCase) >= 0)
+                    .Distinct()
+                    .ToList();
+                Main.LogEntry(methodName, $"Storage reports {items.Count} items. License items present: {(licenseNames.Count > 0 ? string.Join(", ", licenseNames) : "none")}");
+            }
+
+            foreach (LicenseHost license in licenses.Values)
+            {
+                if (license.Item != null && license.LicenseObject != null)
+                {
+                    continue; // still bound to a live item
+                }
+
+                ItemBase? match = items.FirstOrDefault(i => i != null && i.InventorySpecs != null && i.InventorySpecs.ItemPrefabName == license.PrefabName);
+                if (match == null)
+                {
+                    if (license.Item != null || license.LicenseObject != null)
+                    {
+                        Main.LogEntry(methodName, $"License item {license.PrefabName} is gone; releasing its menu.");
+                        UnbindLicense(license);
+                    }
+                    continue;
+                }
+
+                BindLicense(license, match);
+            }
+        }
+
+        private void BindLicense(LicenseHost license, ItemBase item)
+        {
+            UnbindLicense(license);
+            license.Item = item;
+            license.LicenseObject = item.gameObject;
+            paperLookupFailed.Remove(license.PrefabName);
+
+            Main.LogEntry("LicenseScan", $"Found license item {license.PrefabName} (object '{item.gameObject.name}', active: {item.gameObject.activeInHierarchy}, parent: '{(item.transform.parent != null ? item.transform.parent.name : "none")}')");
+
+            if (license.MenuCanvas == null)
+            {
+                CreateMenuCanvas(license);
+            }
+        }
+
+        private static void UnbindLicense(LicenseHost license)
+        {
+            license.Item = null;
+            license.LicenseObject = null;
+            license.PaperRenderer = null;
+            license.PaperObject = null;
+            license.AttachedToStickyTape = false;
+            license.StickyTapeBase = null;
+        }
+
+        /// <summary>
+        /// Hides license canvases and restores anything the mod hid, used when the legacy mode is off or no session is running.
+        /// </summary>
+        private void ReleaseLicenseHosts()
+        {
+            foreach (LicenseHost license in licenses.Values)
+            {
+                if (license.MenuCanvas != null && license.MenuCanvas.activeSelf)
+                {
+                    license.MenuCanvas.SetActive(false);
+                }
+                if (license.PaperRenderer != null && !license.PaperRenderer.enabled)
+                {
+                    license.PaperRenderer.enabled = true;
+                }
+                if (license.PaperObject != null && !license.PaperObject.activeSelf)
+                {
+                    license.PaperObject.SetActive(true);
+                }
+                if (license.StickyTapeBase != null && !license.StickyTapeBase.activeSelf)
+                {
+                    license.StickyTapeBase.SetActive(true);
+                }
+                license.StickyTapeBase = null;
+                license.AttachedToStickyTape = false;
+            }
+        }
+
+        /// <summary>
+        /// Tracks whether the license is snapped to a sticky tape gadget and hides the tape's backing while it is.
+        /// </summary>
+        private void HandleLicenseAttachment(LicenseHost license)
+        {
+            try
+            {
+                SnappableItem? snappable = license.Item != null ? license.Item.SnappableItem : null;
+                bool snapped = snappable != null && snappable.IsSnapped && snappable.SnappedTo != null;
+                if (snapped == license.AttachedToStickyTape)
+                {
+                    return;
+                }
+
+                license.AttachedToStickyTape = snapped;
+                Main.LogEntry("HandleLicenseAttachment", $"License {license.PrefabName} snapped to a mount: {snapped}");
+
+                if (snapped)
+                {
+                    GameObject? stickerBase = FindStickerBase(snappable!.SnappedTo!.transform);
+                    if (stickerBase != null)
+                    {
+                        license.StickyTapeBase = stickerBase;
+                        stickerBase.SetActive(false);
+                    }
+                }
+                else if (license.StickyTapeBase != null)
+                {
+                    license.StickyTapeBase.SetActive(true);
+                    license.StickyTapeBase = null;
+                }
+            }
+            catch (Exception e)
+            {
+                Main.LogEntry("HandleLicenseAttachment", $"Error: {e.Message}");
+            }
+        }
+
+        private static GameObject? FindStickerBase(Transform snapPoint)
+        {
+            Transform root = snapPoint;
+            for (int i = 0; i < 4 && root.parent != null && root.name.IndexOf("StickyTape", StringComparison.OrdinalIgnoreCase) < 0; i++)
+            {
+                root = root.parent;
+            }
+
+            foreach (Transform child in root.GetComponentsInChildren<Transform>(true))
+            {
+                if (child.name.IndexOf("gadget_sticker_base", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return child.gameObject;
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Keeps the printed license page hidden while the canvas covers it. Prefers the game's Page component
+        /// and falls back to the fixed child path used by older builds.
+        /// </summary>
+        private void HandlePaperVisibility(LicenseHost license)
+        {
+            if (license.LicenseObject == null)
+            {
+                return;
+            }
+
+            if (license.PaperRenderer == null && license.PaperObject == null && !paperLookupFailed.Contains(license.PrefabName))
+            {
+                Page page = license.LicenseObject.GetComponentInChildren<Page>(true);
+                if (page != null && page.renderer != null)
+                {
+                    license.PaperRenderer = page.renderer;
+                }
+                else
+                {
+                    Transform fallback = license.LicenseObject.transform.Find(PaperFallbackPath);
+                    if (fallback != null)
+                    {
+                        license.PaperObject = fallback.gameObject;
+                    }
+                    else
+                    {
+                        paperLookupFailed.Add(license.PrefabName);
+                        Main.LogEntry("LicenseScan", $"Could not find the printed page of {license.PrefabName}; the canvas will overlay it instead.");
+                    }
+                }
+            }
+
+            if (license.PaperRenderer != null && license.PaperRenderer.enabled)
+            {
+                license.PaperRenderer.enabled = false;
+            }
+            if (license.PaperObject != null && license.PaperObject.activeSelf)
+            {
+                license.PaperObject.SetActive(false);
+            }
+        }
+
+        private void PositionNearObject(LicenseHost license)
+        {
+            if (license.MenuCanvas == null || license.LicenseObject == null)
+            {
+                return;
+            }
+
+            license.MenuCanvas.transform.position = license.LicenseObject.transform.position;
+            license.MenuCanvas.transform.rotation = license.LicenseObject.transform.rotation *
+                                                    Quaternion.Euler(90f, 180f, 0f) *
+                                                    Quaternion.Euler(panelConfigs[PanelType.Main].PanelRotationOffset);
+        }
+
+        // ------------------------------------------------------------------
+        // Cab display
+        // ------------------------------------------------------------------
+
+        private void UpdateCabDisplay(bool inSession)
+        {
+            if (!inSession)
+            {
+                cabDisplay.Placed = false;
+                cabDisplayCar = null;
+                return;
+            }
+
+            if (cabDisplay.MenuCanvas == null)
+            {
+                // First frame of a session, or the canvas was destroyed along with the car it was parented to
+                CreateMenuCanvas(cabDisplay);
+                cabDisplay.Placed = false;
+                cabDisplayCar = null;
+                TryRestoreCabDisplay(PlayerManager.Car);
+            }
+
+            GameObject canvas = cabDisplay.MenuCanvas!;
+            bool shouldShow = cabDisplay.Placed && Settings.Instance.cabDisplayVisible;
+            if (canvas.activeSelf != shouldShow)
+            {
+                canvas.SetActive(shouldShow);
+                if (shouldShow)
+                {
+                    ShowPanel(cabDisplay.ActivePanel, cabDisplay);
+                }
+            }
+
+            if (shouldShow)
+            {
+                canvas.transform.localScale = Vector3.one * BaseCanvasScale * Settings.Instance.cabDisplayScale;
+                UpdatePanelValues(cabDisplay);
+            }
+        }
+
+        private void OnPlayerCarChanged(TrainCar car)
+        {
+            if (car == null || cabDisplay.MenuCanvas == null || cabDisplayCar == car)
+            {
+                return;
+            }
+            TryRestoreCabDisplay(car);
+        }
+
+        /// <summary>
+        /// Moves the cab display onto the given car if a pose was saved for that locomotive type.
+        /// </summary>
+        private void TryRestoreCabDisplay(TrainCar? car)
+        {
+            if (car == null || cabDisplay.MenuCanvas == null)
+            {
+                return;
+            }
+
+            string key = CarKey(car);
+            CabDisplayPose? pose = FindPose(key);
+            if (pose == null)
+            {
+                return;
+            }
+
+            AttachCabDisplay(car, pose.localPosition, Quaternion.Euler(pose.localEuler));
+            Main.LogEntry("CabDisplay", $"Restored cab display pose for {key}.");
+        }
+
+        private void AttachCabDisplay(TrainCar car, Vector3 localPosition, Quaternion localRotation)
+        {
+            Transform parent = car.interior != null ? car.interior : car.transform;
+            Transform canvas = cabDisplay.MenuCanvas!.transform;
+            canvas.SetParent(parent, false);
+            canvas.localPosition = localPosition;
+            canvas.localRotation = localRotation;
+            canvas.localScale = Vector3.one * BaseCanvasScale * Settings.Instance.cabDisplayScale;
+            cabDisplayCar = car;
+            cabDisplay.Placed = true;
+        }
+
+        /// <summary>
+        /// Places the cab display in front of the player's view, parents it to the current car, and remembers the pose for that locomotive type.
+        /// </summary>
+        public void PlaceCabDisplay()
+        {
+            string methodName = "CabDisplay";
+
+            Camera? camera = PlayerManager.PlayerCamera != null ? PlayerManager.PlayerCamera : Camera.main;
+            if (camera == null || PlayerManager.PlayerTransform == null)
+            {
+                Main.LogEntry(methodName, "Cannot place the cab display outside of a game session.");
+                NotificationManager.SetVariable("alertMessage", "The cab display can only be placed while in a game session.");
+                return;
+            }
+
+            if (cabDisplay.MenuCanvas == null)
+            {
+                CreateMenuCanvas(cabDisplay);
+            }
+
+            Transform canvas = cabDisplay.MenuCanvas!.transform;
+            Vector3 position = camera.transform.position + camera.transform.forward * Settings.Instance.cabDisplayDistance;
+            Quaternion rotation = Quaternion.LookRotation(position - camera.transform.position, Vector3.up);
+
+            TrainCar? car = PlayerManager.Car;
+            Transform? parent = car != null
+                ? (car.interior != null ? car.interior : car.transform)
+                : WorldMover.OriginShiftParent;
+
+            canvas.SetParent(parent, true);
+            canvas.SetPositionAndRotation(position, rotation);
+            canvas.localScale = Vector3.one * BaseCanvasScale * Settings.Instance.cabDisplayScale;
+
+            cabDisplayCar = car;
+            cabDisplay.Placed = true;
+            Settings.Instance.cabDisplayVisible = true;
+
+            string location = "the world";
+            if (car != null)
+            {
+                location = CarKey(car);
+                SavePose(location, canvas.localPosition, canvas.localRotation.eulerAngles);
+            }
+            Settings.Instance.RequestSave();
+
+            canvas.gameObject.SetActive(true);
+            ShowPanel(cabDisplay.ActivePanel, cabDisplay);
+
+            Main.LogEntry(methodName, $"Cab display placed on {location} at {position}.");
+            NotificationManager.SetVariable("alertMessage", car != null
+                ? $"Cab display placed. Position saved for {location}."
+                : "Cab display placed. Not in a car, so this position is not saved.");
+        }
+
+        /// <summary>
+        /// Shows or hides the cab display without moving it.
+        /// </summary>
+        public void ToggleCabDisplay()
+        {
+            Settings.Instance.cabDisplayVisible = !Settings.Instance.cabDisplayVisible;
+            Settings.Instance.RequestSave();
+            Main.LogEntry("CabDisplay", $"Cab display visible: {Settings.Instance.cabDisplayVisible}");
+
+            if (Settings.Instance.cabDisplayVisible && !cabDisplay.Placed)
+            {
+                NotificationManager.SetVariable("alertMessage", "The cab display has not been placed in this locomotive yet. Use Place Display first.");
+            }
+        }
+
+        private static string CarKey(TrainCar car)
+        {
+            return car.carLivery != null ? car.carLivery.id : car.carType.ToString();
+        }
+
+        private static CabDisplayPose? FindPose(string key)
+        {
+            return Settings.Instance.cabDisplayPoses.FirstOrDefault(p => p.carId == key);
+        }
+
+        private static void SavePose(string key, Vector3 localPosition, Vector3 localEuler)
+        {
+            CabDisplayPose? pose = FindPose(key);
+            if (pose == null)
+            {
+                pose = new CabDisplayPose { carId = key };
+                Settings.Instance.cabDisplayPoses.Add(pose);
+            }
+            pose.localPosition = localPosition;
+            pose.localEuler = localEuler;
+        }
+
+        // ------------------------------------------------------------------
+        // Wrist panel
+        // ------------------------------------------------------------------
+
+        private void UpdateWristPanel(bool inSession)
+        {
+            bool wanted = inSession && Settings.Instance.wristPanelEnabled && VRManager.IsVREnabled();
+            if (!wanted)
+            {
+                if (wristPanel.MenuCanvas != null && wristPanel.MenuCanvas.activeSelf)
+                {
+                    wristPanel.MenuCanvas.SetActive(false);
+                }
+                if (!inSession)
+                {
+                    wristAnchor = null;
+                }
+                return;
+            }
+
+            if (wristPanel.MenuCanvas == null)
+            {
+                CreateMenuCanvas(wristPanel);
+                wristAnchor = null;
+            }
+
+            bool wantLeft = Settings.Instance.wristPanelOnLeftHand;
+            if (wristAnchor != null && wristPanel.AttachedToLeftHand != wantLeft)
+            {
+                wristAnchor = null; // hand preference changed, re-attach
+            }
+
+            if (wristAnchor == null && Time.unscaledTime >= nextWristSearchTime)
+            {
+                nextWristSearchTime = Time.unscaledTime + WristSearchInterval;
+                GameObject? hand = wantLeft ? VRTK_DeviceFinder.GetControllerLeftHand(true) : VRTK_DeviceFinder.GetControllerRightHand(true);
+                if (hand != null)
+                {
+                    wristAnchor = hand.transform;
+                    wristPanel.AttachedToLeftHand = wantLeft;
+                    wristPanel.MenuCanvas!.transform.SetParent(wristAnchor, false);
+                    ApplyWristPose();
+                    Main.LogEntry("WristPanel", $"Wrist panel attached to the {(wantLeft ? "left" : "right")} controller ('{hand.name}').");
+                }
+            }
+
+            GameObject canvas = wristPanel.MenuCanvas!;
+            bool shouldShow = wristAnchor != null;
+            if (canvas.activeSelf != shouldShow)
+            {
+                canvas.SetActive(shouldShow);
+                if (shouldShow)
+                {
+                    ShowPanel(wristPanel.ActivePanel, wristPanel);
+                }
+            }
+
+            if (shouldShow)
+            {
+                UpdatePanelValues(wristPanel);
+            }
+        }
+
+        private void ApplyWristPose()
+        {
+            if (wristPanel.MenuCanvas == null)
+            {
+                return;
+            }
+            Transform canvas = wristPanel.MenuCanvas.transform;
+            canvas.localPosition = Settings.Instance.wristPanelOffset;
+            canvas.localRotation = Quaternion.Euler(Settings.Instance.wristPanelRotation);
+            canvas.localScale = Vector3.one * BaseCanvasScale * Settings.Instance.wristPanelScale;
+        }
+
+        // ------------------------------------------------------------------
+        // Shared host plumbing
+        // ------------------------------------------------------------------
+
+        /// <summary>
+        /// Updates values displayed on active panels.
+        /// </summary>
+        private void UpdatePanelValues(PanelHost host)
+        {
+            host.StatusPanel?.UpdateStatusPanelValues();
+            host.StandardMessagesPanel?.UpdateStandardMessagesPanelValues();
+            host.CommandMessagesPanel?.UpdateCommandMessagesPanelValues();
+        }
+
+        public void OnPanelButtonClicked(string panelName, PanelHost host)
+        {
+            Main.LogEntry("OnPanelButtonClicked", $"Panel button clicked: {panelName} for host: {host.Name}");
+            ShowPanel(panelName, host);
+        }
+
+        private void CreateMenuCanvas(PanelHost host)
         {
             if (templateCanvas == null)
             {
@@ -414,76 +843,74 @@ namespace TwitchChat
                 return;
             }
 
-            // Clone the template
-            license.MenuCanvas = Instantiate(templateCanvas);
-            license.MenuCanvas.name = $"MenuCanvas_{license.Name}";
-            
-            Transform menuPanel = license.MenuCanvas.transform.Find("MenuPanel");
-            
+            // Clone the (inactive) template
+            host.MenuCanvas = Instantiate(templateCanvas);
+            host.MenuCanvas.name = $"MenuCanvas_{host.Name}";
+
+            Transform menuPanel = host.MenuCanvas.transform.Find("MenuPanel");
+
             // Create and wire up all panels from the templates
-            license.MainPanel = new MainPanel(menuPanel, license);
-            license.StatusPanel = new StatusPanel(menuPanel);
-            license.NotificationsPanel = new NotificationsPanel(menuPanel);
-            license.LargeDisplayPanel = new LargeDisplayPanel(menuPanel);
-            license.MediumDisplayPanel = new MediumDisplayPanel(menuPanel);
-            license.WideDisplayPanel = new WideDisplayPanel(menuPanel);
-            license.SmallDisplayPanel = new SmallDisplayPanel(menuPanel);
-            license.StandardMessagesPanel = new StandardMessagesPanel(menuPanel);
-            license.CommandMessagesPanel = new CommandMessagesPanel(menuPanel);
-            license.TimedMessagesPanel = new TimedMessagesPanel(menuPanel);
-            license.Config1Panel = new Config1Panel(menuPanel);
-            license.Config2Panel = new Config2Panel(menuPanel);
-            license.DebugPanel = new DebugPanel(menuPanel);
+            host.MainPanel = new MainPanel(menuPanel, host);
+            host.StatusPanel = new StatusPanel(menuPanel);
+            host.NotificationsPanel = new NotificationsPanel(menuPanel);
+            host.LargeDisplayPanel = new LargeDisplayPanel(menuPanel);
+            host.MediumDisplayPanel = new MediumDisplayPanel(menuPanel);
+            host.WideDisplayPanel = new WideDisplayPanel(menuPanel);
+            host.SmallDisplayPanel = new SmallDisplayPanel(menuPanel);
+            host.StandardMessagesPanel = new StandardMessagesPanel(menuPanel);
+            host.CommandMessagesPanel = new CommandMessagesPanel(menuPanel);
+            host.TimedMessagesPanel = new TimedMessagesPanel(menuPanel);
+            host.Config1Panel = new Config1Panel(menuPanel);
+            host.Config2Panel = new Config2Panel(menuPanel);
+            host.DebugPanel = new DebugPanel(menuPanel);
 
             // Explicitly hide all panels immediately after creation
-            HideAllPanels(license);
+            HideAllPanels(host);
 
             // Wire up back button events
-            if (license.StatusPanel != null) license.StatusPanel.OnBackButtonClicked += () => ShowPanel("Main", license);
-            if (license.NotificationsPanel != null) license.NotificationsPanel.OnBackButtonClicked += () => ShowPanel("Main", license);
-            if (license.LargeDisplayPanel != null) license.LargeDisplayPanel.OnBackButtonClicked += () => ShowPanel("Main", license);
-            if (license.MediumDisplayPanel != null) license.MediumDisplayPanel.OnBackButtonClicked += () => ShowPanel("Main", license);
-            if (license.WideDisplayPanel != null) license.WideDisplayPanel.OnBackButtonClicked += () => ShowPanel("Main", license);
-            if (license.SmallDisplayPanel != null) license.SmallDisplayPanel.OnBackButtonClicked += () => ShowPanel("Main", license);
-            if (license.StandardMessagesPanel != null) license.StandardMessagesPanel.OnBackButtonClicked += () => ShowPanel("Main", license);
-            if (license.CommandMessagesPanel != null) license.CommandMessagesPanel.OnBackButtonClicked += () => ShowPanel("Main", license);
-            if (license.TimedMessagesPanel != null) license.TimedMessagesPanel.OnBackButtonClicked += () => ShowPanel("Main", license);
-            if (license.Config1Panel != null) license.Config1Panel.OnBackButtonClicked += () => ShowPanel("Main", license);
-            if (license.Config2Panel != null) license.Config2Panel.OnBackButtonClicked += () => ShowPanel("Main", license);
-            if (license.DebugPanel != null) license.DebugPanel.OnBackButtonClicked += () => ShowPanel("Main", license);
+            host.StatusPanel.OnBackButtonClicked += () => ShowPanel("Main", host);
+            host.NotificationsPanel.OnBackButtonClicked += () => ShowPanel("Main", host);
+            host.LargeDisplayPanel.OnBackButtonClicked += () => ShowPanel("Main", host);
+            host.MediumDisplayPanel.OnBackButtonClicked += () => ShowPanel("Main", host);
+            host.WideDisplayPanel.OnBackButtonClicked += () => ShowPanel("Main", host);
+            host.SmallDisplayPanel.OnBackButtonClicked += () => ShowPanel("Main", host);
+            host.StandardMessagesPanel.OnBackButtonClicked += () => ShowPanel("Main", host);
+            host.CommandMessagesPanel.OnBackButtonClicked += () => ShowPanel("Main", host);
+            host.TimedMessagesPanel.OnBackButtonClicked += () => ShowPanel("Main", host);
+            host.Config1Panel.OnBackButtonClicked += () => ShowPanel("Main", host);
+            host.Config2Panel.OnBackButtonClicked += () => ShowPanel("Main", host);
+            host.DebugPanel.OnBackButtonClicked += () => ShowPanel("Main", host);
 
-            // Show initial panel
-            string panelToShow = !string.IsNullOrEmpty(Settings.Instance.activePanels[license.LicenseIndex]) 
-                ? Settings.Instance.activePanels[license.LicenseIndex] 
-                : "Main";
-            ShowPanel(panelToShow, license);
+            Main.LogEntry("CreateMenuCanvas", $"Created panel stack for host {host.Name}.");
         }
 
-        private void HideAllPanels(License license)
+        private static void HideAllPanels(PanelHost host)
         {
-            license.MainPanel?.Hide();
-            license.StatusPanel?.Hide();
-            license.NotificationsPanel?.Hide();
-            license.LargeDisplayPanel?.Hide();
-            license.MediumDisplayPanel?.Hide();
-            license.WideDisplayPanel?.Hide();
-            license.SmallDisplayPanel?.Hide();
-            license.StandardMessagesPanel?.Hide();
-            license.CommandMessagesPanel?.Hide();
-            license.TimedMessagesPanel?.Hide();
-            license.Config1Panel?.Hide();
-            license.Config2Panel?.Hide();
-            license.DebugPanel?.Hide();
+            host.MainPanel?.Hide();
+            host.StatusPanel?.Hide();
+            host.NotificationsPanel?.Hide();
+            host.LargeDisplayPanel?.Hide();
+            host.MediumDisplayPanel?.Hide();
+            host.WideDisplayPanel?.Hide();
+            host.SmallDisplayPanel?.Hide();
+            host.StandardMessagesPanel?.Hide();
+            host.CommandMessagesPanel?.Hide();
+            host.TimedMessagesPanel?.Hide();
+            host.Config1Panel?.Hide();
+            host.Config2Panel?.Hide();
+            host.DebugPanel?.Hide();
         }
 
-        private void ShowPanel(string panelName, License license)
+        private void ShowPanel(string panelName, PanelHost host)
         {
-            if (license.MenuCanvas == null || !license.MenuCanvas!.activeSelf)
+            if (host.MenuCanvas == null || !host.MenuCanvas.activeSelf)
+            {
                 return;
-            
-            Main.LogEntry("ShowPanel", $"Showing panel {panelName} for license {license.Name} (index: {license.LicenseIndex})");
+            }
 
-            HideAllPanels(license);
+            Main.LogEntry("ShowPanel", $"Showing panel {panelName} on host {host.Name}");
+
+            HideAllPanels(host);
 
             PanelType panelType = panelName switch
             {
@@ -504,13 +931,13 @@ namespace TwitchChat
             };
 
             // Apply the configuration for this panel type
-            var config = panelConfigs[panelType];
-            var menuPanel = license.MenuCanvas!.transform.Find("MenuPanel");
+            PanelConfig config = panelConfigs[panelType];
+            Transform menuPanel = host.MenuCanvas.transform.Find("MenuPanel");
             if (menuPanel != null)
             {
-                RectTransform canvasRect = license.MenuCanvas!.GetComponent<RectTransform>();
+                RectTransform canvasRect = host.MenuCanvas.GetComponent<RectTransform>();
                 RectTransform panelRect = menuPanel.GetComponent<RectTransform>();
-                
+
                 canvasRect.sizeDelta = config.CanvasSize;
                 panelRect.sizeDelta = config.PanelSize;
                 panelRect.localPosition = config.PanelPosition;
@@ -521,302 +948,233 @@ namespace TwitchChat
             switch (panelType)
             {
                 case PanelType.Main:
-                    license.MainPanel?.Show();
+                    host.MainPanel?.Show();
                     break;
                 case PanelType.Status:
-                    license.StatusPanel?.Show();
+                    host.StatusPanel?.Show();
                     break;
                 case PanelType.Notifications:
-                    license.NotificationsPanel?.Show();
+                    host.NotificationsPanel?.Show();
                     break;
                 case PanelType.LargeDisplay:
-                    license.LargeDisplayPanel?.Show();
+                    host.LargeDisplayPanel?.Show();
                     break;
                 case PanelType.MediumDisplay:
-                    license.MediumDisplayPanel?.Show();
+                    host.MediumDisplayPanel?.Show();
                     break;
                 case PanelType.WideDisplay:
-                    license.WideDisplayPanel?.Show();
+                    host.WideDisplayPanel?.Show();
                     break;
                 case PanelType.SmallDisplay:
-                    license.SmallDisplayPanel?.Show();
+                    host.SmallDisplayPanel?.Show();
                     break;
                 case PanelType.StandardMessages:
-                    license.StandardMessagesPanel?.Show();
+                    host.StandardMessagesPanel?.Show();
                     break;
                 case PanelType.CommandMessages:
-                    license.CommandMessagesPanel?.Show();
+                    host.CommandMessagesPanel?.Show();
                     break;
                 case PanelType.TimedMessages:
-                    license.TimedMessagesPanel?.Show();
+                    host.TimedMessagesPanel?.Show();
                     break;
                 case PanelType.Config1:
-                    license.Config1Panel?.Show();
+                    host.Config1Panel?.Show();
                     break;
                 case PanelType.Config2:
-                    license.Config2Panel?.Show();
+                    host.Config2Panel?.Show();
                     break;
                 case PanelType.Debug:
-                    license.DebugPanel?.Show();
+                    host.DebugPanel?.Show();
                     break;
             }
 
-            // Save the active panel state to the correct index
-            Settings.Instance.activePanels[license.LicenseIndex] = panelName;
-            Settings.Instance.Save(Main.ModEntry);
-            Main.LogEntry("ShowPanel", $"Saving active panel state for license {license.Name} at index {license.LicenseIndex}: {panelName}");
-        }
-
-        private void PositionNearObject(License license)
-        {
-            if (license.MenuCanvas == null)
-            {
-                Main.LogEntry("MenuManager.PositionNearObject", "Menu Canvas is not initialized.");
-                return;
-            }
-
-            if (license.LicenseObject == null) return;
-
-            Vector3 targetPosition = license.LicenseObject.transform.position;
-            license.MenuCanvas.transform.position = targetPosition;
-
-            license.MenuCanvas.transform.rotation = license.LicenseObject.transform.rotation * 
-                                         Quaternion.Euler(90f, 180f, 0f) * 
-                                         Quaternion.Euler(panelConfigs[PanelType.Main].PanelRotationOffset);
+            // Remember the active panel for this host
+            host.ActivePanel = panelName;
+            Settings.Instance.RequestSave();
         }
 
         /// <summary>
-        /// Adds a chat message to all active display panels.
+        /// Adds a chat message to the display panels of every host that has been created.
         /// </summary>
         /// <param name="username">The username of the message sender.</param>
         /// <param name="message">The chat message content.</param>
         public void AddMessageToPanelDisplays(string username, string message)
         {
-            try
+            foreach (PanelHost host in AllHosts)
             {
-                foreach (var license in licenses.Values)
+                if (host.MenuCanvas == null)
                 {
-                    if (license.MenuCanvas != null && license.MenuCanvas.activeSelf)
-                    {
-                        try
-                        {
-                            // Add message to all display panels regardless of visibility
-                            license.LargeDisplayPanel?.AddChatMessage(username, message);
-                            license.MediumDisplayPanel?.AddChatMessage(username, message);
-                            license.WideDisplayPanel?.AddChatMessage(username, message);
-                            license.SmallDisplayPanel?.AddChatMessage(username, message);
-                        }
-                        catch (System.Exception ex)
-                        {
-                            Main.LogEntry("MenuManager.AddMessageToPanelDisplays", 
-                                $"Error adding message to license {license.Name}: {ex.Message}");
-                        }
-                    }
+                    continue;
                 }
-            }
-            catch (System.Exception ex)
-            {
-                Main.LogEntry("MenuManager.AddMessageToPanelDisplays", 
-                    $"Error in AddMessageToPanelDisplays: {ex.Message}");
+
+                try
+                {
+                    // Add message to all display panels regardless of which one is showing
+                    host.LargeDisplayPanel?.AddChatMessage(username, message);
+                    host.MediumDisplayPanel?.AddChatMessage(username, message);
+                    host.WideDisplayPanel?.AddChatMessage(username, message);
+                    host.SmallDisplayPanel?.AddChatMessage(username, message);
+                }
+                catch (Exception ex)
+                {
+                    Main.LogEntry("MenuManager.AddMessageToPanelDisplays", $"Error adding message to host {host.Name}: {ex.Message}");
+                }
             }
         }
 
-        /// <summary>
-        /// Updates the notification toggle state across all licenses.
-        /// </summary>
-        /// <param name="value">The new toggle state to apply.</param>
         public void UpdateAllNotificationToggles(bool value)
         {
-            foreach (var license in licenses.Values)
+            foreach (PanelHost host in AllHosts)
             {
-                if (license.NotificationsPanel != null)
-                {
-                    license.NotificationsPanel.UpdateNotificationsEnabled(value);
-                }
+                host.NotificationsPanel?.UpdateNotificationsEnabled(value);
             }
         }
 
         public void UpdateAllNotificationDurations(float value)
         {
-            foreach (var license in licenses.Values)
+            foreach (PanelHost host in AllHosts)
             {
-                if (license.NotificationsPanel != null)
-                {
-                    license.NotificationsPanel.UpdateNotificationDuration(value);
-                }
+                host.NotificationsPanel?.UpdateNotificationDuration(value);
             }
         }
+
         public void UpdateAllProcessOwnToggles(bool value)
         {
-            foreach (var license in licenses.Values)
+            foreach (PanelHost host in AllHosts)
             {
-                if (license.DebugPanel != null)
-                {
-                    license.DebugPanel.UpdateProcessOwn(value);
-                }
+                host.DebugPanel?.UpdateProcessOwn(value);
             }
         }
+
         public void UpdateAllProcessDuplicatesToggles(bool value)
         {
-            foreach (var license in licenses.Values)
+            foreach (PanelHost host in AllHosts)
             {
-                if (license.DebugPanel != null)
-                {
-                    license.DebugPanel.UpdateProcessDuplicates(value);
-                }
+                host.DebugPanel?.UpdateProcessDuplicates(value);
             }
         }
 
         public void UpdateAllConnectMessageEnabledToggles(bool value)
         {
-            foreach (var license in licenses.Values)
+            foreach (PanelHost host in AllHosts)
             {
-                if (license.StandardMessagesPanel != null)
-                {
-                    license.StandardMessagesPanel.UpdateConnectMessageEnabled(value);
-                }
+                host.StandardMessagesPanel?.UpdateConnectMessageEnabled(value);
             }
         }
-
-        // public void UpdateAllNewFollowerMessageEnabledToggles(bool value)
-        // {
-        //     foreach (var license in licenses.Values)
-        //     {
-        //         if (license.StandardMessagesPanel != null)
-        //         {
-        //             license.StandardMessagesPanel.UpdateNewFollowerMessageEnabled(value);
-        //         }
-        //     }
-        // }
-
-        // public void UpdateAllNewSubscriberMessageEnabledToggles(bool value)
-        // {
-        //     foreach (var license in licenses.Values)
-        //     {
-        //         if (license.StandardMessagesPanel != null)
-        //         {
-        //             license.StandardMessagesPanel.UpdateNewSubscriberMessageEnabled(value);
-        //         }
-        //     }
-        // }
 
         public void UpdateAllDisconnectMessageEnabledToggles(bool value)
         {
-            foreach (var license in licenses.Values)
+            foreach (PanelHost host in AllHosts)
             {
-                if (license.StandardMessagesPanel != null)
-                {
-                    license.StandardMessagesPanel.UpdateDisconnectMessageEnabled(value);
-                }
+                host.StandardMessagesPanel?.UpdateDisconnectMessageEnabled(value);
             }
         }
+
         public void UpdateCommandsMessageToggles(bool value)
         {
-            foreach (var license in licenses.Values)
+            foreach (PanelHost host in AllHosts)
             {
-                if (license.CommandMessagesPanel != null)
-                {
-                    license.CommandMessagesPanel.UpdateCommandsMessageEnabled(value);
-                }
+                host.CommandMessagesPanel?.UpdateCommandsMessageEnabled(value);
             }
         }
+
         public void UpdateInfoMessageToggles(bool value)
         {
-            foreach (var license in licenses.Values)
+            foreach (PanelHost host in AllHosts)
             {
-                if (license.CommandMessagesPanel != null)
-                {
-                    license.CommandMessagesPanel.UpdateInfoMessageEnabled(value);
-                }
+                host.CommandMessagesPanel?.UpdateInfoMessageEnabled(value);
             }
         }
+
         public void UpdateAllTimedMessageToggles(bool value)
         {
-            foreach (var license in licenses.Values)
+            foreach (PanelHost host in AllHosts)
             {
-                if (license.TimedMessagesPanel != null)
-                {
-                    license.TimedMessagesPanel.UpdateTimedMessagesEnabled(value);
-                }
+                host.TimedMessagesPanel?.UpdateTimedMessagesEnabled(value);
             }
         }
+
         public void UpdateAllPanelBackgrounds()
         {
-            foreach (var license in licenses.Values)
+            foreach (PanelHost host in AllHosts)
             {
-                if (license.MenuCanvas != null)
+                if (host.MenuCanvas == null)
                 {
-                    // Update menu panel background
-                    Transform menuPanel = license.MenuCanvas.transform.Find("MenuPanel");
-                    if (menuPanel != null)
-                    {
-                        // Update the main panel background
-                        Image panelImage = menuPanel.GetComponent<Image>();
-                        if (panelImage != null)
-                        {
-                            panelImage.color = Settings.Instance.panelColor;
-                        }
+                    continue;
+                }
 
-                        // Find all panel backgrounds (direct children of MenuPanel only)
-                        foreach (Transform child in menuPanel)
+                Transform menuPanel = host.MenuCanvas.transform.Find("MenuPanel");
+                if (menuPanel == null)
+                {
+                    continue;
+                }
+
+                Image panelImage = menuPanel.GetComponent<Image>();
+                if (panelImage != null)
+                {
+                    panelImage.color = Settings.Instance.panelColor;
+                }
+
+                // Direct children of MenuPanel whose name contains "Panel" are the panel backgrounds
+                foreach (Transform child in menuPanel)
+                {
+                    if (child.name.Contains("Panel"))
+                    {
+                        Image childImage = child.GetComponent<Image>();
+                        if (childImage != null)
                         {
-                            // Only update if it's a panel (contains "Panel" in name)
-                            if (child.name.Contains("Panel"))
-                            {
-                                Image childImage = child.GetComponent<Image>();
-                                if (childImage != null)
-                                {
-                                    childImage.color = Settings.Instance.panelColor;
-                                }
-                            }
+                            childImage.color = Settings.Instance.panelColor;
                         }
                     }
                 }
             }
         }
+
         public void UpdateAllSectionBackgrounds()
         {
-            foreach (var license in licenses.Values)
+            foreach (PanelHost host in AllHosts)
             {
-                if (license.MenuCanvas != null)
+                if (host.MenuCanvas == null)
                 {
-                    // Update menu panel background
-                    Transform menuPanel = license.MenuCanvas.transform.Find("MenuPanel");
-                    if (menuPanel != null)
+                    continue;
+                }
+
+                Transform menuPanel = host.MenuCanvas.transform.Find("MenuPanel");
+                if (menuPanel == null)
+                {
+                    continue;
+                }
+
+                foreach (Image image in menuPanel.GetComponentsInChildren<Image>(true))
+                {
+                    if (image.gameObject.name.EndsWith("Section"))
                     {
-                        // Find all section backgrounds recursively
-                        Image[] sectionImages = menuPanel.GetComponentsInChildren<Image>(true);
-                        foreach (Image image in sectionImages)
-                        {
-                            // Check if this image belongs to a section (parent GameObject name ends with "Section")
-                            if (image.gameObject.name.EndsWith("Section"))
-                            {
-                                image.color = Settings.Instance.sectionColor;
-                            }
-                        }
+                        image.color = Settings.Instance.sectionColor;
                     }
                 }
             }
         }
+
         public void UpdateAllButtonColors()
         {
-            foreach (var license in licenses.Values)
+            foreach (PanelHost host in AllHosts)
             {
-                if (license.MenuCanvas != null)
+                if (host.MenuCanvas == null)
                 {
-                    Transform menuPanel = license.MenuCanvas.transform.Find("MenuPanel");
-                    if (menuPanel != null)
+                    continue;
+                }
+
+                Transform menuPanel = host.MenuCanvas.transform.Find("MenuPanel");
+                if (menuPanel == null)
+                {
+                    continue;
+                }
+
+                foreach (Image image in menuPanel.GetComponentsInChildren<Image>(true))
+                {
+                    if (image.GetComponent<Button>() != null)
                     {
-                        // Find all button images recursively
-                        Image[] buttonImages = menuPanel.GetComponentsInChildren<Image>(true);
-                        foreach (Image image in buttonImages)
-                        {
-                            // Only update images that are attached to buttons
-                            if (image.GetComponent<Button>() != null)
-                            {
-                                image.color = Settings.Instance.buttonColor;
-                            }
-                        }
+                        image.color = Settings.Instance.buttonColor;
                     }
                 }
             }

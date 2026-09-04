@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Timers;
 
 namespace TwitchChat
@@ -17,7 +16,7 @@ namespace TwitchChat
         /// Collection of active message timers.
         /// </summary>
         private static readonly List<Timer> activeTimers = new();
-        
+
         /// <summary>
         /// Indicates whether any message timers are currently active and running.
         /// </summary>
@@ -29,61 +28,55 @@ namespace TwitchChat
         /// </summary>
         private static void TimedMessagesInit()
         {
-            string methodName = MethodBase.GetCurrentMethod().Name;
+            string methodName = "TimedMessagesInit";
             try
             {
                 StopAndClearTimers(); // Clear any existing timers before creating new ones
-                var messages = new Dictionary<string, (float timer, string color)>();
 
-                // Add messages if they are set and have a valid timer
-                if (!string.IsNullOrEmpty(TimedMessages.TimedMessage1) && TimedMessages.TimedMessage1Timer > 0)
-                    messages.Add(TimedMessages.TimedMessage1, (TimedMessages.TimedMessage1Timer, TimedMessages.TimedMessage1Color));
-                if (!string.IsNullOrEmpty(TimedMessages.TimedMessage2) && TimedMessages.TimedMessage2Timer > 0)
-                    messages.Add(TimedMessages.TimedMessage2, (TimedMessages.TimedMessage2Timer, TimedMessages.TimedMessage2Color));
-                if (!string.IsNullOrEmpty(TimedMessages.TimedMessage3) && TimedMessages.TimedMessage3Timer > 0)
-                    messages.Add(TimedMessages.TimedMessage3, (TimedMessages.TimedMessage3Timer, TimedMessages.TimedMessage3Color));
-                if (!string.IsNullOrEmpty(TimedMessages.TimedMessage4) && TimedMessages.TimedMessage4Timer > 0)
-                    messages.Add(TimedMessages.TimedMessage4, (TimedMessages.TimedMessage4Timer, TimedMessages.TimedMessage4Color));
-                if (!string.IsNullOrEmpty(TimedMessages.TimedMessage5) && TimedMessages.TimedMessage5Timer > 0)
-                    messages.Add(TimedMessages.TimedMessage5, (TimedMessages.TimedMessage5Timer, TimedMessages.TimedMessage5Color));
-
-                // Create and start timers for each message
-                foreach (var message in messages)
+                var messages = new List<(string text, float timer, string color)>
                 {
-                    if (message.Value.timer <= 0 || string.IsNullOrEmpty(message.Key) || message.Key == "MessageNotSet") 
+                    (TimedMessages.TimedMessage1, TimedMessages.TimedMessage1Timer, TimedMessages.TimedMessage1Color),
+                    (TimedMessages.TimedMessage2, TimedMessages.TimedMessage2Timer, TimedMessages.TimedMessage2Color),
+                    (TimedMessages.TimedMessage3, TimedMessages.TimedMessage3Timer, TimedMessages.TimedMessage3Color),
+                    (TimedMessages.TimedMessage4, TimedMessages.TimedMessage4Timer, TimedMessages.TimedMessage4Color),
+                    (TimedMessages.TimedMessage5, TimedMessages.TimedMessage5Timer, TimedMessages.TimedMessage5Color)
+                };
+
+                // Create and start timers for each configured message
+                foreach (var (text, timer, color) in messages)
+                {
+                    if (timer <= 0 || string.IsNullOrEmpty(text) || text == "MessageNotSet")
                         continue;
-                    
-                    Timer messageTimer = new(message.Value.timer * 1000); // Convert seconds to milliseconds
-                    string messageText = message.Key;
-                    string messageColor = message.Value.color;
-                    
-                    messageTimer.Elapsed += async (source, e) => 
+
+                    Timer messageTimer = new(timer * 1000); // Convert seconds to milliseconds
+                    string messageText = text;
+                    string messageColor = color;
+
+                    messageTimer.Elapsed += async (source, e) =>
                     {
                         if (messageColor.ToLower() == "normal")
                             await TwitchEventHandler.SendMessage(messageText);
                         else
                             await TwitchEventHandler.SendAnnouncement(messageText, messageColor);
-                        
-                        typeof(TimedMessages).GetProperty("lastTimedMessageSent", BindingFlags.NonPublic | BindingFlags.Static)
-                            ?.SetValue(null, $"{messageText} (Sent at {DateTime.Now:HH:mm:ss})");
+
+                        SetLastTimedMessageSent($"{messageText} (Sent at {DateTime.Now:HH:mm:ss})");
                     };
                     messageTimer.AutoReset = true;
                     messageTimer.Enabled = true;
                     activeTimers.Add(messageTimer);
-                    Main.LogEntry(methodName, $"Timer set for message: {messageText} with interval: {message.Value.timer} seconds");
+                    Main.LogEntry(methodName, $"Timer set for message: {messageText} with interval: {timer} seconds");
                 }
             }
             catch (Exception ex)
             {
                 Main.LogEntry(methodName, $"An error occurred: {ex.Message}");
-                typeof(TimedMessages).GetProperty("lastTimedMessageSent", BindingFlags.NonPublic | BindingFlags.Static)
-                    ?.SetValue(null, "Error initializing timed messages, see log for details");
+                SetLastTimedMessageSent("Error initializing timed messages, see log for details");
             }
         }
 
         public static void ToggleTimedMessages()
         {
-            string methodName = MethodBase.GetCurrentMethod().Name;
+            string methodName = "ToggleTimedMessages";
             try
             {
                 if (TimedMessages.TimedMessageSystemToggle)
@@ -124,27 +117,30 @@ namespace TwitchChat
                 Main.LogEntry(methodName, $"Error clearing timers: {ex.Message}");
             }
         }
+
+        /// <summary>
+        /// Records the most recent timed-message status so the settings UI can display it.
+        /// </summary>
         private static void SetLastTimedMessageSent(string message)
         {
-            typeof(TimedMessages).GetProperty("lastTimedMessageSent", BindingFlags.NonPublic | BindingFlags.Static)
-                ?.SetValue(null, message);
+            Settings.Instance.lastTimedMessageSent = message;
         }
 
         public static void CommandMessageProcessing(string message, string sender)
         {
-            string methodName = MethodBase.GetCurrentMethod().Name;
+            string methodName = "CommandMessageProcessing";
             var settings = Settings.Instance;
 
             try
             {
                 string lowerMessage = message.ToLower();
-                
+
                 if (lowerMessage == "!commands" && settings.commandsMessageEnabled)
                 {
                     _ = TwitchEventHandler.SendWhisper(sender, settings.commandsMessage);
                     return;
                 }
-                
+
                 if (lowerMessage == "!info" && settings.infoMessageEnabled)
                 {
                     _ = TwitchEventHandler.SendWhisper(sender, settings.infoMessage);

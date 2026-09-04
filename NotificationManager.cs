@@ -2,14 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 
 namespace TwitchChat
 {
     /// <summary>
     /// Manages in-game notifications and Twitch chat message display.
-    /// Handles message queuing, processing, and visual presentation of notifications.
-    /// Provides real-time chat integration and notification attachment to game objects.
+    /// Handles message routing, command dispatch, and visual presentation of notifications.
+    /// All Unity work is marshalled to the main thread, so callers may run on any thread.
     /// </summary>
     public class NotificationManager
     {
@@ -61,236 +63,127 @@ namespace TwitchChat
         {
             return NewNotificationQueue.ContainsKey(notification_type) ? NewNotificationQueue[notification_type] : null;
         }
+
         public static void WebSocketNotificationTest()
         {
             SetVariable("webSocketNotification", $"Message Queue Attachment Notification Test #{messageQueueTestCounter}");
-            messageQueueTestCounter++;            
-        }
-        private class TwitchMessage
-        {
-            public Metadata? metadata { get; set; }
-            public Payload? payload { get; set; }
-        }
-        private class Metadata
-        {
-            public string? subscription_type { get; set; }
-        }
-        private class Payload
-        {
-            public Event? @event { get; set; }
-        }
-        private class Event
-        {
-            public string? chatter_user_name { get; set; }
-            public string? chatter_user_id { get; set; }
-            public Message? message { get; set; }
-        }
-        private class Message
-        {
-            public string? text { get; set; }
+            messageQueueTestCounter++;
         }
 
         /// <summary>
-        /// Handles incoming Twitch chat notifications and processes commands.
+        /// Handles an incoming Twitch EventSub notification and processes commands.
+        /// Safe to call from the WebSocket receive thread.
         /// </summary>
-        /// <param name="jsonMessage">The raw JSON message received from Twitch.</param>
-        public static void HandleNotification(dynamic jsonMessage)
+        /// <param name="message">The parsed EventSub message envelope.</param>
+        public static void HandleNotification(JObject message)
         {
-            string methodName = MethodBase.GetCurrentMethod().Name;
+            string methodName = "HandleNotification";
 
-            Main.LogEntry(methodName, "Attempting to handle notification...");
-
-            // if (Settings.Instance.notificationsEnabled == false)
-            // {
-            //     Main.LogEntry(methodName, "Notification system disabled, skipping.");
-            //     return;
-            // }
-            // Main.LogEntry(methodName, "Notification system enabled, continuing...");
-        
             try
             {
-                string jsonString = jsonMessage.ToString();
-                Main.LogEntry($"{methodName}", $"Processing message: {jsonString}");
-                
-                if (!jsonString.Contains("\"subscription_type\":\"channel.chat.message\""))
+                string subscriptionType = (string?)message.SelectToken("metadata.subscription_type") ?? string.Empty;
+                if (subscriptionType != "channel.chat.message")
                 {
-                    Main.LogEntry($"{methodName}", "Not a chat message, skipping");
+                    Main.LogEntry(methodName, $"Ignoring non-chat notification: {subscriptionType}");
                     return;
                 }
-                
-                string chatter = ExtractValue(jsonString, "chatter_user_name");
-                string chatterId = ExtractValue(jsonString, "chatter_user_id");
-                string text = ExtractValue(jsonString, "text");
 
-                Main.LogEntry($"{methodName}", $"Extracted values - Chatter: {chatter}, ChatterId: {chatterId}, Text: {text}");
+                JToken? chatEvent = message.SelectToken("payload.event");
+                string chatter = (string?)chatEvent?["chatter_user_name"] ?? string.Empty;
+                string chatterId = (string?)chatEvent?["chatter_user_id"] ?? string.Empty;
+                string text = (string?)chatEvent?.SelectToken("message.text") ?? string.Empty;
+
+                Main.LogEntry(methodName, $"Extracted values - Chatter: {chatter}, ChatterId: {chatterId}, Text: {text}");
 
                 // Skip if any required values are missing
                 if (string.IsNullOrEmpty(chatter) || string.IsNullOrEmpty(text) || string.IsNullOrEmpty(chatterId))
                 {
-                    Main.LogEntry($"{methodName}", "Skipping message due to missing required values");
+                    Main.LogEntry(methodName, "Skipping message due to missing required values");
                     return;
                 }
 
                 // Skip processing if message is from ourselves (unless debug setting is enabled)
                 if (chatterId == TwitchEventHandler.user_id && !Settings.Instance.processOwn)
                 {
-                    Main.LogEntry($"{methodName}", $"Skipping message from self (ID: {chatterId})");
+                    Main.LogEntry(methodName, $"Skipping message from self (ID: {chatterId})");
                     return;
                 }
 
-                if (!string.IsNullOrEmpty(chatter) && !string.IsNullOrEmpty(text))
+                Main.LogEntry("ReceivedMessage", $"{chatter}: {text}");
+
+                // Redirect command messages
+                if (text.StartsWith("!"))
                 {
-                    Main.LogEntry($"{methodName}", $"Valid message received from {chatter}: {text}");
+                    AutomatedMessages.CommandMessageProcessing(text, chatterId);
+                    return;
+                }
 
-                    // Redirect command messages
-                    if (text.ToLower().StartsWith("!"))
-                    {
-                        AutomatedMessages.CommandMessageProcessing(text, chatterId);
-                        return;
-                    }
-
-                    // Add message to in-game display boards
+                // Everything that touches Unity objects runs on the main thread.
+                UnityMainThreadDispatcher.Instance().Enqueue(() =>
+                {
                     try
                     {
                         MenuManager.Instance.AddMessageToPanelDisplays(chatter, text);
                     }
                     catch (Exception ex)
                     {
-                        Main.LogEntry($"{methodName}", $"Failed to add message to display boards: {ex.Message}");
+                        Main.LogEntry(methodName, $"Failed to add message to display boards: {ex.Message}");
                     }
 
-                    // Check if notification system is enabled
-                    if (Settings.Instance.notificationsEnabled == false)
+                    if (!Settings.Instance.notificationsEnabled)
                     {
-                        Main.LogEntry(methodName, "Notification system disabled, skipping.");
+                        Main.LogEntry(methodName, "Notification system disabled, skipping popup.");
                         return;
                     }
-                    Main.LogEntry(methodName, "Notification system enabled, continuing...");
 
-                    try
-                    {
-                        Main.LogEntry($"{methodName}", "Attempting to queue notification...");
-                        UnityMainThreadDispatcher.Instance().Enqueue(() =>
-                        {
-                            try
-                            {
-                                Main.LogEntry($"{methodName}", "Dispatching notification to main thread");
-                                string displayMessage = $"{chatter}: {text}";
-                                NewNotificationQueue["webSocketNotification"] = displayMessage;
-                                AttachNotification(displayMessage, "null");
-                                Main.LogEntry($"{methodName}", $"Successfully queued notification: {displayMessage}");
-                            }
-                            catch (Exception ex)
-                            {
-                                Main.LogEntry($"{methodName}", $"Error in main thread notification: {ex.Message}");
-                            }
-                        });
-                    }
-                    catch (Exception ex)
-                    {
-                        Main.LogEntry($"{methodName}", $"Failed to queue notification: {ex.Message}");
-                    }
-                }
-                else
-                {
-                    Main.LogEntry($"{methodName}", "Invalid message: missing chatter or text");
-                }
+                    string displayMessage = $"{chatter}: {text}";
+                    NewNotificationQueue["webSocketNotification"] = displayMessage;
+                    AttachNotification(displayMessage, "null");
+                });
             }
             catch (Exception ex)
             {
-                Main.LogEntry($"{methodName}", $"Error processing notification: {ex.Message}");
-                Main.LogEntry($"{methodName}", $"Stack Trace: {ex.StackTrace}");
-            }
-        }
-
-        private static string ExtractValue(string json, string key)
-        {
-            try
-            {
-                switch (key)
-                {
-                    case "chatter_user_name":
-                        // Look for the specific path in the JSON
-                        int nameStart = json.IndexOf("\"chatter_user_name\":\"") + "\"chatter_user_name\":\"".Length;
-                        if (nameStart > 0)
-                        {
-                            int nameEnd = json.IndexOf("\"", nameStart);
-                            if (nameEnd > nameStart)
-                            {
-                                return json.Substring(nameStart, nameEnd - nameStart);
-                            }
-                        }
-                        break;
-
-                    case "chatter_user_id":
-                        // Look for the specific path in the JSON
-                        int idStart = json.IndexOf("\"chatter_user_id\":\"") + "\"chatter_user_id\":\"".Length;
-                        if (idStart > 0)
-                        {
-                            int idEnd = json.IndexOf("\"", idStart);
-                            if (idEnd > idStart)
-                            {
-                                return json.Substring(idStart, idEnd - idStart);
-                            }
-                        }
-                        break;
-
-                    case "text":
-                        // Text is nested inside the message object
-                        int textStart = json.IndexOf("\"message\":{\"text\":\"") + "\"message\":{\"text\":\"".Length;
-                        if (textStart > 0)
-                        {
-                            int textEnd = json.IndexOf("\"", textStart);
-                            if (textEnd > textStart)
-                            {
-                                return json.Substring(textStart, textEnd - textStart);
-                            }
-                        }
-                        break;
-                }
-                return string.Empty;
-            }
-            catch (Exception ex)
-            {
-                Main.LogEntry("ExtractValue", $"Error extracting {key}: {ex.Message}");
-                return string.Empty;
+                Main.LogEntry(methodName, $"Error processing notification: {ex.Message}");
+                Main.LogEntry(methodName, $"Stack Trace: {ex.StackTrace}");
             }
         }
 
         /// <summary>
-        /// Displays an in-game notification attached to a GameObject (if included).
+        /// Displays an in-game notification. May be called from any thread; the work is queued to the main thread.
         /// </summary>
         /// <param name="displayed_text">The text to display.</param>
-        /// <param name="object_name">The name of the GameObject to attempt to attach to.</param>
+        /// <param name="object_name">The name of a GameObject to look for, or "null" for none.</param>
         public static void AttachNotification(string displayed_text, string object_name)
         {
-            string methodName = MethodBase.GetCurrentMethod().Name;
+            UnityMainThreadDispatcher.Instance().Enqueue(() => ShowNotificationOnMainThread(displayed_text, object_name));
+        }
+
+        /// <summary>
+        /// Performs the actual notification display. Must run on the Unity main thread.
+        /// </summary>
+        private static void ShowNotificationOnMainThread(string displayed_text, string object_name)
+        {
+            string methodName = "AttachNotification";
             Main.LogEntry(methodName, $"AttachNotification called with displayed_text: {displayed_text}, object_name: {object_name}");
 
-            // Find the object_name GameObject in the scene
-            GameObject found_object = GameObject.Find(object_name);
-            if (found_object != null)
+            if (!string.IsNullOrEmpty(object_name) && object_name != "null")
             {
-                Main.LogEntry(methodName, $"Found object: {found_object.name}");
-            }
-            else
-            {
-                // Main.LogEntry(methodName, "Object not found");
+                GameObject found_object = GameObject.Find(object_name);
+                if (found_object != null)
+                {
+                    Main.LogEntry(methodName, $"Found object: {found_object.name}");
+                }
             }
 
-            // Find NotificationManager in the scene
+            // Find the game's NotificationManager in the scene
             DV.UIFramework.NotificationManager notificationManager = UnityEngine.Object.FindObjectOfType<DV.UIFramework.NotificationManager>();
             if (notificationManager == null)
             {
                 Main.LogEntry(methodName, "NotificationManager not found in the scene.");
                 return;
             }
-            else
-            {
-                Main.LogEntry(methodName, "NotificationManager found in the scene.");
-            }
 
-            // Ensure displayed_text is a string with only standard alphanumeric characters and punctuation, no longer than 80 characters
+            // Ensure displayed_text contains only standard alphanumeric characters and punctuation, no longer than 80 characters
             if (displayed_text.Length > 80)
             {
                 displayed_text = displayed_text.Substring(0, 80);
@@ -298,28 +191,98 @@ namespace TwitchChat
             }
 
             displayed_text = new string(displayed_text.Where(c => char.IsLetterOrDigit(c) || char.IsPunctuation(c) || char.IsWhiteSpace(c)).ToArray());
-            Main.LogEntry(methodName, $"Sanitized displayed_text: {displayed_text}");
 
             try
             {
-                // Display a notification, attached to the found_object if it's not null
-                Main.LogEntry(methodName, "Attempting to show notification");
-                var notification = notificationManager.ShowNotification(
-                    displayed_text,                     // Text
-                    null,                               // Localization parameters
-                    Settings.Instance.notificationDuration,  // Duration
-                    false,                              // Clear existing notifications
-                    // found_object?.transform,         // Attach to GameObject if not null
-                    null,                               // Temp force null for GameObject.transform
-                    false,                              // Localize
-                    false                               // Target UI
-                );
-                Main.LogEntry(methodName, "Notification shown successfully");
+                GameObject? notification;
+                try
+                {
+                    notification = ShowNotificationDirect(notificationManager, displayed_text, Settings.Instance.notificationDuration);
+                }
+                catch (MissingMethodException mmEx)
+                {
+                    // The game changed the ShowNotification signature (this is what broke v3.1.0). Fall back to a late-bound call.
+                    Main.LogEntry(methodName, $"Game notification API signature changed ({mmEx.Message}); using reflection fallback.");
+                    notification = ShowNotificationViaReflection(notificationManager, displayed_text, Settings.Instance.notificationDuration);
+                }
+
+                Main.LogEntry(methodName, notification != null ? "Notification shown successfully" : "Notification call returned nothing");
             }
             catch (Exception ex)
             {
                 Main.LogEntry(methodName, $"Error showing notification and text: {displayed_text}\nException: {ex.Message}\nStack Trace: {ex.StackTrace}");
             }
+        }
+
+        /// <summary>
+        /// Direct, compile-time bound call to the game's notification API.
+        /// Kept in its own non-inlined method so a signature mismatch surfaces as a catchable
+        /// MissingMethodException at this call site instead of taking down the caller.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static GameObject? ShowNotificationDirect(DV.UIFramework.NotificationManager manager, string text, float duration)
+        {
+            return manager.ShowNotification(
+                text,       // Text
+                null,       // Localization parameters
+                duration,   // Duration
+                false,      // Clear existing notifications
+                null,       // Point at transform
+                false,      // Localize
+                false       // Target UI
+            );
+        }
+
+        /// <summary>
+        /// Late-bound call to ShowNotification that fills every parameter the current game build declares,
+        /// using the game's own defaults for anything this mod does not set.
+        /// </summary>
+        private static GameObject? ShowNotificationViaReflection(DV.UIFramework.NotificationManager manager, string text, float duration)
+        {
+            MethodInfo? method = typeof(DV.UIFramework.NotificationManager)
+                .GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                .Where(m => m.Name == "ShowNotification")
+                .OrderByDescending(m => m.GetParameters().Length)
+                .FirstOrDefault();
+
+            if (method == null)
+            {
+                Main.LogEntry("ShowNotificationViaReflection", "ShowNotification method not found on the game's NotificationManager.");
+                return null;
+            }
+
+            ParameterInfo[] parameters = method.GetParameters();
+            object?[] args = new object?[parameters.Length];
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                ParameterInfo parameter = parameters[i];
+                Type parameterType = parameter.ParameterType;
+                object? value = parameter.HasDefaultValue ? parameter.DefaultValue : null;
+
+                if (value == null && parameterType.IsValueType)
+                {
+                    value = Activator.CreateInstance(parameterType);
+                }
+                else if (value != null && parameterType.IsEnum && !parameterType.IsInstanceOfType(value))
+                {
+                    value = Enum.ToObject(parameterType, value);
+                }
+
+                switch (parameter.Name)
+                {
+                    case "locKey": value = text; break;
+                    case "locParams": value = null; break;
+                    case "duration": value = duration; break;
+                    case "clearExisting": value = false; break;
+                    case "pointAt": value = null; break;
+                    case "localize": value = false; break;
+                    case "targetIsUI": value = false; break;
+                }
+
+                args[i] = value;
+            }
+
+            return method.Invoke(manager, args) as GameObject;
         }
     }
 }
