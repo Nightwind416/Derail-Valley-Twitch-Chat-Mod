@@ -34,8 +34,7 @@ namespace TwitchChat
         {
             string methodName = "GetUserID";
 
-            byte[] tokenBytes = Convert.FromBase64String(Settings.Instance.EncodedOAuthToken);
-            string access_token = Encoding.UTF8.GetString(tokenBytes);
+            string access_token = OAuthTokenManager.GetAccessToken();
 
             Main.LogEntry(methodName, "Adding Authorization and Client-Id headers.");
             httpClient.DefaultRequestHeaders.Clear();
@@ -78,8 +77,7 @@ namespace TwitchChat
             string methodName = "ConnectionStatus";
             try
             {
-                byte[] tokenBytes = Convert.FromBase64String(Settings.Instance.EncodedOAuthToken);
-                string access_token = Encoding.UTF8.GetString(tokenBytes);
+                string access_token = OAuthTokenManager.GetAccessToken();
 
                 Main.LogEntry(methodName, "Adding Authorization and Client-Id headers.");
                 httpClient.DefaultRequestHeaders.Clear();

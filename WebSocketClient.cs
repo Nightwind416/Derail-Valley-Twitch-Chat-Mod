@@ -502,8 +502,7 @@ namespace TwitchChat
             });
             StringContent content = new(jsonBody, Encoding.UTF8, "application/json");
 
-            byte[] tokenBytes = Convert.FromBase64String(Settings.Instance.EncodedOAuthToken);
-            string access_token = Encoding.UTF8.GetString(tokenBytes);
+            string access_token = OAuthTokenManager.GetAccessToken();
 
             TwitchEventHandler.httpClient.DefaultRequestHeaders.Clear();
             TwitchEventHandler.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", access_token);

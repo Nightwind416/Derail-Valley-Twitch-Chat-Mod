@@ -7,7 +7,7 @@ A mod that seamlessly integrates Twitch chat into your Derail Valley gameplay ex
 ### Core Functionality
 
 - **Real-Time Chat Display**: View Twitch chat messages through in-game display panels (and popup notifications)
-- **Secure Authentication**: Automated OAuth token handling for secure Twitch integration
+- **Authentication You Can Audit**: OAuth handled directly between you and Twitch, asking for only the four permissions the mod actually uses, revocable from inside the game
 - **Message Logging**: Detailed chat logs for post-stream review
 - **Automated Messages**: Schedule periodic announcements to keep your chat informed
 - **Display Panels**: Wide, Large, Medium, and Small sized message display panels
@@ -85,9 +85,41 @@ The menus and chat displays live on world-space panels. There are three kinds of
 3. Complete the OAuth authentication in your default browser, outside the game
     Note: If playing in VR, you need to take your headset off or be able to 'alt tab' to your PC to authorize the connection
     Note: If you wait too long, the request will time out. If clicking the button does not work, restart the game and try again.
-4. Token is securely saved and valid for ~30 days
+4. The access token is stored in `Settings.xml` in the mod folder on your own PC
 5. If you are SURE your username is set correctly in the UMM menu, try restarting the game to 'hard reload' from the settings
 TODO: Improve websocket error/bad authentication response
+
+#### What you are authorizing
+
+You approve this on Twitch's own site, so the mod never sees your Twitch password. The mod asks
+for four permissions, and nothing else:
+
+| Permission | Twitch scope | Used for |
+| --- | --- | --- |
+| Read the messages in your chat | `user:read:chat` | Showing chat on your in-game panels |
+| Send chat messages as you | `user:write:chat` | The `!info` / `!commands` replies and any timed messages you set up |
+| Send whispers as you | `user:manage:whispers` | Only command replies you have set to whisper |
+| Post announcements in your chat | `moderator:manage:announcements` | Only timed messages you have coloured blue |
+
+It does **not** ask to read your email address, see your subscribers, followers or revenue, change
+your stream, or follow or subscribe to anything as you.
+
+#### Where your access token lives
+
+Your access token is written to `Settings.xml` in the mod's folder, on your PC and nowhere else. It
+is sent only to Twitch, over HTTPS. There is no server behind this mod, and the mod author has no
+way to see your token, your chat, or your game session. The token is deliberately kept out of the
+mod's log files so that sharing a log when reporting a bug does not hand over your account.
+
+If you want to check any of this, the code that talks to Twitch is in
+[`OAuthManager.cs`](OAuthManager.cs) and [`TwitchEventHandler.cs`](TwitchEventHandler.cs).
+
+#### Withdrawing access
+
+Use **Sign Out & Revoke Access** on the Status panel. That tells Twitch to invalidate the token
+immediately and deletes the local copy. You can also revoke it from Twitch's side at any time under
+[Twitch Connection Settings](https://www.twitch.tv/settings/connections) — find *DerailValleyChatMod*
+under "Other Connections" and click Disconnect.
 
 ### UnityModManager Configurations
 

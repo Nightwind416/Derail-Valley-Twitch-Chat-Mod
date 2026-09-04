@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -12,12 +14,188 @@ using UnityEngine;
 namespace TwitchChat
 {
     /// <summary>
+    /// Coarse state of the link between the mod and the user's Twitch account.
+    /// The UI switches on this rather than on the wording of the status message.
+    /// </summary>
+    public enum AuthPhase
+    {
+        /// <summary>No token held. The user has not linked an account, or has signed out.</summary>
+        NotConnected,
+        /// <summary>An authorization is in flight and the mod is waiting on the user.</summary>
+        AwaitingUser,
+        /// <summary>A token is held and was accepted by Twitch.</summary>
+        Connected,
+        /// <summary>The last attempt failed. <see cref="OAuthTokenManager.StatusMessage"/> says why.</summary>
+        Failed
+    }
+
+    /// <summary>
     /// Manages OAuth authentication flow with Twitch API.
     /// Handles secure token acquisition, storage, and validation for Twitch integration.
     /// Provides browser-based authentication and automatic token refresh functionality.
     /// </summary>
     public class OAuthTokenManager : MonoBehaviour
     {
+        /// <summary>
+        /// The exact scopes the mod asks Twitch for, and nothing beyond them.
+        /// Every entry here becomes a line on the consent screen the user has to trust us with,
+        /// so each one is listed with the single thing it is needed for:
+        ///   user:read:chat                 - EventSub channel.chat.message, to show chat in game
+        ///   user:write:chat                - POST /helix/chat/messages, for command replies and timed messages
+        ///   user:manage:whispers           - POST /helix/whispers, for command replies set to whisper
+        ///   moderator:manage:announcements - POST /helix/chat/announcements, for blue timed messages
+        /// The mod talks to Twitch with a user access token, so the bot scopes (user:bot, channel:bot)
+        /// are not required, and the legacy IRC scopes (chat:read, chat:edit) are superseded by the
+        /// user:*:chat pair. user:read:email was never used by any code path.
+        /// </summary>
+        public const string RequestedScopes = "user:read:chat user:write:chat user:manage:whispers moderator:manage:announcements";
+
+        /// <summary>Plain-language description of each requested scope, shown on the in-game consent screen.</summary>
+        public static readonly string[] ScopeExplanations =
+        [
+            "Read the messages in your chat, to show them on your in-game panels",
+            "Send chat messages as you, for the !info and !commands replies and any timed messages you set up",
+            "Send whispers as you, used only for command replies you have set to whisper",
+            "Post announcements in your chat, used only for timed messages you have coloured blue"
+        ];
+
+        /// <summary>Things the mod deliberately cannot do, shown alongside the scope list.</summary>
+        public static readonly string[] ScopeExclusions =
+        [
+            "Read your email address",
+            "See your subscribers, followers or revenue",
+            "Change your stream title, category or settings",
+            "Follow, subscribe or buy anything as you"
+        ];
+
+        /// <summary>Current state of the account link. Drives the authentication UI.</summary>
+        public static AuthPhase Phase { get; private set; } = AuthPhase.NotConnected;
+
+        /// <summary>Human-readable detail for the current <see cref="Phase"/>.</summary>
+        public static string StatusMessage { get; private set; } = "Not connected";
+
+        /// <summary>
+        /// Records a new authentication state and mirrors it into settings so the
+        /// Unity Mod Manager menu and the status panel stay in step.
+        /// </summary>
+        internal static void SetPhase(AuthPhase phase, string message)
+        {
+            Phase = phase;
+            StatusMessage = message;
+            Settings.Instance.authentication_status = message;
+        }
+
+        /// <summary>
+        /// Restores the phase from whatever is on disk at start-up, without contacting Twitch.
+        /// </summary>
+        public static void InitialisePhaseFromSettings()
+        {
+            if (string.IsNullOrEmpty(Settings.Instance.EncodedOAuthToken))
+            {
+                SetPhase(AuthPhase.NotConnected, "Not connected");
+            }
+            else
+            {
+                SetPhase(AuthPhase.NotConnected, "Saved token found, not yet checked");
+            }
+        }
+
+        /// <summary>
+        /// Reads a single parameter out of a callback URL's query string or fragment.
+        /// </summary>
+        /// <param name="url">The URL to read from.</param>
+        /// <param name="name">The parameter name, without the trailing '='.</param>
+        /// <returns>The parameter value, or an empty string if it is not present.</returns>
+        private static string ReadParameter(string url, string name)
+        {
+            string marker = name + "=";
+            int start = url.IndexOf(marker, StringComparison.Ordinal);
+            if (start == -1)
+            {
+                return string.Empty;
+            }
+
+            start += marker.Length;
+            int end = url.IndexOf('&', start);
+            if (end == -1)
+            {
+                end = url.Length;
+            }
+
+            return url.Substring(start, end - start);
+        }
+
+        /// <summary>
+        /// Returns the stored access token in plain text, or an empty string if none is held
+        /// or the stored value cannot be decoded.
+        /// </summary>
+        /// <remarks>
+        /// The result is a live credential. Never write it to a log, a status message or the UI.
+        /// </remarks>
+        public static string GetAccessToken()
+        {
+            if (string.IsNullOrEmpty(Settings.Instance.EncodedOAuthToken))
+            {
+                return string.Empty;
+            }
+
+            try
+            {
+                return Encoding.UTF8.GetString(Convert.FromBase64String(Settings.Instance.EncodedOAuthToken));
+            }
+            catch (FormatException)
+            {
+                Main.LogEntry("GetAccessToken", "Stored token is not valid base64. Treating it as absent.");
+                return string.Empty;
+            }
+        }
+
+        /// <summary>
+        /// Tells Twitch to revoke the stored token, then clears it from this machine.
+        /// </summary>
+        /// <remarks>
+        /// The local token is cleared whether or not Twitch accepts the revoke call, so a user who
+        /// asks to sign out always ends up signed out locally. Revocation is immediate and permanent;
+        /// reconnecting requires a fresh authorization.
+        /// </remarks>
+        /// <returns>An asynchronous task representing the revoke operation.</returns>
+        public static async Task RevokeAndSignOut()
+        {
+            string methodName = "RevokeAndSignOut";
+            string accessToken = GetAccessToken();
+
+            if (!string.IsNullOrEmpty(accessToken))
+            {
+                try
+                {
+                    Main.LogEntry(methodName, "Asking Twitch to revoke the stored token...");
+                    var body = new FormUrlEncodedContent(new[]
+                    {
+                        new KeyValuePair<string, string>("client_id", TwitchEventHandler.GetClientId()),
+                        new KeyValuePair<string, string>("token", accessToken)
+                    });
+
+                    // A bare client is used here so the shared client's Authorization header,
+                    // which carries the very token being revoked, is not sent along with it.
+                    using var client = new HttpClient();
+                    var response = await client.PostAsync("https://id.twitch.tv/oauth2/revoke", body);
+                    Main.LogEntry(methodName, $"Revoke response status code: {response.StatusCode}");
+                }
+                catch (Exception ex)
+                {
+                    // Non-fatal: the local copy is still discarded below.
+                    Main.LogEntry(methodName, $"Revoke request failed: {ex.Message}. Clearing the local token anyway.");
+                }
+            }
+
+            Settings.Instance.EncodedOAuthToken = string.Empty;
+            TwitchEventHandler.user_id = string.Empty;
+            TwitchEventHandler.httpClient.DefaultRequestHeaders.Clear();
+            Settings.Save(Settings.Instance, Main.ModEntry);
+            SetPhase(AuthPhase.NotConnected, "Signed out. Access revoked.");
+            Main.LogEntry(methodName, "Local token cleared.");
+        }
+
         /// <summary>
         /// Initiates the OAuth token retrieval process through Twitch authentication.
         /// Opens a browser window for user authorization and captures the response token.
@@ -28,25 +206,25 @@ namespace TwitchChat
         {
             string methodName = "GetOathToken";
             Main.LogEntry(methodName, "Sending oath Token request to Twitch...");
-            Settings.Instance.authentication_status = "Attempting Authentication...";
+            SetPhase(AuthPhase.AwaitingUser, "Attempting Authentication...");
         
             try
             {
                 if (string.IsNullOrEmpty(Settings.Instance.twitchUsername))
                 {
                     Main.LogEntry(methodName, "Twitch username is not set. Please set a username in the settings first.");
-                    Settings.Instance.authentication_status = "No Username Set";
+                    SetPhase(AuthPhase.Failed, "No Username Set");
                     return;
                 }
                 
                 Main.LogEntry(methodName, $"Using Twitch username: {Settings.Instance.twitchUsername}");
                 
                 string clientId = TwitchEventHandler.GetClientId();
-                string scope = "channel:bot user:read:chat user:bot user:read:email user:write:chat chat:edit chat:read user:manage:whispers moderator:manage:announcements";
+                string scope = RequestedScopes;
                 string state = Guid.NewGuid().ToString();
-        
+
                 string authorizationUrl = $"https://id.twitch.tv/oauth2/authorize?response_type=token&client_id={clientId}&redirect_uri=http://localhost/&scope={Uri.EscapeDataString(scope)}&state={state}";
-                Main.LogEntry(methodName, $"Authorization URL: {authorizationUrl}");
+                Main.LogEntry(methodName, $"Requesting scopes: {scope}");
         
                 // Open the authorization URL in the default web browser
                 await Task.Run(() => System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
@@ -56,14 +234,14 @@ namespace TwitchChat
                 }));
         
                 Main.LogEntry(methodName, "Opened Twitch authorization URL in the default web browser.");
-                Settings.Instance.authentication_status = "Check external browser...";
+                SetPhase(AuthPhase.AwaitingUser, "Check external browser...");
         
                 // Start an HTTP listener to capture the response
                 using var listener = new HttpListener();
                 listener.Prefixes.Add("http://localhost/");
                 listener.Start();
                 Main.LogEntry(methodName, "Waiting for Twitch authorization response...");
-                Settings.Instance.authentication_status = "Awaiting Authentication...";
+                SetPhase(AuthPhase.AwaitingUser, "Awaiting Authentication...");
 
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
         
@@ -76,7 +254,7 @@ namespace TwitchChat
                     if (context == null)
                     {
                         Main.LogEntry(methodName, "Authorization response timed out.");
-                        Settings.Instance.authentication_status = "Authorization failed. Please try again.";
+                        SetPhase(AuthPhase.Failed, "Authorization failed. Please try again.");
                         return;
                     }
 
@@ -105,47 +283,44 @@ namespace TwitchChat
                     // Handle the /save_token request
                     var secondContext = await listener.GetContextAsync();
                     string responseUrl = secondContext.Request.Url.ToString();
-                    Main.LogEntry(methodName, $"Received response:\n{responseUrl}");
+                    // Never log this URL: on success it carries the access token in its query string.
+                    Main.LogEntry(methodName, $"Received callback ({responseUrl.Length} chars).");
 
-                    string accessToken = string.Empty;
-                    string tokenParam = "access_token=";
-                    int tokenStartIndex = responseUrl.IndexOf(tokenParam);
-                    if (tokenStartIndex != -1)
+                    string accessToken = ReadParameter(responseUrl, "access_token");
+                    string returnedState = ReadParameter(responseUrl, "state");
+
+                    if (!string.IsNullOrEmpty(accessToken) && returnedState != state)
                     {
-                        tokenStartIndex += tokenParam.Length;
-                        int tokenEndIndex = responseUrl.IndexOf('&', tokenStartIndex);
-                        if (tokenEndIndex == -1)
-                        {
-                            tokenEndIndex = responseUrl.Length;
-                        }
-                        accessToken = responseUrl.Substring(tokenStartIndex, tokenEndIndex - tokenStartIndex);
+                        // The callback did not come from the request we started. Discard it.
+                        Main.LogEntry(methodName, "Callback state did not match the request. Ignoring the token.");
+                        SetPhase(AuthPhase.Failed, "Authorization response did not match. Please try again.");
+                        return;
                     }
 
                     if (!string.IsNullOrEmpty(accessToken))
                     {
-                        Main.LogEntry(methodName, $"Access token: {accessToken}");
-                        // oath_access_token = accessToken;
-                    
+                        Main.LogEntry(methodName, "Access token received.");
+
                         // Encode and save the token to settings
                         string encodedToken = Convert.ToBase64String(Encoding.UTF8.GetBytes(accessToken));
                         Settings.Instance.EncodedOAuthToken = encodedToken;
                         Settings.Save(Settings.Instance, Main.ModEntry);
 
-                        Settings.Instance.authentication_status = "Validated!";
+                        SetPhase(AuthPhase.Connected, "Validated!");
 
                         await TwitchEventHandler.GetUserID();
                     }
                     else
                     {
                         Main.LogEntry(methodName, "Failed to extract access token from the response URL.");
-                        Settings.Instance.authentication_status = "Authorization failed. Please try again.";
+                        SetPhase(AuthPhase.Failed, "Authorization failed. Please try again.");
                     }
 
                 }
                 catch (OperationCanceledException)
                 {
                     Main.LogEntry(methodName, "Authorization response timed out.");
-                    Settings.Instance.authentication_status = "Authorization failed. Please try again.";
+                    SetPhase(AuthPhase.Failed, "Authorization failed. Please try again.");
                 }
                 finally
                 {
@@ -155,7 +330,7 @@ namespace TwitchChat
             catch (Exception ex)
             {
                 Main.LogEntry(methodName, $"Failed to get oath Token: {ex.Message}");
-                Settings.Instance.authentication_status = "Authorization failed. Please try again.";
+                SetPhase(AuthPhase.Failed, "Authorization failed. Please try again.");
             }
         }
 
@@ -169,44 +344,36 @@ namespace TwitchChat
         {
             string methodName = "ValidateAuthToken";
 
-            byte[] tokenBytes = Convert.FromBase64String(Settings.Instance.EncodedOAuthToken);
-            _ = Encoding.UTF8.GetString(tokenBytes);
-            string access_token = Encoding.UTF8.GetString(tokenBytes);
-            
-            // Check for encoded token first
-            if (!string.IsNullOrEmpty(Settings.Instance.EncodedOAuthToken))
-            {
-                try
-                {
-                    Main.LogEntry(methodName, "Found saved token, attempting to validate...");
-                    Settings.Instance.authentication_status = "Found saved token, attempting to validate...";
-                }
-                catch (Exception ex)
-                {
-                    Main.LogEntry(methodName, $"Error decoding saved token: {ex.Message}");
-                    Settings.Instance.EncodedOAuthToken = string.Empty;
-                    Settings.Save(Settings.Instance, Main.ModEntry);
-                    Settings.Instance.authentication_status = "Error decoding saved token. Please try again.";
-                    return;
-                }
-            }
-            else
+            if (string.IsNullOrEmpty(Settings.Instance.EncodedOAuthToken))
             {
                 Main.LogEntry(methodName, "No saved token found.");
-                Settings.Instance.authentication_status = "No saved token found. Please try again.";
+                SetPhase(AuthPhase.NotConnected, "No saved token found. Please try again.");
                 return;
             }
-            
+
+            // Decode before anything else: a settings file that has been hand-edited or truncated
+            // used to throw out of this method and leave the mod with no way to recover.
+            string access_token = GetAccessToken();
+            if (string.IsNullOrEmpty(access_token))
+            {
+                Settings.Instance.EncodedOAuthToken = string.Empty;
+                Settings.Save(Settings.Instance, Main.ModEntry);
+                SetPhase(AuthPhase.Failed, "Error decoding saved token. Please try again.");
+                return;
+            }
+
+            Main.LogEntry(methodName, "Found saved token, attempting to validate...");
+            SetPhase(AuthPhase.AwaitingUser, "Found saved token, attempting to validate...");
+
+
             TwitchEventHandler.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", access_token);
             Main.LogEntry(methodName, $"Validating oath token...");
-            Settings.Instance.authentication_status = "Validating Authorization Token...";
+            SetPhase(AuthPhase.AwaitingUser, "Validating Authorization Token...");
 
-            // Log the headers
-            foreach (var header in TwitchEventHandler.httpClient.DefaultRequestHeaders)
-            {
-                Main.LogEntry(methodName, $"Header: {header.Key} = {string.Join(", ", header.Value)}");
-            }
-        
+            // Header names only. The Authorization header's value is the access token itself.
+            Main.LogEntry(methodName, $"Request headers: {string.Join(", ", TwitchEventHandler.httpClient.DefaultRequestHeaders.Select(h => h.Key))}");
+
+
             int retryCount = 3;
             for (int i = 0; i < retryCount; i++)
             {
@@ -214,7 +381,7 @@ namespace TwitchChat
                 {
                     var stopwatch = System.Diagnostics.Stopwatch.StartNew();
                     Main.LogEntry(methodName, "Sending request to Twitch API...");
-                    Settings.Instance.authentication_status = "Sending Validation request...";
+                    SetPhase(AuthPhase.AwaitingUser, "Sending Validation request...");
                     var response = await TwitchEventHandler.httpClient.GetAsync("https://id.twitch.tv/oauth2/validate");
                     stopwatch.Stop();
                     Main.LogEntry(methodName, $"Response status code: {response.StatusCode}, Time taken: {stopwatch.ElapsedMilliseconds} ms");
@@ -224,13 +391,13 @@ namespace TwitchChat
                         Main.LogEntry(methodName, "Token is not valid. Clearing saved token...");
                         Settings.Instance.EncodedOAuthToken = string.Empty;
                         Settings.Save(Settings.Instance, Main.ModEntry);
-                        Settings.Instance.authentication_status = "Validation failed. Please try again.";
+                        SetPhase(AuthPhase.Failed, "Validation failed. Please try again.");
                         return;
                     }
                     else
                     {
                         Main.LogEntry(methodName, "Validated token.");
-                        Settings.Instance.authentication_status = "Validated!";
+                        SetPhase(AuthPhase.Connected, "Validated!");
                         
                         await TwitchEventHandler.GetUserID();
                     }
@@ -240,7 +407,7 @@ namespace TwitchChat
                 catch (HttpRequestException ex)
                 {
                     Main.LogEntry(methodName, $"HTTP request error: {ex.Message}");
-                    Settings.Instance.authentication_status = "HTTP request error";
+                    SetPhase(AuthPhase.Failed, "HTTP request error");
                     if (ex.InnerException != null)
                     {
                         Main.LogEntry(methodName, $"Inner exception: {ex.InnerException.Message}");
@@ -249,7 +416,7 @@ namespace TwitchChat
                 catch (TaskCanceledException ex)
                 {
                     Main.LogEntry(methodName, $"Request timed out: {ex.Message}");
-                    Settings.Instance.authentication_status = "Request timed out";
+                    SetPhase(AuthPhase.Failed, "Request timed out");
                     if (ex.InnerException != null)
                     {
                         Main.LogEntry(methodName, $"Inner exception: {ex.InnerException.Message}");
@@ -258,7 +425,7 @@ namespace TwitchChat
                 catch (Exception ex)
                 {
                     Main.LogEntry(methodName, $"Unexpected error: {ex.Message}");
-                    Settings.Instance.authentication_status = "Unexpected error";
+                    SetPhase(AuthPhase.Failed, "Unexpected error");
                     if (ex.InnerException != null)
                     {
                         Main.LogEntry(methodName, $"Inner exception: {ex.InnerException.Message}");
@@ -269,13 +436,13 @@ namespace TwitchChat
                 if (i < retryCount - 1)
                 {
                     Main.LogEntry(methodName, "Retrying...");
-                    Settings.Instance.authentication_status = "Retrying";
+                    SetPhase(AuthPhase.AwaitingUser, "Retrying");
                     await Task.Delay(2000); // Wait for 2 seconds before retrying
                 }
                 else
                 {
                     Main.LogEntry(methodName, "Max retry attempts reached. Giving up.");
-                    Settings.Instance.authentication_status = "Max retry attempts reached. Giving up.";
+                    SetPhase(AuthPhase.Failed, "Max retry attempts reached. Giving up.");
                 }
             }
         }
