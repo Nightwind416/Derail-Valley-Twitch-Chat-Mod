@@ -46,7 +46,7 @@ namespace TwitchChat.PanelMenus
                 Color newColor = Settings.Instance.panelColor;
                 newColor.r = value / 100f;
                 Settings.Instance.panelColor = newColor;
-                Settings.Instance.Save(Main.ModEntry);
+                Settings.Instance.RequestSave();
                 MenuManager.Instance.UpdateAllPanelBackgrounds();
             });
 
@@ -58,7 +58,7 @@ namespace TwitchChat.PanelMenus
                 Color newColor = Settings.Instance.panelColor;
                 newColor.g = value / 100f;
                 Settings.Instance.panelColor = newColor;
-                Settings.Instance.Save(Main.ModEntry);
+                Settings.Instance.RequestSave();
                 MenuManager.Instance.UpdateAllPanelBackgrounds();
             });
 
@@ -70,7 +70,7 @@ namespace TwitchChat.PanelMenus
                 Color newColor = Settings.Instance.panelColor;
                 newColor.b = value / 100f;
                 Settings.Instance.panelColor = newColor;
-                Settings.Instance.Save(Main.ModEntry);
+                Settings.Instance.RequestSave();
                 MenuManager.Instance.UpdateAllPanelBackgrounds();
             });
 
@@ -82,7 +82,7 @@ namespace TwitchChat.PanelMenus
                 Color newColor = Settings.Instance.panelColor;
                 newColor.a = value / 100f;
                 Settings.Instance.panelColor = newColor;
-                Settings.Instance.Save(Main.ModEntry);
+                Settings.Instance.RequestSave();
                 MenuManager.Instance.UpdateAllPanelBackgrounds();
             });
         }
@@ -103,7 +103,7 @@ namespace TwitchChat.PanelMenus
                 Color newColor = Settings.Instance.sectionColor;
                 newColor.r = value / 100f;
                 Settings.Instance.sectionColor = newColor;
-                Settings.Instance.Save(Main.ModEntry);
+                Settings.Instance.RequestSave();
                 MenuManager.Instance.UpdateAllSectionBackgrounds();
             });
 
@@ -115,7 +115,7 @@ namespace TwitchChat.PanelMenus
                 Color newColor = Settings.Instance.sectionColor;
                 newColor.g = value / 100f;
                 Settings.Instance.sectionColor = newColor;
-                Settings.Instance.Save(Main.ModEntry);
+                Settings.Instance.RequestSave();
                 MenuManager.Instance.UpdateAllSectionBackgrounds();
             });
 
@@ -127,7 +127,7 @@ namespace TwitchChat.PanelMenus
                 Color newColor = Settings.Instance.sectionColor;
                 newColor.b = value / 100f;
                 Settings.Instance.sectionColor = newColor;
-                Settings.Instance.Save(Main.ModEntry);
+                Settings.Instance.RequestSave();
                 MenuManager.Instance.UpdateAllSectionBackgrounds();
             });
 
@@ -139,7 +139,7 @@ namespace TwitchChat.PanelMenus
                 Color newColor = Settings.Instance.sectionColor;
                 newColor.a = value / 100f;
                 Settings.Instance.sectionColor = newColor;
-                Settings.Instance.Save(Main.ModEntry);
+                Settings.Instance.RequestSave();
                 MenuManager.Instance.UpdateAllSectionBackgrounds();
             });
         }

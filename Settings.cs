@@ -53,6 +53,25 @@ namespace TwitchChat
         public Color panelColor = new(0, 0, 0, 0.3f);
         public Color sectionColor = new(0, 0, 0, 0.1f);
         public Color buttonColor = new(0, 0, 0, 0.5f);
+
+        // Cab Display and Wrist Panel Settings
+        public bool licensePanelsEnabled = true;
+        public string cabDisplayPanel = "Main";
+        public bool cabDisplayVisible = true;
+        public float cabDisplayDistance = 0.7f;
+        public float cabDisplayScale = 1.0f;
+        public string placeDisplayKey = "F7";
+        public string toggleDisplayKey = "F8";
+        public List<CabDisplayPose> cabDisplayPoses = new();
+        public bool wristPanelEnabled = true;
+        public string wristPanel = "Main";
+        public bool wristPanelOnLeftHand = true;
+        public float wristPanelScale = 0.6f;
+        public Vector3 wristPanelOffset = DefaultWristOffset;
+        public Vector3 wristPanelRotation = DefaultWristRotation;
+
+        public static readonly Vector3 DefaultWristOffset = new(0f, 0.04f, -0.10f);
+        public static readonly Vector3 DefaultWristRotation = new(90f, 0f, 0f);
         
         // Standard Messages Settings
         public bool connectMessageEnabled = true;
@@ -141,6 +160,19 @@ namespace TwitchChat
                 "Primary" => Color.red,
                 _ => Color.white
             };
+        }
+
+        /// <summary>
+        /// Draws a labelled horizontal slider with its current value and returns the (possibly changed) value.
+        /// </summary>
+        private static float SliderRow(string label, float value, float min, float max, string format)
+        {
+            GUILayout.BeginHorizontal();
+                GUILayout.Label(label, GUILayout.Width(160));
+                float result = GUILayout.HorizontalSlider(value, min, max, GUILayout.Width(200));
+                GUILayout.Label(result.ToString(format), GUILayout.Width(60));
+            GUILayout.EndHorizontal();
+            return result;
         }
 
         /// <summary>
@@ -348,6 +380,57 @@ namespace TwitchChat
 
             // GUILayout.Space(10);
             
+            // Cab Display and Wrist Panel Section
+            GUILayout.BeginVertical(GUI.skin.box);
+                GUILayout.Label("Cab Display and Wrist Panel");
+                GUILayout.Space(5);
+                GUILayout.BeginHorizontal();
+                    if (GUILayout.Button("Place Cab Display In Front Of Me", GUILayout.Width(230)))
+                    {
+                        MenuManager.Instance.PlaceCabDisplay();
+                    }
+                    if (GUILayout.Button(cabDisplayVisible ? "Hide Cab Display" : "Show Cab Display", GUILayout.Width(150)))
+                    {
+                        MenuManager.Instance.ToggleCabDisplay();
+                    }
+                GUILayout.EndHorizontal();
+                GUILayout.BeginHorizontal();
+                    GUILayout.Label("Place key:", GUILayout.Width(160));
+                    placeDisplayKey = GUILayout.TextField(placeDisplayKey, GUILayout.Width(80));
+                    GUILayout.Label("Toggle key:", GUILayout.Width(80));
+                    toggleDisplayKey = GUILayout.TextField(toggleDisplayKey, GUILayout.Width(80));
+                    GUILayout.Label("(Unity KeyCode names, for example F7 or Keypad1)");
+                GUILayout.EndHorizontal();
+                cabDisplayDistance = SliderRow("Placement distance (m)", cabDisplayDistance, 0.3f, 2.0f, "0.00");
+                cabDisplayScale = SliderRow("Cab display scale", cabDisplayScale, 0.5f, 2.0f, "0.00");
+                GUILayout.Space(5);
+                licensePanelsEnabled = GUILayout.Toggle(licensePanelsEnabled, " Also show the menus on the six license papers (legacy mode)");
+                GUILayout.Space(5);
+                wristPanelEnabled = GUILayout.Toggle(wristPanelEnabled, " Wrist panel (VR only)");
+                GUILayout.BeginHorizontal();
+                    GUILayout.Label("Wrist panel hand:", GUILayout.Width(160));
+                    if (GUILayout.Button(wristPanelOnLeftHand ? "Left" : "Right", GUILayout.Width(80)))
+                    {
+                        wristPanelOnLeftHand = !wristPanelOnLeftHand;
+                    }
+                GUILayout.EndHorizontal();
+                wristPanelScale = SliderRow("Wrist panel scale", wristPanelScale, 0.2f, 1.5f, "0.00");
+                wristPanelOffset.x = SliderRow("Wrist offset X (m)", wristPanelOffset.x, -0.3f, 0.3f, "0.000");
+                wristPanelOffset.y = SliderRow("Wrist offset Y (m)", wristPanelOffset.y, -0.3f, 0.3f, "0.000");
+                wristPanelOffset.z = SliderRow("Wrist offset Z (m)", wristPanelOffset.z, -0.3f, 0.3f, "0.000");
+                wristPanelRotation.x = SliderRow("Wrist rotation X (deg)", wristPanelRotation.x, -180f, 180f, "0");
+                wristPanelRotation.y = SliderRow("Wrist rotation Y (deg)", wristPanelRotation.y, -180f, 180f, "0");
+                wristPanelRotation.z = SliderRow("Wrist rotation Z (deg)", wristPanelRotation.z, -180f, 180f, "0");
+                if (GUILayout.Button("Reset wrist panel to defaults", GUILayout.Width(200)))
+                {
+                    wristPanelOffset = DefaultWristOffset;
+                    wristPanelRotation = DefaultWristRotation;
+                    wristPanelScale = 0.6f;
+                }
+            GUILayout.EndVertical();
+
+            GUILayout.Space(10);
+
             // Debug Settings Section
             GUILayout.BeginVertical(GUI.skin.box);
                 GUILayout.Label("Debug Level");
@@ -382,6 +465,33 @@ namespace TwitchChat
             _ = this;
         }
 
+        // Deferred saving: panel sliders fire on every tick, so writes are coalesced and flushed after a short quiet period.
+        private bool saveRequested;
+        private DateTime saveRequestedAt;
+        private static readonly TimeSpan saveDelay = TimeSpan.FromSeconds(1);
+
+        /// <summary>
+        /// Marks the settings as changed. The file is written by <see cref="FlushPendingSave"/> once changes stop for a second.
+        /// Use this from in-game panel controls; use <see cref="Save(UnityModManager.ModEntry)"/> when the write must happen now.
+        /// </summary>
+        public void RequestSave()
+        {
+            saveRequested = true;
+            saveRequestedAt = DateTime.UtcNow;
+        }
+
+        /// <summary>
+        /// Writes pending changes to disk. Called every frame by the MenuManager; pass true to write immediately.
+        /// </summary>
+        /// <param name="force">Write now even if changes are still arriving.</param>
+        public void FlushPendingSave(bool force = false)
+        {
+            if (!saveRequested) return;
+            if (!force && DateTime.UtcNow - saveRequestedAt < saveDelay) return;
+            saveRequested = false;
+            Save(Main.ModEntry);
+        }
+
         /// <summary>
         /// Default constructor for Settings class
         /// </summary>
@@ -408,6 +518,17 @@ namespace TwitchChat
         public override string GetPath(UnityModManager.ModEntry modEntry) {
             return Path.Combine(modEntry.Path, "Settings.xml");
         }
+    }
+
+    /// <summary>
+    /// Where the cab display sits inside one locomotive type, stored relative to the car interior transform.
+    /// </summary>
+    [Serializable]
+    public class CabDisplayPose
+    {
+        public string carId = string.Empty;
+        public Vector3 localPosition;
+        public Vector3 localEuler;
     }
 
     /// <summary>

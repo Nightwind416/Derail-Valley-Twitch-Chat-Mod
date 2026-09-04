@@ -45,7 +45,7 @@ namespace TwitchChat.PanelMenus
                 Color newColor = Settings.Instance.buttonColor;
                 newColor.r = value / 100f;
                 Settings.Instance.buttonColor = newColor;
-                Settings.Instance.Save(Main.ModEntry);
+                Settings.Instance.RequestSave();
                 MenuManager.Instance.UpdateAllButtonColors();
             });
 
@@ -57,7 +57,7 @@ namespace TwitchChat.PanelMenus
                 Color newColor = Settings.Instance.buttonColor;
                 newColor.g = value / 100f;
                 Settings.Instance.buttonColor = newColor;
-                Settings.Instance.Save(Main.ModEntry);
+                Settings.Instance.RequestSave();
                 MenuManager.Instance.UpdateAllButtonColors();
             });
 
@@ -69,7 +69,7 @@ namespace TwitchChat.PanelMenus
                 Color newColor = Settings.Instance.buttonColor;
                 newColor.b = value / 100f;
                 Settings.Instance.buttonColor = newColor;
-                Settings.Instance.Save(Main.ModEntry);
+                Settings.Instance.RequestSave();
                 MenuManager.Instance.UpdateAllButtonColors();
             });
 
@@ -81,7 +81,7 @@ namespace TwitchChat.PanelMenus
                 Color newColor = Settings.Instance.buttonColor;
                 newColor.a = value / 100f;
                 Settings.Instance.buttonColor = newColor;
-                Settings.Instance.Save(Main.ModEntry);
+                Settings.Instance.RequestSave();
                 MenuManager.Instance.UpdateAllButtonColors();
             });
         }
@@ -93,21 +93,21 @@ namespace TwitchChat.PanelMenus
             // Reset Panel Color button
             PanelConstructor.Button.Create(resetSection.transform, "Reset Panel Color", 80, 35, clicked: () => {
                 Settings.Instance.panelColor = new Color(0, 0, 0, 0.3f);
-                Settings.Instance.Save(Main.ModEntry);
+                Settings.Instance.RequestSave();
                 MenuManager.Instance.UpdateAllPanelBackgrounds();
             });
             
             // Reset Section Color button
             PanelConstructor.Button.Create(resetSection.transform, "Reset Section Color", 80, 60, clicked: () => {
                 Settings.Instance.sectionColor = new Color(0, 0, 0, 0.1f);
-                Settings.Instance.Save(Main.ModEntry);
+                Settings.Instance.RequestSave();
                 MenuManager.Instance.UpdateAllSectionBackgrounds();
             });
             
             // Reset Button Color button
             PanelConstructor.Button.Create(resetSection.transform, "Reset Button Color", 80, 85, clicked: () => {
                 Settings.Instance.buttonColor = new Color(0, 0, 0, 0.5f);
-                Settings.Instance.Save(Main.ModEntry);
+                Settings.Instance.RequestSave();
                 MenuManager.Instance.UpdateAllButtonColors();
                 
                 // Update sliders to reflect new values
@@ -125,7 +125,7 @@ namespace TwitchChat.PanelMenus
                 Settings.Instance.buttonColor = new Color(0, 0, 0, 0.5f);
                 
                 // Update all UI elements with new colors
-                Settings.Instance.Save(Main.ModEntry);
+                Settings.Instance.RequestSave();
                 MenuManager.Instance.UpdateAllPanelBackgrounds();
                 MenuManager.Instance.UpdateAllSectionBackgrounds();
                 MenuManager.Instance.UpdateAllButtonColors();

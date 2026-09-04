@@ -9,9 +9,9 @@
 		<DerailValleyManagedAssets>D:\SteamLibrary\steamapps\common\Derail Valley\DerailValley_Data\Managed\</DerailValleyManagedAssets> <!-- Change to local game install path during build -->
 		<CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
 		<DebugType>none</DebugType>
-		<ModVersion>3.1.0</ModVersion>
+		<ModVersion>3.3.0</ModVersion>
 		<ModAuthor>Nightwind416</ModAuthor>
-		<GameVersion>build 99.3</GameVersion>
+		<GameVersion>build 99</GameVersion>
 		<EntryMethod>TwitchChat.Main.Load</EntryMethod>
 		<ManagerVersion>0.27.3</ManagerVersion>
 		<ModHomepage>https://www.nexusmods.com/derailvalley/mods/1069</ModHomepage>
@@ -60,6 +60,22 @@
 			<HintPath>$(DerailValleyManagedAssets)DV.Utils.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
+		<Reference Include="DV.ThingTypes">
+			<HintPath>$(DerailValleyManagedAssets)DV.ThingTypes.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="WorldStreamer">
+			<HintPath>$(DerailValleyManagedAssets)WorldStreamer.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="VRTK">
+			<HintPath>$(DerailValleyManagedAssets)VRTK.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="Newtonsoft.Json">
+			<HintPath>$(DerailValleyManagedAssets)Newtonsoft.Json.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
 		<Reference Include="UnityEngine.UI">
 			<HintPath>$(DerailValleyManagedAssets)UnityEngine.UI.dll</HintPath>
 			<Private>false</Private>
@@ -74,10 +90,6 @@
 		</Reference>
 		<Reference Include="UnityEngine.PhysicsModule">
 			<HintPath>$(DerailValleyManagedAssets)UnityEngine.PhysicsModule.dll</HintPath>
-			<Private>false</Private>
-		</Reference>
-		<Reference Include="UnityEngine.EventSystems">
-			<HintPath>$(DerailValleyManagedAssets)UnityEngine.EventSystems.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
 	</ItemGroup>

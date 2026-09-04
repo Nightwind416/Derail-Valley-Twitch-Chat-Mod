@@ -63,7 +63,7 @@ namespace TwitchChat.PanelMenus
             // Add listener after toggle creation
             notificationsEnabled.onValueChanged.AddListener((value) => {
                 Settings.Instance.notificationsEnabled = value;
-                Settings.Instance.Save(Main.ModEntry);
+                Settings.Instance.RequestSave();
                 MenuManager.Instance.UpdateAllNotificationToggles(value);
             });
 
@@ -78,7 +78,7 @@ namespace TwitchChat.PanelMenus
             
             notificationDuration.onValueChanged.AddListener((value) => {
                 Settings.Instance.notificationDuration = value;
-                Settings.Instance.Save(Main.ModEntry);
+                Settings.Instance.RequestSave();
                 MenuManager.Instance.UpdateAllNotificationDurations(value);
             });
 

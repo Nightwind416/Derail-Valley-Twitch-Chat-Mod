@@ -72,7 +72,7 @@ namespace TwitchChat.PanelMenus
             // Add listener after toggle creation
             processOwn.onValueChanged.AddListener((value) => {
                 Settings.Instance.processOwn = value;
-                Settings.Instance.Save(Main.ModEntry);
+                Settings.Instance.RequestSave();
                 MenuManager.Instance.UpdateAllProcessOwnToggles(value);
             });
 
@@ -88,7 +88,7 @@ namespace TwitchChat.PanelMenus
             // Add listener after toggle creation
             processDuplicates.onValueChanged.AddListener((value) => {
                 Settings.Instance.processDuplicates = value;
-                Settings.Instance.Save(Main.ModEntry);
+                Settings.Instance.RequestSave();
                 MenuManager.Instance.UpdateAllProcessDuplicatesToggles(value);
             });
         }
@@ -105,7 +105,7 @@ namespace TwitchChat.PanelMenus
             
             // Update settings
             Settings.Instance.debugLevel = (DebugLevel)nextLevel;
-            Settings.Instance.Save(Main.ModEntry);
+            Settings.Instance.RequestSave();
 
             // Update button text
             if (debugLevelButton != null)

@@ -40,15 +40,22 @@ A mod that seamlessly integrates Twitch chat into your Derail Valley gameplay ex
 
 ### Display and Menu Panel Setup
 
-- Menus automatically 'replace' the following licenses:
--- LicenseTrainDriver - Automatically given at start of a new game
--- LicenseShunting - Automatically given at start of a new game
--- LicenseLocomotiveDE2 - Automatically given at start of a new game
--- LicenseMuseumCitySouth - Purchase/own the the 'Museum' license
--- LicenseFreightHaul - Purchase/own the Freight Haul 1 license
--- LicenseDispatcher1 - Purchase/own the Dispatcher license
+The menus and chat displays live on world-space panels. There are three kinds of panel host:
 
-- Each menu is an exact duplicate, though you can show different panels on each
+- **Cab display** - a panel parented to the locomotive you are in, so it rides along with the cab
+-- Press the place key (default F7), or use the "Place Display" button on any Main panel, and the panel appears where you are looking
+-- The position is remembered per locomotive type and restored automatically the next time you board that type
+-- The toggle key (default F8), or the "Toggle Display" button, hides and shows it without moving it
+-- Keys, placement distance and scale are set in the Unity Mod Manager menu
+- **Wrist panel** (VR only) - a smaller copy of the menus attached to a controller, glance at it like a watch
+-- Choose the hand, size, offset and rotation in the Unity Mod Manager menu; changes apply live
+-- Its "Place Display" button is the VR way to summon the cab display without a keyboard
+- **License papers** (legacy mode, can be turned off in the Unity Mod Manager menu) - menus replace the following licenses:
+-- LicenseTrainDriver, LicenseShunting, LicenseLocomotiveDE2 - given at the start of a new game
+-- LicenseMuseumCitySouth, LicenseFreightHaul, LicenseDispatcher1 - purchase/own the license
+-- As these menus ride on licenses, they can be attached to sticky tape anywhere sticky tape can be placed
+
+- Every host shows the same panels and remembers which panel it last showed
 - Display Panels:
 -- Wide - Little wider than the large, but about 1/3 in height
 -- Large - Approx same size as the DE2 back window
@@ -56,16 +63,15 @@ A mod that seamlessly integrates Twitch chat into your Derail Valley gameplay ex
 -- Small - Same size as the license
 - Config Panels
 -- Config1 - Customize background panel and section coloring
--- Config2 - Customize button coloring and reset color cusotmizations
+-- Config2 - Customize button coloring and reset color customizations
 - Menu Panels
--- Main - Access all other panels from here
--- Notifications - Enable/Disable the notification popups when new messges are received and set duration
+-- Main - Access all other panels from here, plus the Place Display and Toggle Display buttons
+-- Notifications - Enable/Disable the notification popups when new messages are received and set duration
 -- Standard Messages - Enable/Disable your automatic Connect/Disconnect messages
 -- Command Messages - Enable/Disable the !info and !command ...commands
 -- Timed Messages - Enable/Disable the timed messages system
 -- Debug - Set debug level, several 'debug and testing' related buttons
 
-- As these menus replaced license, they can be 'attached' to sticky tape **ANYWHERE** (that sticky tape can be placed)
 - Buttons can be interacted with in both VR and non-VR modes
 - Top left panel buttons will 'minimize' the displayed panel
 - Top right panel buttons will return to the 'Main' panel (does nothing 'on' the Main panel)
@@ -110,6 +116,23 @@ Access advanced options by expanding the "Debug and Troubleshooting" section in 
 - [GitHub Repository](https://github.com/Nightwind416/Derail-Valley-Twitch-Chat-Mod)
 
 ## Version History
+
+### 3.3.0 (September 4, 2026)
+
+- New cab display: a panel placed where you look that rides along with the locomotive and remembers its position per locomotive type
+- New wrist panel for VR: the menus on your forearm, including a button to summon the cab display
+- License paper menus are now an optional legacy mode. Licenses are found through the game's item system instead of by object name, so they work again on current game builds
+- Unity Mod Manager menu gains a section for the hotkeys, placement distance, and wrist panel tuning
+
+### 3.2.0 (September 4, 2026)
+
+- Fixed the mod failing to enable on current game builds (the game's notification API gained new optional parameters; the mod now tolerates such changes)
+- WebSocket messages are reassembled from all frames, so long chat messages are no longer truncated or dropped
+- Twitch "session reconnect" requests are honoured, and lost connections retry with backoff instead of giving up
+- Connect/disconnect chat announcements are only sent for manual connects and disconnects, not automatic reconnects
+- The "Last Message Sent" status for timed messages now updates
+- Settings changes made from the in-game panels are written to disk after a short delay instead of on every slider tick
+- Received chat messages are now written to the Messages log
 
 ### 3.1.0 (January 16,2025)
 

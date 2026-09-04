@@ -1,11 +1,13 @@
 using System;
+using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.WebSockets;
-using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace TwitchChat
 {
@@ -15,40 +17,58 @@ namespace TwitchChat
     /// <remarks>
     /// This class is responsible for:
     /// - Establishing and maintaining WebSocket connections to Twitch's EventSub service
-    /// - Handling connection monitoring and automatic reconnection
+    /// - Reassembling fragmented frames into complete JSON messages
+    /// - Honouring Twitch-initiated session reconnects without dropping subscriptions
+    /// - Handling connection monitoring and automatic reconnection with backoff
     /// - Processing incoming messages and events
-    /// - Managing connection state and health checks
     /// </remarks>
     public class WebSocketManager
     {
-        /// <summary>The WebSocket client instance for Twitch communication</summary>
-        private static ClientWebSocket webSocketClient = new();
-        
-        /// <summary>The current session ID from Twitch</summary>
+        /// <summary>Default EventSub endpoint. Twitch sends a keepalive at least this often when the channel is idle.</summary>
+        private const string EventSubUri = "wss://eventsub.wss.twitch.tv/ws?keepalive_timeout_seconds=30";
+
+        /// <summary>How long a single receive may wait before the connection is considered dead.</summary>
+        private static readonly TimeSpan receiveTimeout = TimeSpan.FromSeconds(45);
+
+        /// <summary>How long without any message before the health monitor declares the connection dead.</summary>
+        private static readonly TimeSpan keepaliveGrace = TimeSpan.FromSeconds(45);
+
+        /// <summary>The active WebSocket client instance for Twitch communication.</summary>
+        private static ClientWebSocket? webSocketClient;
+
+        /// <summary>The previous socket during a Twitch-initiated session migration. Closed once the new session is welcomed.</summary>
+        private static ClientWebSocket? supersededSocket;
+
+        /// <summary>The current session ID from Twitch.</summary>
         private static string session_id = string.Empty;
-        
-        /// <summary>Timestamp of the last received keepalive message</summary>
+
+        /// <summary>Timestamp of the last message received on the active connection.</summary>
         public static DateTime lastKeepaliveTime = DateTime.UtcNow;
-        
-        /// <summary>Indicates whether the connection is currently healthy</summary>
+
+        /// <summary>Indicates whether the connection is currently healthy.</summary>
         private static bool isConnectionHealthy = false;
-        
-        /// <summary>Timer for monitoring connection health</summary>
+
+        /// <summary>Timer for monitoring connection health.</summary>
         private static Timer? connectionMonitorTimer;
-        
-        /// <summary>Public accessor for connection health status</summary>
+
+        /// <summary>Public accessor for connection health status.</summary>
         public static bool IsConnectionHealthy => isConnectionHealthy;
 
         public static string lastMessageType = "None";
         public static string lastChatMessage = "No messages received";
-        // public static string LastMessageType => lastMessageType;
-        // public static string LastChatMessage => lastChatMessage;
         public static DateTime lastTypeReceivedTime = DateTime.UtcNow;
 
         private static readonly SemaphoreSlim reconnectLock = new(1, 1);
         private static int reconnectAttempts = 0;
-        private static readonly int maxReconnectAttempts = 5;
+        private static readonly int maxReconnectAttempts = 8;
         private static readonly TimeSpan reconnectDelay = TimeSpan.FromSeconds(5);
+        private static readonly TimeSpan maxReconnectDelay = TimeSpan.FromSeconds(60);
+
+        /// <summary>True from a user-initiated connect until a user-initiated disconnect. Automatic reconnects only happen while this is set.</summary>
+        private static bool userWantsConnection = false;
+
+        /// <summary>Whether the next successful subscription should send the connect chat message. Suppressed for automatic reconnects.</summary>
+        private static bool announceOnWelcome = false;
 
         /// <summary>
         /// Establishes a WebSocket connection to Twitch's EventSub service.
@@ -65,44 +85,111 @@ namespace TwitchChat
                 return;
             }
 
-            if (string .IsNullOrEmpty(Settings.Instance.EncodedOAuthToken))
+            if (string.IsNullOrEmpty(Settings.Instance.EncodedOAuthToken))
             {
                 Main.LogEntry(methodName, "Access token is empty. Cannot attempt connection to WebSocket.");
                 NotificationManager.SetVariable("alertMessage", "Access token is empty. Cannot attempt connection to WebSocket.");
                 return;
             }
 
-            if (webSocketClient.State == WebSocketState.Open)
+            if (webSocketClient?.State == WebSocketState.Open)
             {
                 Main.LogEntry(methodName, "WebSocket is already open. Cannot attempt connection to WebSocket.");
                 NotificationManager.SetVariable("alertMessage", "WebSocket is already open. Cannot attempt connection to WebSocket.");
                 return;
             }
 
+            // The chat subscription needs the broadcaster's numeric ID. Look it up if the token was never validated this session.
+            if (string.IsNullOrEmpty(TwitchEventHandler.user_id))
+            {
+                Main.LogEntry(methodName, "User ID not yet known, looking it up before connecting.");
+                try
+                {
+                    await TwitchEventHandler.GetUserID();
+                }
+                catch (Exception ex)
+                {
+                    Main.LogEntry(methodName, $"User ID lookup failed: {ex.Message}");
+                }
+
+                if (string.IsNullOrEmpty(TwitchEventHandler.user_id))
+                {
+                    NotificationManager.SetVariable("alertMessage", "Could not look up your Twitch user ID. Validate your token and try again.");
+                    return;
+                }
+            }
+
+            userWantsConnection = true;
+            announceOnWelcome = true;
+            reconnectAttempts = 0;
+            await OpenSocketAsync(new Uri(EventSubUri), isSessionMigration: false);
+        }
+
+        /// <summary>
+        /// Opens a new socket to the given URI and starts its receive loop.
+        /// </summary>
+        /// <param name="serverUri">EventSub endpoint to connect to.</param>
+        /// <param name="isSessionMigration">True when following a Twitch session_reconnect request, in which case the old socket is kept open until the new session is welcomed.</param>
+        /// <returns>True if the socket connected.</returns>
+        private static async Task<bool> OpenSocketAsync(Uri serverUri, bool isSessionMigration)
+        {
+            string methodName = "OpenSocketAsync";
+            ClientWebSocket socket = new();
             try
             {
-                Uri serverUri = new("wss://eventsub.wss.twitch.tv/ws?keepalive_timeout_seconds=30");
-                
-                webSocketClient?.Dispose();
-                webSocketClient = new ClientWebSocket();
-                await webSocketClient.ConnectAsync(serverUri, CancellationToken.None);
-                Main.LogEntry(methodName, "Connected to WebSocket server.");
+                using CancellationTokenSource connectCts = new(TimeSpan.FromSeconds(20));
+                await socket.ConnectAsync(serverUri, connectCts.Token);
+                Main.LogEntry(methodName, $"Connected to WebSocket server ({serverUri.Host}){(isSessionMigration ? " for session migration" : "")}.");
 
-                // Initialize connection monitoring
+                if (isSessionMigration)
+                {
+                    supersededSocket = webSocketClient;
+                }
+                else
+                {
+                    ClientWebSocket? stale = webSocketClient;
+                    if (stale != null && stale.State != WebSocketState.Open)
+                    {
+                        stale.Dispose();
+                    }
+                }
+                webSocketClient = socket;
+
                 lastKeepaliveTime = DateTime.UtcNow;
                 isConnectionHealthy = true;
-                connectionMonitorTimer = new Timer(CheckConnectionHealth, null, TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(15));
+                StartConnectionMonitor();
 
-                // Start receiving messages
-                _ = Task.Run(ReceiveMessages);
-                
-
+                _ = Task.Run(() => ReceiveMessages(socket, isSessionMigration));
+                return true;
             }
             catch (Exception ex)
             {
-                isConnectionHealthy = false;
+                socket.Dispose();
+                if (!isSessionMigration)
+                {
+                    isConnectionHealthy = false;
+                }
                 Main.LogEntry(methodName, $"Connection error: {ex.Message}");
+                return false;
             }
+        }
+
+        /// <summary>
+        /// Starts (or restarts) the periodic connection health check.
+        /// </summary>
+        private static void StartConnectionMonitor()
+        {
+            connectionMonitorTimer?.Dispose();
+            connectionMonitorTimer = new Timer(CheckConnectionHealth, null, TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(15));
+        }
+
+        /// <summary>
+        /// Stops the periodic connection health check.
+        /// </summary>
+        private static void StopConnectionMonitor()
+        {
+            connectionMonitorTimer?.Dispose();
+            connectionMonitorTimer = null;
         }
 
         /// <summary>
@@ -111,178 +198,278 @@ namespace TwitchChat
         /// <param name="state">Timer state object (unused).</param>
         private static void CheckConnectionHealth(object state)
         {
-            var timeSinceLastKeepalive = DateTime.UtcNow - lastKeepaliveTime;
+            ClientWebSocket? socket = webSocketClient;
+            TimeSpan timeSinceLastKeepalive = DateTime.UtcNow - lastKeepaliveTime;
             bool wasHealthy = isConnectionHealthy;
-            
-            // Reduce the threshold to 35 seconds (Twitch timeout is 30s)
-            isConnectionHealthy = timeSinceLastKeepalive <= TimeSpan.FromSeconds(35) 
-                && webSocketClient.State == WebSocketState.Open;
+
+            isConnectionHealthy = socket != null
+                && socket.State == WebSocketState.Open
+                && timeSinceLastKeepalive <= keepaliveGrace;
 
             if (wasHealthy && !isConnectionHealthy)
             {
-                Main.LogEntry("CheckConnectionHealth", $"Connection appears to be dead (no keepalive for {timeSinceLastKeepalive.TotalSeconds:F1}s)");
+                Main.LogEntry("CheckConnectionHealth", $"Connection appears to be dead (no message for {timeSinceLastKeepalive.TotalSeconds:F1}s)");
                 _ = ReconnectAsync();
             }
             else if (!wasHealthy && isConnectionHealthy)
             {
                 Main.LogEntry("CheckConnectionHealth", "Connection restored");
-                reconnectAttempts = 0; // Reset reconnect attempts when connection is healthy
+                reconnectAttempts = 0;
             }
         }
 
         /// <summary>
-        /// Attempts to reconnect the WebSocket connection by disconnecting and connecting again.
+        /// Attempts to re-establish a lost connection with exponential backoff.
+        /// Only one reconnect sequence runs at a time, and none run after a user-initiated disconnect.
         /// </summary>
         private static async Task ReconnectAsync()
         {
+            string methodName = "ReconnectAsync";
+
+            if (!await reconnectLock.WaitAsync(0))
+            {
+                Main.LogEntry(methodName, "Reconnection already in progress");
+                return;
+            }
+
             try
             {
-                if (!await reconnectLock.WaitAsync(0)) // Don't wait if already reconnecting
+                while (userWantsConnection && reconnectAttempts < maxReconnectAttempts)
                 {
-                    Main.LogEntry("ReconnectAsync", "Reconnection already in progress");
-                    return;
-                }
+                    reconnectAttempts++;
+                    double backoffSeconds = Math.Min(maxReconnectDelay.TotalSeconds, reconnectDelay.TotalSeconds * Math.Pow(2, reconnectAttempts - 1));
+                    Main.LogEntry(methodName, $"Attempting reconnect {reconnectAttempts}/{maxReconnectAttempts} in {backoffSeconds:F0}s");
 
-                using (reconnectLock)
-                {
-                    if (reconnectAttempts >= maxReconnectAttempts)
+                    await CloseSocketQuietly(webSocketClient, "Reconnecting");
+                    await Task.Delay(TimeSpan.FromSeconds(backoffSeconds));
+
+                    if (!userWantsConnection)
                     {
-                        Main.LogEntry("ReconnectAsync", "Max reconnection attempts reached");
-                        isConnectionHealthy = false;
                         return;
                     }
 
-                    Main.LogEntry("ReconnectAsync", $"Attempting reconnect {reconnectAttempts + 1}/{maxReconnectAttempts}");
-                    
-                    await DisconnectFromoWebSocket();
-                    
-                    // Add delay before reconnecting
-                    await Task.Delay(reconnectDelay);
-                    
-                    await ConnectToWebSocket();
-                    reconnectAttempts++;
+                    announceOnWelcome = false;
+                    if (await OpenSocketAsync(new Uri(EventSubUri), isSessionMigration: false))
+                    {
+                        return;
+                    }
+                }
+
+                if (userWantsConnection)
+                {
+                    Main.LogEntry(methodName, "Max reconnection attempts reached");
+                    isConnectionHealthy = false;
+                    NotificationManager.SetVariable("alertMessage", "Lost connection to Twitch and could not reconnect. Use the Status panel to reconnect.");
                 }
             }
             catch (Exception ex)
             {
-                Main.LogEntry("ReconnectAsync", $"Reconnection error: {ex.Message}");
+                Main.LogEntry(methodName, $"Reconnection error: {ex.Message}");
                 isConnectionHealthy = false;
+            }
+            finally
+            {
+                reconnectLock.Release();
             }
         }
 
         /// <summary>
-        /// Continuously receives and processes messages from the WebSocket connection.
+        /// Sends a close frame on the given socket without any chat announcements.
+        /// The socket's receive loop completes the handshake and disposes it.
         /// </summary>
-        private static async Task ReceiveMessages()
+        private static async Task CloseSocketQuietly(ClientWebSocket? socket, string reason)
+        {
+            if (socket == null)
+            {
+                return;
+            }
+
+            try
+            {
+                if (socket.State == WebSocketState.Open || socket.State == WebSocketState.CloseReceived)
+                {
+                    using CancellationTokenSource cts = new(TimeSpan.FromSeconds(5));
+                    await socket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, reason, cts.Token);
+                }
+            }
+            catch (Exception ex)
+            {
+                Main.LogEntry("CloseSocketQuietly", $"Close failed ({reason}): {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Continuously receives and processes messages from one WebSocket connection.
+        /// Frames are accumulated until EndOfMessage so long payloads are never truncated.
+        /// </summary>
+        /// <param name="socket">The socket to read from.</param>
+        /// <param name="isSessionMigration">True if this socket was opened in response to a session_reconnect request.</param>
+        private static async Task ReceiveMessages(ClientWebSocket socket, bool isSessionMigration)
         {
             string methodName = "ReceiveMessages";
-            var buffer = new byte[1024 * 4];
+            byte[] buffer = new byte[8192];
+            using MemoryStream messageStream = new();
+            bool closeRequestedByServer = false;
 
-            while (webSocketClient.State == WebSocketState.Open)
+            while (socket.State == WebSocketState.Open)
             {
                 try
                 {
-                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(35));
-                    var result = await webSocketClient.ReceiveAsync(
-                        new ArraySegment<byte>(buffer), 
-                        cts.Token
-                    );
-
-                    // Reset connection monitoring on any successful message
-                    lastKeepaliveTime = DateTime.UtcNow;
-
-                    // Simple string-based message type extraction
-                    string messageType = ExtractValue(Encoding.UTF8.GetString(buffer, 0, result.Count), "message_type");
-                    lastMessageType = messageType;
-
-                    switch (messageType)
+                    messageStream.SetLength(0);
+                    WebSocketReceiveResult result;
+                    do
                     {
-                        case "session_welcome":
-                            session_id = ExtractValue(Encoding.UTF8.GetString(buffer, 0, result.Count), "id");
-                            Main.LogEntry(methodName, $"Session ID: {session_id}");
-                            Main.LogEntry(methodName, "TwitchChat connected to WebSocket");
-                            await RegisterWebbSocketChatEvent();
+                        using CancellationTokenSource cts = new(receiveTimeout);
+                        result = await socket.ReceiveAsync(new ArraySegment<byte>(buffer), cts.Token);
+                        if (result.MessageType == WebSocketMessageType.Close)
+                        {
                             break;
-
-                        case "notification":
-                            string userName = ExtractValue(Encoding.UTF8.GetString(buffer, 0, result.Count), "chatter_user_name");
-                            string chatMessage = ExtractValue(Encoding.UTF8.GetString(buffer, 0, result.Count), "text");
-                            lastChatMessage = $"{userName}: {chatMessage}";
-                            NotificationManager.HandleNotification(Encoding.UTF8.GetString(buffer, 0, result.Count));
-                            break;
-
-                        case "session_keepalive":
-                            lastKeepaliveTime = DateTime.UtcNow;
-                            isConnectionHealthy = true;
-                            Main.LogEntry(methodName, "Received keepalive message.");
-                            break;
-
-                        case "session_reconnect":
-                            Main.LogEntry(methodName, "Received reconnect message.");
-                            break;
-
-                        case "revocation":
-                            Main.LogEntry(methodName, "Received revocation message.");
-                            break;
-
-                        default:
-                            Main.LogEntry(methodName, $"Unknown message type: {messageType}");
-                            break;
+                        }
+                        messageStream.Write(buffer, 0, result.Count);
                     }
+                    while (!result.EndOfMessage);
+
+                    if (result.MessageType == WebSocketMessageType.Close)
+                    {
+                        closeRequestedByServer = true;
+                        Main.LogEntry(methodName, $"Server closed the connection: {(socket.CloseStatus.HasValue ? (int)socket.CloseStatus.Value : 0)} {socket.CloseStatusDescription}");
+                        break;
+                    }
+
+                    if (socket == webSocketClient)
+                    {
+                        lastKeepaliveTime = DateTime.UtcNow;
+                    }
+
+                    string json = Encoding.UTF8.GetString(messageStream.GetBuffer(), 0, (int)messageStream.Length);
+                    await HandleMessage(json, socket, isSessionMigration);
                 }
                 catch (OperationCanceledException)
                 {
-                    Main.LogEntry(methodName, "Receive operation timed out");
-                    isConnectionHealthy = false;
-                    _ = ReconnectAsync();
+                    if (socket == webSocketClient)
+                    {
+                        Main.LogEntry(methodName, "Receive operation timed out");
+                    }
                     break;
                 }
                 catch (WebSocketException wsEx)
                 {
                     Main.LogEntry(methodName, $"WebSocket error: {wsEx.Message}");
-                    isConnectionHealthy = false;
-                    _ = ReconnectAsync();
+                    break;
+                }
+                catch (ObjectDisposedException)
+                {
                     break;
                 }
                 catch (Exception ex)
                 {
-                    Main.LogEntry(methodName, $"Error receiving message: {ex.Message}");
-                    continue;
+                    // A bad or unexpected message should not take the connection down.
+                    Main.LogEntry(methodName, $"Error handling message: {ex.Message}");
                 }
             }
-            
-            if (webSocketClient.CloseStatus.HasValue)
+
+            if (closeRequestedByServer)
             {
-                string closeReason = webSocketClient.CloseStatusDescription;
-                int closeCode = (int)webSocketClient.CloseStatus.Value;
-                Main.LogEntry(methodName, $"WebSocket connection closed with code {closeCode}: {closeReason}");
+                await CloseSocketQuietly(socket, "Acknowledging close");
             }
-            else
+
+            bool wasCurrent = socket == webSocketClient;
+            string closeInfo = socket.CloseStatus.HasValue
+                ? $"code {(int)socket.CloseStatus.Value}: {socket.CloseStatusDescription}"
+                : "no close status";
+            Main.LogEntry(methodName, $"WebSocket connection closed ({closeInfo}){(wasCurrent ? "" : " [superseded connection]")}.");
+
+            if (socket == supersededSocket)
             {
-                Main.LogEntry(methodName, "WebSocket connection closed.");
+                supersededSocket = null;
+            }
+            socket.Dispose();
+
+            if (wasCurrent)
+            {
+                isConnectionHealthy = false;
+                if (userWantsConnection)
+                {
+                    Main.LogEntry(methodName, "Connection lost, scheduling reconnect.");
+                    _ = ReconnectAsync();
+                }
             }
         }
 
-        private static string ExtractValue(string json, string key)
+        /// <summary>
+        /// Dispatches one complete EventSub message.
+        /// </summary>
+        private static async Task HandleMessage(string json, ClientWebSocket socket, bool isSessionMigration)
         {
-            int keyIndex = json.IndexOf($"\"{key}\"");
-            if (keyIndex == -1) return string.Empty;
+            string methodName = "HandleMessage";
+            JObject message = JObject.Parse(json);
+            string messageType = (string?)message.SelectToken("metadata.message_type") ?? "unknown";
+            lastMessageType = messageType;
+            lastTypeReceivedTime = DateTime.UtcNow;
 
-            int valueStart = json.IndexOf(':', keyIndex) + 1;
-            while (valueStart < json.Length && char.IsWhiteSpace(json[valueStart])) valueStart++;
-
-            if (valueStart >= json.Length) return string.Empty;
-
-            if (json[valueStart] == '"')
+            switch (messageType)
             {
-                valueStart++;
-                int valueEnd = json.IndexOf('"', valueStart);
-                return valueEnd == -1 ? string.Empty : json.Substring(valueStart, valueEnd - valueStart);
-            }
-            else
-            {
-                int valueEnd = json.IndexOfAny([',', '}'], valueStart);
-                return valueEnd == -1 ? string.Empty : json.Substring(valueStart, valueEnd - valueStart).Trim();
+                case "session_welcome":
+                    session_id = (string?)message.SelectToken("payload.session.id") ?? string.Empty;
+                    Main.LogEntry(methodName, $"Session ID: {session_id}");
+                    reconnectAttempts = 0;
+                    if (isSessionMigration)
+                    {
+                        // Twitch carries existing subscriptions over to the new session; only the old socket needs closing.
+                        Main.LogEntry(methodName, "Session migrated to new connection, closing the old one.");
+                        ClientWebSocket? old = supersededSocket;
+                        supersededSocket = null;
+                        await CloseSocketQuietly(old, "Session migrated");
+                    }
+                    else
+                    {
+                        Main.LogEntry(methodName, "TwitchChat connected to WebSocket");
+                        await RegisterWebbSocketChatEvent();
+                    }
+                    break;
+
+                case "notification":
+                    string userName = (string?)message.SelectToken("payload.event.chatter_user_name") ?? string.Empty;
+                    string chatMessage = (string?)message.SelectToken("payload.event.message.text") ?? string.Empty;
+                    lastChatMessage = $"{userName}: {chatMessage}";
+                    NotificationManager.HandleNotification(message);
+                    break;
+
+                case "session_keepalive":
+                    if (socket == webSocketClient)
+                    {
+                        lastKeepaliveTime = DateTime.UtcNow;
+                        isConnectionHealthy = true;
+                    }
+                    Main.LogEntry(methodName, "Received keepalive message.");
+                    break;
+
+                case "session_reconnect":
+                    string reconnectUrl = (string?)message.SelectToken("payload.session.reconnect_url") ?? string.Empty;
+                    if (socket != webSocketClient)
+                    {
+                        Main.LogEntry(methodName, "Ignoring reconnect request on a superseded connection.");
+                    }
+                    else if (string.IsNullOrEmpty(reconnectUrl))
+                    {
+                        Main.LogEntry(methodName, "Reconnect request had no URL; the health monitor will handle it.");
+                    }
+                    else
+                    {
+                        Main.LogEntry(methodName, "Twitch requested a session reconnect, migrating.");
+                        _ = OpenSocketAsync(new Uri(reconnectUrl), isSessionMigration: true);
+                    }
+                    break;
+
+                case "revocation":
+                    string status = (string?)message.SelectToken("payload.subscription.status") ?? "unknown";
+                    Main.LogEntry(methodName, $"Chat subscription revoked: {status}");
+                    NotificationManager.SetVariable("alertMessage", $"Twitch revoked the chat subscription ({status}). Re-authorize the mod and reconnect.");
+                    break;
+
+                default:
+                    Main.LogEntry(methodName, $"Unknown message type: {messageType}");
+                    break;
             }
         }
 
@@ -292,75 +479,84 @@ namespace TwitchChat
         private static async Task RegisterWebbSocketChatEvent()
         {
             string methodName = "RegisterWebbSocketChatEvent";
-            if (webSocketClient.State != WebSocketState.Open)
+            if (webSocketClient?.State != WebSocketState.Open)
             {
                 Main.LogEntry(methodName, "WebSocket is not open. Cannot send subscription request.");
                 return;
             }
 
-            var jsonBody = $@"{{
-                ""type"": ""channel.chat.message"",
-                ""version"": ""1"",
-                ""condition"": {{
-                    ""broadcaster_user_id"": ""{TwitchEventHandler.user_id}"",
-                    ""user_id"": ""{TwitchEventHandler.user_id}""
-                }},
-                ""transport"": {{
-                    ""method"": ""websocket"",
-                    ""session_id"": ""{session_id}""
-                }}
-            }}";
-            var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
-        
+            string jsonBody = JsonConvert.SerializeObject(new
+            {
+                type = "channel.chat.message",
+                version = "1",
+                condition = new
+                {
+                    broadcaster_user_id = TwitchEventHandler.user_id,
+                    user_id = TwitchEventHandler.user_id
+                },
+                transport = new
+                {
+                    method = "websocket",
+                    session_id
+                }
+            });
+            StringContent content = new(jsonBody, Encoding.UTF8, "application/json");
+
             byte[] tokenBytes = Convert.FromBase64String(Settings.Instance.EncodedOAuthToken);
-            _ = Encoding.UTF8.GetString(tokenBytes);
             string access_token = Encoding.UTF8.GetString(tokenBytes);
 
             TwitchEventHandler.httpClient.DefaultRequestHeaders.Clear();
             TwitchEventHandler.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", access_token);
             TwitchEventHandler.httpClient.DefaultRequestHeaders.Add("Client-ID", TwitchEventHandler.GetClientId());
-            var response = await TwitchEventHandler.httpClient.PostAsync("https://api.twitch.tv/helix/eventsub/subscriptions", content);
+            HttpResponseMessage response = await TwitchEventHandler.httpClient.PostAsync("https://api.twitch.tv/helix/eventsub/subscriptions", content);
             if (response.StatusCode != System.Net.HttpStatusCode.Accepted)
             {
-                var errorContent = await response.Content.ReadAsStringAsync();
+                string errorContent = await response.Content.ReadAsStringAsync();
                 Main.LogEntry(methodName, $"Failed to subscribe to channel.chat.message. Status: {response.StatusCode}, Error: {errorContent}");
+                NotificationManager.SetVariable("alertMessage", $"Twitch chat subscription failed ({(int)response.StatusCode}). Check the debug log.");
+                return;
             }
-            else
+
+            Main.LogEntry(methodName, "Subscribed to channel.chat.message.");
+            if (announceOnWelcome && Settings.Instance.connectMessageEnabled && !string.IsNullOrEmpty(Settings.Instance.connectMessage))
             {
-                Main.LogEntry(methodName, "Subscribed to channel.chat.message.");
-                if (!string.IsNullOrEmpty(Settings.Instance.connectMessage) && Settings.Instance.connectMessageEnabled)
-                {
-                    await TwitchEventHandler.SendMessage(Settings.Instance.connectMessage);
-                }
+                await TwitchEventHandler.SendMessage(Settings.Instance.connectMessage);
             }
+            announceOnWelcome = false;
         }
 
         /// <summary>
-        /// Gracefully disconnects from the WebSocket server.
+        /// Gracefully disconnects from the WebSocket server at the user's request.
+        /// No automatic reconnect follows.
         /// </summary>
-        public static async Task DisconnectFromoWebSocket()
+        public static async Task DisconnectFromWebSocket()
         {
-            string methodName = MethodBase.GetCurrentMethod().Name;
-            
-            if (webSocketClient.State == WebSocketState.Open)
+            string methodName = "DisconnectFromWebSocket";
+
+            userWantsConnection = false;
+            announceOnWelcome = false;
+            StopConnectionMonitor();
+
+            ClientWebSocket? socket = webSocketClient;
+            if (socket != null && socket.State == WebSocketState.Open)
             {
-                if (!string.IsNullOrEmpty(Settings.Instance.disconnectMessage))
+                if (Settings.Instance.disconnectMessageEnabled && !string.IsNullOrEmpty(Settings.Instance.disconnectMessage))
                 {
-                    if (Settings.Instance.disconnectMessageEnabled)
-                    {
-                        await TwitchEventHandler.SendMessage(Settings.Instance.disconnectMessage);
-                    }
-                    
+                    await TwitchEventHandler.SendMessage(Settings.Instance.disconnectMessage);
                     // Small delay to ensure the message is sent before closing
                     await Task.Delay(500);
                 }
-                
-                connectionMonitorTimer?.Dispose();
-                isConnectionHealthy = false;
-                await webSocketClient.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing", CancellationToken.None);
+
+                await CloseSocketQuietly(socket, "Closing");
                 Main.LogEntry(methodName, "Disconnected from WebSocket server.");
                 AutomatedMessages.StopAndClearTimers();
             }
+            else
+            {
+                Main.LogEntry(methodName, "WebSocket was not open.");
+            }
+
+            isConnectionHealthy = false;
         }
     }
 }

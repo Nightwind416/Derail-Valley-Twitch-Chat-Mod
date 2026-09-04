@@ -79,7 +79,7 @@ namespace TwitchChat.PanelMenus
             Color.white,
             () => {
                 if (WebSocketManager.IsConnectionHealthy)
-                _ = WebSocketManager.DisconnectFromoWebSocket();
+                _ = WebSocketManager.DisconnectFromWebSocket();
                 else
                 _ = WebSocketManager.ConnectToWebSocket();
             },

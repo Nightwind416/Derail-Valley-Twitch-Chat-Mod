@@ -3,6 +3,8 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace TwitchChat
 {
@@ -21,7 +23,7 @@ namespace TwitchChat
     {
         /// <summary>Shared HttpClient instance for API requests</summary>
         public static readonly HttpClient httpClient = new();
-        
+
         /// <summary>Current user's Twitch ID</summary>
         public static string user_id = string.Empty;
 
@@ -31,55 +33,39 @@ namespace TwitchChat
         public static async Task GetUserID()
         {
             string methodName = "GetUserID";
-            
+
             byte[] tokenBytes = Convert.FromBase64String(Settings.Instance.EncodedOAuthToken);
-            _ = Encoding.UTF8.GetString(tokenBytes);
             string access_token = Encoding.UTF8.GetString(tokenBytes);
-            
+
             Main.LogEntry(methodName, "Adding Authorization and Client-Id headers.");
             httpClient.DefaultRequestHeaders.Clear();
             httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {access_token}");
             httpClient.DefaultRequestHeaders.Add("Client-Id", GetClientId());
-        
+
             Main.LogEntry(methodName, "Sending GET request to https://api.twitch.tv/helix/users.");
-            var response = await httpClient.GetAsync($"https://api.twitch.tv/helix/users?login={Settings.Instance.twitchUsername}");
+            var response = await httpClient.GetAsync($"https://api.twitch.tv/helix/users?login={Uri.EscapeDataString(Settings.Instance.twitchUsername)}");
             Main.LogEntry(methodName, $"Response status code: {response.StatusCode}");
-        
+
             if (response.StatusCode == HttpStatusCode.BadRequest)
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
                 Main.LogEntry(methodName, $"Response error content: {errorContent}");
             }
-        
+
             response.EnsureSuccessStatusCode();
-        
+
             var content = await response.Content.ReadAsStringAsync();
             Main.LogEntry(methodName, $"Response content: {content}");
-            
-            // Replace JsonDocument parsing with string parsing
-            string? lookup_id = null;
-            if (content.Contains("\"id\":\""))
+
+            string? lookup_id = (string?)JObject.Parse(content).SelectToken("data[0].id");
+
+            if (!string.IsNullOrEmpty(lookup_id))
             {
-                int startIndex = content.IndexOf("\"id\":\"") + 6;
-                int endIndex = content.IndexOf("\"", startIndex);
-                if (startIndex > 5 && endIndex > startIndex)
-                {
-                    lookup_id = content.Substring(startIndex, endIndex - startIndex);
-                }
-            }
-        
-            if (lookup_id == null)
-            {
-                Main.LogEntry(methodName, "User ID is null.");
-            }
-        
-            if (lookup_id != null)
-            {
-                user_id = lookup_id;
+                user_id = lookup_id!;
             }
             else
             {
-                Main.LogEntry(methodName, "Failed to retrieve user ID.");
+                Main.LogEntry(methodName, "Failed to retrieve user ID (no user returned for that login name).");
             }
             Main.LogEntry(methodName, $"User ID: {user_id}");
         }
@@ -93,16 +79,15 @@ namespace TwitchChat
             try
             {
                 byte[] tokenBytes = Convert.FromBase64String(Settings.Instance.EncodedOAuthToken);
-                _ = Encoding.UTF8.GetString(tokenBytes);
                 string access_token = Encoding.UTF8.GetString(tokenBytes);
-                
+
                 Main.LogEntry(methodName, "Adding Authorization and Client-Id headers.");
                 httpClient.DefaultRequestHeaders.Clear();
                 httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {access_token}");
                 httpClient.DefaultRequestHeaders.Add("Client-Id", GetClientId());
 
                 Main.LogEntry(methodName, "Sending GET request to https://api.twitch.tv/helix/users.");
-                var userResponse = await httpClient.GetAsync($"https://api.twitch.tv/helix/users?login={Settings.Instance.twitchUsername}");
+                var userResponse = await httpClient.GetAsync($"https://api.twitch.tv/helix/users?login={Uri.EscapeDataString(Settings.Instance.twitchUsername)}");
                 Main.LogEntry(methodName, $"User response status code: {userResponse.StatusCode}");
 
                 if (userResponse.StatusCode == HttpStatusCode.Unauthorized)
@@ -161,26 +146,40 @@ namespace TwitchChat
         {
             string methodName = "SendMessage";
             Main.LogEntry(methodName, $"Preparing to send chat message: {message}");
-        
-            string jsonMessage = $"{{\"broadcaster_id\":\"{user_id}\",\"sender_id\":\"{user_id}\",\"message\":\"{message.Replace("\"", "\\\"")}\"}}";
+
+            string jsonMessage = JsonConvert.SerializeObject(new
+            {
+                broadcaster_id = user_id,
+                sender_id = user_id,
+                message
+            });
             var content = new StringContent(jsonMessage, Encoding.UTF8, "application/json");
-        
-            Main.LogEntry(methodName, $"Created content: {content}");
-        
+
             try
             {
                 var response = await httpClient.PostAsync("https://api.twitch.tv/helix/chat/messages", content);
                 Main.LogEntry(methodName, $"Received response: {response.StatusCode}");
-        
+
                 if (response.StatusCode != HttpStatusCode.OK)
                 {
-                    Main.LogEntry(methodName, "Failed to send chat message.");
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    Main.LogEntry(methodName, $"Failed to send chat message. Error: {errorContent}");
+                    return;
                 }
-                else
+
+                // Twitch answers 200 even when the message was dropped (for example by AutoMod), so check the body.
+                var responseContent = await response.Content.ReadAsStringAsync();
+                JToken? result = JObject.Parse(responseContent).SelectToken("data[0]");
+                bool isSent = result?["is_sent"]?.Value<bool>() ?? true;
+                if (!isSent)
                 {
-                    Main.LogEntry(methodName, $"Sent chat message: {message}");
-                    Main.LogEntry("SentMessage", $"Sent Message: {message}");
+                    string dropReason = (string?)result?.SelectToken("drop_reason.message") ?? "unknown";
+                    Main.LogEntry(methodName, $"Chat message was dropped by Twitch: {dropReason}");
+                    return;
                 }
+
+                Main.LogEntry(methodName, $"Sent chat message: {message}");
+                Main.LogEntry("SentMessage", $"Sent Message: {message}");
             }
             catch (Exception ex)
             {
@@ -198,7 +197,12 @@ namespace TwitchChat
             string methodName = "SendWhisper";
             Main.LogEntry(methodName, $"Preparing to send whisper to user {toUserId}: {message}");
 
-            string jsonMessage = $"{{\"from_user_id\":\"{user_id}\",\"to_user_id\":\"{toUserId}\",\"message\":\"{message.Replace("\"", "\\\"")}\"}}";
+            string jsonMessage = JsonConvert.SerializeObject(new
+            {
+                from_user_id = user_id,
+                to_user_id = toUserId,
+                message
+            });
             var content = new StringContent(jsonMessage, Encoding.UTF8, "application/json");
 
             try
@@ -234,13 +238,19 @@ namespace TwitchChat
 
             // Validate color parameter
             color = color.ToLower();
-            string[] validColors = ["blue", "green", "orange", "purple", "primary"]; // primary is the channel’s accent color
+            string[] validColors = ["blue", "green", "orange", "purple", "primary"]; // primary is the channel's accent color
             if (!Array.Exists(validColors, c => c.Equals(color, StringComparison.OrdinalIgnoreCase)))
             {
                 color = "primary";
             }
 
-            string jsonMessage = $"{{\"broadcaster_id\":\"{user_id}\",\"moderator_id\":\"{user_id}\",\"message\":\"{message.Replace("\"", "\\\"")}\",\"color\":\"{color}\"}}";
+            string jsonMessage = JsonConvert.SerializeObject(new
+            {
+                broadcaster_id = user_id,
+                moderator_id = user_id,
+                message,
+                color
+            });
             var content = new StringContent(jsonMessage, Encoding.UTF8, "application/json");
 
             try
