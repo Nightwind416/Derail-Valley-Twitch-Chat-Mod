@@ -9,7 +9,7 @@ A mod that seamlessly integrates Twitch chat into your Derail Valley gameplay ex
 - **Real-Time Chat Display**: View Twitch chat messages through in-game display panels (and popup notifications)
 - **Authentication You Can Audit**: OAuth handled directly between you and Twitch, asking for only the four permissions the mod actually uses, revocable from inside the game
 - **Message Logging**: Detailed chat logs for post-stream review
-- **Automated Messages**: Schedule periodic announcements to keep your chat informed
+- **Automated Messages**: Schedule up to five periodic announcements, each posted in the color you pick - normal, blue, green, orange, purple, or your channel accent
 - **Displays You Size Yourself**: Up to 5 panels per locomotive, each dragged to whatever size suits it
 - **Color Customization**: Ability to customize panel, section, and button coloring
 
@@ -19,8 +19,8 @@ A mod that seamlessly integrates Twitch chat into your Derail Valley gameplay ex
 - Message throttling and combining for busy chats
 - User list management (VIP, ignore, etc.)
 - Integration with "Remote Dispatch" mod
-- Colored announcement system for timed messages
 - Display panel scrolling in VR
+- Editing timed message text and intervals from the in-game panel, instead of the Unity Mod Manager menu or Settings.xml
 
 ## Installation
 
