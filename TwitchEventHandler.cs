@@ -28,14 +28,18 @@ namespace TwitchChat
         public static string user_id = string.Empty;
 
         /// <summary>
-        /// Retrieves the user ID for the configured Twitch username.
+        /// Identifies the account the stored token belongs to.
         /// </summary>
+        /// <remarks>
+        /// Asking /helix/users with no login parameter returns whoever the token was issued to, so
+        /// the account is discovered rather than typed. The login name is copied into settings for
+        /// display; it is a result of connecting, not an input to it.
+        /// </remarks>
         public static async Task GetUserID()
         {
             string methodName = "GetUserID";
 
-            byte[] tokenBytes = Convert.FromBase64String(Settings.Instance.EncodedOAuthToken);
-            string access_token = Encoding.UTF8.GetString(tokenBytes);
+            string access_token = OAuthTokenManager.GetAccessToken();
 
             Main.LogEntry(methodName, "Adding Authorization and Client-Id headers.");
             httpClient.DefaultRequestHeaders.Clear();
@@ -43,7 +47,7 @@ namespace TwitchChat
             httpClient.DefaultRequestHeaders.Add("Client-Id", GetClientId());
 
             Main.LogEntry(methodName, "Sending GET request to https://api.twitch.tv/helix/users.");
-            var response = await httpClient.GetAsync($"https://api.twitch.tv/helix/users?login={Uri.EscapeDataString(Settings.Instance.twitchUsername)}");
+            var response = await httpClient.GetAsync("https://api.twitch.tv/helix/users");
             Main.LogEntry(methodName, $"Response status code: {response.StatusCode}");
 
             if (response.StatusCode == HttpStatusCode.BadRequest)
@@ -55,19 +59,25 @@ namespace TwitchChat
             response.EnsureSuccessStatusCode();
 
             var content = await response.Content.ReadAsStringAsync();
-            Main.LogEntry(methodName, $"Response content: {content}");
+            JObject payload = JObject.Parse(content);
 
-            string? lookup_id = (string?)JObject.Parse(content).SelectToken("data[0].id");
+            string? lookup_id = (string?)payload.SelectToken("data[0].id");
+            string? login = (string?)payload.SelectToken("data[0].login");
 
             if (!string.IsNullOrEmpty(lookup_id))
             {
                 user_id = lookup_id!;
+                if (!string.IsNullOrEmpty(login))
+                {
+                    Settings.Instance.twitchUsername = login!;
+                    Settings.Instance.RequestSave();
+                }
             }
             else
             {
-                Main.LogEntry(methodName, "Failed to retrieve user ID (no user returned for that login name).");
+                Main.LogEntry(methodName, "Failed to retrieve user ID (the token returned no user).");
             }
-            Main.LogEntry(methodName, $"User ID: {user_id}");
+            Main.LogEntry(methodName, $"Connected account: {Settings.Instance.twitchUsername} (id {user_id})");
         }
 
         /// <summary>
@@ -78,8 +88,7 @@ namespace TwitchChat
             string methodName = "ConnectionStatus";
             try
             {
-                byte[] tokenBytes = Convert.FromBase64String(Settings.Instance.EncodedOAuthToken);
-                string access_token = Encoding.UTF8.GetString(tokenBytes);
+                string access_token = OAuthTokenManager.GetAccessToken();
 
                 Main.LogEntry(methodName, "Adding Authorization and Client-Id headers.");
                 httpClient.DefaultRequestHeaders.Clear();
@@ -87,7 +96,7 @@ namespace TwitchChat
                 httpClient.DefaultRequestHeaders.Add("Client-Id", GetClientId());
 
                 Main.LogEntry(methodName, "Sending GET request to https://api.twitch.tv/helix/users.");
-                var userResponse = await httpClient.GetAsync($"https://api.twitch.tv/helix/users?login={Uri.EscapeDataString(Settings.Instance.twitchUsername)}");
+                var userResponse = await httpClient.GetAsync("https://api.twitch.tv/helix/users");
                 Main.LogEntry(methodName, $"User response status code: {userResponse.StatusCode}");
 
                 if (userResponse.StatusCode == HttpStatusCode.Unauthorized)

@@ -11,6 +11,7 @@ namespace TwitchChat.PanelMenus
     {
         private Button? authButton;
         private Text? authStatus;
+        private Text? authAccount;
         private Button? connectButton;
         private Text? connectionStatus;
         private Text? connectionIndicator;
@@ -36,21 +37,19 @@ namespace TwitchChat.PanelMenus
             
             // Dimensions - Menu width minus 20
 
-            // Authentication Section
-            authSection = PanelConstructor.Section.Create(panelObject.transform, "Twitch Authentication", 25, 75);
+            // Authentication Section. Connecting and disconnecting live on the Authentication
+            // panel; this is a read-out so the status page can be glanced at without acting on it.
+            authSection = PanelConstructor.Section.Create(panelObject.transform, "Twitch Account", 25, 85);
 
-            // Authentication Status Message
-            authStatus = PanelConstructor.DisplayText.Create(authSection.transform, Settings.Instance.authentication_status, 15, 25);
-            
-            // Authentication Button
+            authAccount = PanelConstructor.DisplayText.Create(authSection.transform, "Not connected", 15, 25, Color.yellow);
+            authStatus = PanelConstructor.DisplayText.Create(authSection.transform, OAuthTokenManager.StatusMessage, 15, 42, Color.cyan, 2, 11);
+
+            // Re-checks the stored token, refreshing it if Twitch says it has expired.
             authButton = PanelConstructor.Button.Create(authSection.transform,
-            string.IsNullOrEmpty(Settings.Instance.EncodedOAuthToken) ? "Request Authorization Token" : "Validate Token",
-            90, 55,
+            "Check Connection",
+            90, 70,
             Color.white,
             () => {
-                if (string.IsNullOrEmpty(Settings.Instance.EncodedOAuthToken))
-                _ = OAuthTokenManager.GetOathToken();
-                else
                 _ = OAuthTokenManager.ValidateAuthToken();
             }
             );
@@ -66,7 +65,7 @@ namespace TwitchChat.PanelMenus
             // Dimensions - Menu width minus 20
 
             // WebSocket Section
-            wsSection = PanelConstructor.Section.Create(panelObject.transform, "WebSocket Status", 110, 180);
+            wsSection = PanelConstructor.Section.Create(panelObject.transform, "WebSocket Status", 120, 170);
 
             // Connection Status Indicator
             connectionIndicator = PanelConstructor.DisplayText.Create(wsSection.transform, "■", 25, 25);
@@ -111,26 +110,30 @@ namespace TwitchChat.PanelMenus
         /// </summary>
         public void UpdateStatusPanelValues()
         {
-            if (authButton != null && authStatus != null && connectButton != null && 
-                connectionIndicator != null && connectionStatus != null && lastMessageType != null && 
+            if (authButton != null && authStatus != null && authAccount != null && connectButton != null &&
+                connectionIndicator != null && connectionStatus != null && lastMessageType != null &&
                 lastTypeReceivedTime != null && lastKeepaliveTime != null)
             {
                 // Update authentication status
-                string authText = string.IsNullOrEmpty(Settings.Instance.EncodedOAuthToken) 
-                    ? "Request Authorization Token" 
-                    : "Validate Token";
-                authButton.GetComponentInChildren<Text>().text = authText;
-                
-                Color authColor = Settings.Instance.authentication_status switch
+                bool hasToken = !string.IsNullOrEmpty(Settings.Instance.EncodedOAuthToken);
+                AuthPhase phase = OAuthTokenManager.Phase;
+
+                authAccount.text = phase == AuthPhase.Connected && !string.IsNullOrEmpty(Settings.Instance.twitchUsername)
+                    ? Settings.Instance.twitchUsername
+                    : "Not connected";
+                authAccount.color = phase == AuthPhase.Connected ? Color.green : Color.yellow;
+
+                authStatus.color = phase switch
                 {
-                    "Validated!" => Color.green,
-                    "Authorization failed. Please try again." or "No Username Set" => Color.red,
-                    "Unverified or not set" => Color.yellow,
-                    _ => Color.cyan
+                    AuthPhase.Connected => Color.green,
+                    AuthPhase.Failed => Color.red,
+                    AuthPhase.AwaitingUser => Color.cyan,
+                    _ => Color.yellow
                 };
-                authStatus.color = authColor;
-                authStatus.text = Settings.Instance.authentication_status;
-                authButton.interactable = Settings.Instance.authentication_status != "Validated!";
+                authStatus.text = OAuthTokenManager.StatusMessage;
+
+                // Nothing to re-check until an account has been linked.
+                authButton.gameObject.SetActive(hasToken);
 
                 // Update websocket status
                 connectButton.GetComponentInChildren<Text>().text = 

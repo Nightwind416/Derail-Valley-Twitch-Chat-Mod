@@ -78,17 +78,10 @@ namespace TwitchChat
         {
             string methodName = "ConnectToWebSocket";
 
-            if (string.IsNullOrEmpty(Settings.Instance.twitchUsername))
-            {
-                Main.LogEntry(methodName, "Twitch username is empty. Cannot attempt connection to WebSocket.");
-                NotificationManager.SetVariable("alertMessage", "Twitch username is empty. Cannot attempt connection to WebSocket.");
-                return;
-            }
-
             if (string.IsNullOrEmpty(Settings.Instance.EncodedOAuthToken))
             {
-                Main.LogEntry(methodName, "Access token is empty. Cannot attempt connection to WebSocket.");
-                NotificationManager.SetVariable("alertMessage", "Access token is empty. Cannot attempt connection to WebSocket.");
+                Main.LogEntry(methodName, "No Twitch account connected. Cannot attempt connection to WebSocket.");
+                NotificationManager.SetVariable("alertMessage", "Connect your Twitch account first, from the Authentication panel.");
                 return;
             }
 
@@ -502,8 +495,7 @@ namespace TwitchChat
             });
             StringContent content = new(jsonBody, Encoding.UTF8, "application/json");
 
-            byte[] tokenBytes = Convert.FromBase64String(Settings.Instance.EncodedOAuthToken);
-            string access_token = Encoding.UTF8.GetString(tokenBytes);
+            string access_token = OAuthTokenManager.GetAccessToken();
 
             TwitchEventHandler.httpClient.DefaultRequestHeaders.Clear();
             TwitchEventHandler.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", access_token);

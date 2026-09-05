@@ -28,26 +28,27 @@ namespace TwitchChat.PanelMenus
         private void CreateMainMenu()
         {
             // Menu buttons
-            CreateMenuButton("Status", 35);
-            CreateMenuButton("Notifications", 60);
-            CreateMenuButton("Standard Messages", 85);
-            CreateMenuButton("Command Messages", 110);
-            CreateMenuButton("Timed Messages", 135);
-            CreateMenuButton("Debug", 160);
+            CreateMenuButton("Authentication", 35);
+            CreateMenuButton("Status", 60);
+            CreateMenuButton("Notifications", 85);
+            CreateMenuButton("Standard Messages", 110);
+            CreateMenuButton("Command Messages", 135);
+            CreateMenuButton("Timed Messages", 160);
+            CreateMenuButton("Debug", 185);
 
             // Config buttons side by side
-            CreateMenuButton("Config1", 185, -35); // Offset to the left
-            CreateMenuButton("Config2", 185, 35);  // Offset to the right
+            CreateMenuButton("Config1", 210, -35); // Offset to the left
+            CreateMenuButton("Config2", 210, 35);  // Offset to the right
 
             // Display buttons
-            CreateMenuButton("Wide Display", 210);
-            CreateMenuButton("Large Display", 235);
-            CreateMenuButton("Medium Display", 260);
-            CreateMenuButton("Small Display", 285);
+            CreateMenuButton("Wide Display", 235);
+            CreateMenuButton("Large Display", 260);
+            CreateMenuButton("Medium Display", 285);
+            CreateMenuButton("Small Display", 310);
 
             // Cab display controls side by side
-            CreateActionButton("Place Display", 310, -42, () => MenuManager.Instance.PlaceCabDisplay());
-            CreateActionButton("Toggle Display", 310, 42, () => MenuManager.Instance.ToggleCabDisplay());
+            CreateActionButton("Place Display", 335, -42, () => MenuManager.Instance.PlaceCabDisplay());
+            CreateActionButton("Toggle Display", 335, 42, () => MenuManager.Instance.ToggleCabDisplay());
         }
 
         /// <summary>

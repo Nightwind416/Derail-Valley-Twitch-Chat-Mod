@@ -38,7 +38,7 @@ namespace TwitchChat
             {
                 // Settings first, so the logger knows the configured debug level
                 Settings.Instance = UnityModManager.ModSettings.Load<Settings>(modEntry) ?? new Settings();
-                Settings.Instance.authentication_status = "Unverified or not set";
+                OAuthTokenManager.InitialisePhaseFromSettings();
 
                 // Log files next, so every LogEntry from here on has somewhere to go
                 InitializeLogFiles();
@@ -296,8 +296,12 @@ namespace TwitchChat
             "DisconnectFromWebSocket",
             "CheckConnectionHealth",
             "CloseSocketQuietly",
-            "GetOathToken",
+            "StartDeviceAuthorization",
+            "PollForDeviceToken",
+            "TryRefreshAccessToken",
+            "RevokeAndSignOut",
             "ValidateAuthToken",
+            "TokenStore",
             "UnityMainThreadDispatcher",
             "LicenseScan",
             "HandleLicenseAttachment",
