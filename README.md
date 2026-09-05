@@ -21,7 +21,6 @@ A mod that seamlessly integrates Twitch chat into your Derail Valley gameplay ex
 - Integration with "Remote Dispatch" mod
 - Colored announcement system for timed messages
 - Display panel scrolling in VR
-- Choose which licenses to replace with TwitchChat mod menus (currently 'hard coded')
 
 ## Installation
 
@@ -40,27 +39,24 @@ A mod that seamlessly integrates Twitch chat into your Derail Valley gameplay ex
 
 ### Display and Menu Panel Setup
 
-The menus and chat displays live on world-space panels. There are three kinds of panel host:
+The menus and chat displays live on world-space panels. There are two kinds of panel host:
 
 - **Cab display** - a panel parented to the locomotive you are in, so it rides along with the cab
 -- Press the place key (default F7), or use the "Place Display" button on any Main panel, and the panel appears where you are looking
 -- The position is remembered per locomotive type and restored automatically the next time you board that type
 -- The toggle key (default F8), or the "Toggle Display" button, hides and shows it without moving it
--- Keys, placement distance and scale are set in the Unity Mod Manager menu
+-- In VR, faint grab bars run along all four edges: bring a hand to one (it lights up) and squeeze the grip to carry the display around, exactly like holding the old license papers. Let go and the new spot is saved for that locomotive
+-- Keys, placement distance and scale are set in the Unity Mod Manager menu, where the grab bars can also be turned off
 - **Wrist panel** (VR only) - a smaller copy of the menus attached to a controller, glance at it like a watch
 -- Choose the hand, size, offset and rotation in the Unity Mod Manager menu; changes apply live
 -- Its "Place Display" button is the VR way to summon the cab display without a keyboard
-- **License papers** (legacy mode, can be turned off in the Unity Mod Manager menu) - menus replace the following licenses:
--- LicenseTrainDriver, LicenseShunting, LicenseLocomotiveDE2 - given at the start of a new game
--- LicenseMuseumCitySouth, LicenseFreightHaul, LicenseDispatcher1 - purchase/own the license
--- As these menus ride on licenses, they can be attached to sticky tape anywhere sticky tape can be placed
 
 - Every host shows the same panels and remembers which panel it last showed
 - Display Panels:
 -- Wide - Little wider than the large, but about 1/3 in height
 -- Large - Approx same size as the DE2 back window
--- Medium - About double the license size
--- Small - Same size as the license
+-- Medium - Roughly half a metre square
+-- Small - About the size of a sheet of paper
 - Config Panels
 -- Config1 - Customize background panel and section coloring
 -- Config2 - Customize button coloring and reset color customizations
@@ -177,6 +173,9 @@ Access advanced options by expanding the "Debug and Troubleshooting" section in 
 - Fixed the access token being written to the mod debug log on every authorization
 - Tokens are now encrypted at rest with Windows DPAPI where the runtime supports it, instead of being merely base64 encoded
 - The Twitch username setting is gone. Your account is identified from the token itself
+- The license paper menus are gone. The cab display and wrist panel replace them, so the mod no longer touches your license items or the sticky tape they were stuck to
+- The cab display can be grabbed and moved by hand in VR: grab bars along its four edges light up as a hand nears them, and squeezing the grip carries the display until you let go
+- Fixed the panels interfering with locomotive physics. Their VR colliders had no body of their own, so the game folded them into the rigidbody of the locomotive the display was parented to, which could shift its mass and shove it around. All panel colliders are triggers now, and the grab bars use none at all
 
 ### 3.3.0 (September 4, 2026)
 

@@ -1,9 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using DV.CabControls;
-using DV.Items;
-using DV.Utils;
 using TwitchChat.PanelDisplays;
 using TwitchChat.PanelMenus;
 using UnityEngine;
@@ -16,30 +13,23 @@ namespace TwitchChat
     /// Manages the creation, positioning, and interaction of UI menus and panels for the Twitch Chat mod.
     /// </summary>
     /// <remarks>
-    /// Three kinds of host carry the panel stack:
+    /// Two kinds of host carry the panel stack:
     /// - Cab display: one canvas parented to the current locomotive interior, placed where the player is looking.
     ///   Its pose is remembered per locomotive type and restored when the player enters that type again.
     /// - Wrist panel: one canvas parented to a VR controller so it can be glanced at like a watch.
-    /// - License papers (legacy, optional): canvases riding on the six license items. Items are found through the
-    ///   game's storage system by prefab name, so the object name and hierarchy no longer matter.
     /// </remarks>
     public class MenuManager : MonoBehaviour
     {
-        private const float LicenseScanInterval = 1f;
         private const float WristSearchInterval = 2f;
         private const float BaseCanvasScale = 0.001f;
-        private const string PaperFallbackPath = "Pivot/TempPaper(Clone)(Clone) 0/Paper";
 
         private static MenuManager? instance;
-        private readonly Dictionary<string, LicenseHost> licenses = new();
         private readonly CabDisplayHost cabDisplay = new();
         private readonly WristPanelHost wristPanel = new();
-        private readonly HashSet<string> paperLookupFailed = new();
         private GameObject? templateCanvas;
 
-        private float nextLicenseScanTime;
-        private bool licenseInventoryLogged;
         private TrainCar? cabDisplayCar;
+        private PanelGrabHandles? cabDisplayHandles;
         private Transform? wristAnchor;
         private float nextWristSearchTime;
 
@@ -53,10 +43,6 @@ namespace TwitchChat
         {
             get
             {
-                foreach (LicenseHost license in licenses.Values)
-                {
-                    yield return license;
-                }
                 yield return cabDisplay;
                 yield return wristPanel;
             }
@@ -135,27 +121,6 @@ namespace TwitchChat
                     DontDestroyOnLoad(go);
                 }
                 return instance;
-            }
-        }
-
-        /// <summary>
-        /// Initializes a new instance of MenuManager with the legacy license hosts.
-        /// </summary>
-        public MenuManager()
-        {
-            string[] licenseNames =
-            [
-                "LicenseTrainDriver",
-                "LicenseShunting",
-                "LicenseLocomotiveDE2",
-                "LicenseMuseumCitySouth",
-                "LicenseFreightHaul",
-                "LicenseDispatcher1"
-            ];
-
-            for (int i = 0; i < licenseNames.Length; i++)
-            {
-                licenses.Add(licenseNames[i], new LicenseHost(licenseNames[i], i));
             }
         }
 
@@ -253,29 +218,12 @@ namespace TwitchChat
 
             bool inSession = PlayerManager.PlayerTransform != null;
 
-            if (inSession && Settings.Instance.licensePanelsEnabled)
-            {
-                UpdateLicenseHosts();
-            }
-            else
-            {
-                ReleaseLicenseHosts();
-            }
-
             UpdateCabDisplay(inSession);
             UpdateWristPanel(inSession);
         }
 
         private void LateUpdate()
         {
-            foreach (LicenseHost license in licenses.Values)
-            {
-                if (license.LicenseObject != null && license.MenuCanvas != null && license.MenuCanvas.activeSelf)
-                {
-                    PositionNearObject(license);
-                }
-            }
-
             if (wristAnchor != null && wristPanel.MenuCanvas != null && wristPanel.MenuCanvas.activeSelf)
             {
                 ApplyWristPose();
@@ -309,264 +257,6 @@ namespace TwitchChat
             }
             cachedName = name;
             return Enum.TryParse(name, true, out KeyCode key) ? key : KeyCode.None;
-        }
-
-        // ------------------------------------------------------------------
-        // Legacy license hosts
-        // ------------------------------------------------------------------
-
-        private void UpdateLicenseHosts()
-        {
-            if (Time.unscaledTime >= nextLicenseScanTime)
-            {
-                nextLicenseScanTime = Time.unscaledTime + LicenseScanInterval;
-                ScanForLicenseItems();
-            }
-
-            foreach (LicenseHost license in licenses.Values)
-            {
-                bool visible = license.LicenseObject != null && license.LicenseObject.activeInHierarchy;
-
-                if (license.MenuCanvas != null && license.MenuCanvas.activeSelf != visible)
-                {
-                    license.MenuCanvas.SetActive(visible);
-                    if (visible)
-                    {
-                        ShowPanel(license.ActivePanel, license);
-                    }
-                }
-
-                if (visible)
-                {
-                    UpdatePanelValues(license);
-                    HandleLicenseAttachment(license);
-                    HandlePaperVisibility(license);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Looks the six license items up through the game's storage system, which tracks every item
-        /// regardless of its GameObject name or where it is parented.
-        /// </summary>
-        private void ScanForLicenseItems()
-        {
-            string methodName = "LicenseScan";
-
-            StorageController storage = SingletonBehaviour<StorageController>.Instance;
-            if (storage == null)
-            {
-                return;
-            }
-
-            List<ItemBase> items;
-            try
-            {
-                items = storage.GetAllStorageItems();
-            }
-            catch (Exception ex)
-            {
-                Main.LogEntry(methodName, $"Could not list storage items: {ex.Message}");
-                return;
-            }
-
-            if (!licenseInventoryLogged)
-            {
-                licenseInventoryLogged = true;
-                List<string> licenseNames = items
-                    .Where(i => i != null && i.InventorySpecs != null)
-                    .Select(i => i.InventorySpecs.ItemPrefabName)
-                    .Where(n => !string.IsNullOrEmpty(n) && n.IndexOf("License", StringComparison.OrdinalIgnoreCase) >= 0)
-                    .Distinct()
-                    .ToList();
-                Main.LogEntry(methodName, $"Storage reports {items.Count} items. License items present: {(licenseNames.Count > 0 ? string.Join(", ", licenseNames) : "none")}");
-            }
-
-            foreach (LicenseHost license in licenses.Values)
-            {
-                if (license.Item != null && license.LicenseObject != null)
-                {
-                    continue; // still bound to a live item
-                }
-
-                ItemBase? match = items.FirstOrDefault(i => i != null && i.InventorySpecs != null && i.InventorySpecs.ItemPrefabName == license.PrefabName);
-                if (match == null)
-                {
-                    if (license.Item != null || license.LicenseObject != null)
-                    {
-                        Main.LogEntry(methodName, $"License item {license.PrefabName} is gone; releasing its menu.");
-                        UnbindLicense(license);
-                    }
-                    continue;
-                }
-
-                BindLicense(license, match);
-            }
-        }
-
-        private void BindLicense(LicenseHost license, ItemBase item)
-        {
-            UnbindLicense(license);
-            license.Item = item;
-            license.LicenseObject = item.gameObject;
-            paperLookupFailed.Remove(license.PrefabName);
-
-            Main.LogEntry("LicenseScan", $"Found license item {license.PrefabName} (object '{item.gameObject.name}', active: {item.gameObject.activeInHierarchy}, parent: '{(item.transform.parent != null ? item.transform.parent.name : "none")}')");
-
-            if (license.MenuCanvas == null)
-            {
-                CreateMenuCanvas(license);
-            }
-        }
-
-        private static void UnbindLicense(LicenseHost license)
-        {
-            license.Item = null;
-            license.LicenseObject = null;
-            license.PaperRenderer = null;
-            license.PaperObject = null;
-            license.AttachedToStickyTape = false;
-            license.StickyTapeBase = null;
-        }
-
-        /// <summary>
-        /// Hides license canvases and restores anything the mod hid, used when the legacy mode is off or no session is running.
-        /// </summary>
-        private void ReleaseLicenseHosts()
-        {
-            foreach (LicenseHost license in licenses.Values)
-            {
-                if (license.MenuCanvas != null && license.MenuCanvas.activeSelf)
-                {
-                    license.MenuCanvas.SetActive(false);
-                }
-                if (license.PaperRenderer != null && !license.PaperRenderer.enabled)
-                {
-                    license.PaperRenderer.enabled = true;
-                }
-                if (license.PaperObject != null && !license.PaperObject.activeSelf)
-                {
-                    license.PaperObject.SetActive(true);
-                }
-                if (license.StickyTapeBase != null && !license.StickyTapeBase.activeSelf)
-                {
-                    license.StickyTapeBase.SetActive(true);
-                }
-                license.StickyTapeBase = null;
-                license.AttachedToStickyTape = false;
-            }
-        }
-
-        /// <summary>
-        /// Tracks whether the license is snapped to a sticky tape gadget and hides the tape's backing while it is.
-        /// </summary>
-        private void HandleLicenseAttachment(LicenseHost license)
-        {
-            try
-            {
-                SnappableItem? snappable = license.Item != null ? license.Item.SnappableItem : null;
-                bool snapped = snappable != null && snappable.IsSnapped && snappable.SnappedTo != null;
-                if (snapped == license.AttachedToStickyTape)
-                {
-                    return;
-                }
-
-                license.AttachedToStickyTape = snapped;
-                Main.LogEntry("HandleLicenseAttachment", $"License {license.PrefabName} snapped to a mount: {snapped}");
-
-                if (snapped)
-                {
-                    GameObject? stickerBase = FindStickerBase(snappable!.SnappedTo!.transform);
-                    if (stickerBase != null)
-                    {
-                        license.StickyTapeBase = stickerBase;
-                        stickerBase.SetActive(false);
-                    }
-                }
-                else if (license.StickyTapeBase != null)
-                {
-                    license.StickyTapeBase.SetActive(true);
-                    license.StickyTapeBase = null;
-                }
-            }
-            catch (Exception e)
-            {
-                Main.LogEntry("HandleLicenseAttachment", $"Error: {e.Message}");
-            }
-        }
-
-        private static GameObject? FindStickerBase(Transform snapPoint)
-        {
-            Transform root = snapPoint;
-            for (int i = 0; i < 4 && root.parent != null && root.name.IndexOf("StickyTape", StringComparison.OrdinalIgnoreCase) < 0; i++)
-            {
-                root = root.parent;
-            }
-
-            foreach (Transform child in root.GetComponentsInChildren<Transform>(true))
-            {
-                if (child.name.IndexOf("gadget_sticker_base", StringComparison.OrdinalIgnoreCase) >= 0)
-                {
-                    return child.gameObject;
-                }
-            }
-            return null;
-        }
-
-        /// <summary>
-        /// Keeps the printed license page hidden while the canvas covers it. Prefers the game's Page component
-        /// and falls back to the fixed child path used by older builds.
-        /// </summary>
-        private void HandlePaperVisibility(LicenseHost license)
-        {
-            if (license.LicenseObject == null)
-            {
-                return;
-            }
-
-            if (license.PaperRenderer == null && license.PaperObject == null && !paperLookupFailed.Contains(license.PrefabName))
-            {
-                Page page = license.LicenseObject.GetComponentInChildren<Page>(true);
-                if (page != null && page.renderer != null)
-                {
-                    license.PaperRenderer = page.renderer;
-                }
-                else
-                {
-                    Transform fallback = license.LicenseObject.transform.Find(PaperFallbackPath);
-                    if (fallback != null)
-                    {
-                        license.PaperObject = fallback.gameObject;
-                    }
-                    else
-                    {
-                        paperLookupFailed.Add(license.PrefabName);
-                        Main.LogEntry("LicenseScan", $"Could not find the printed page of {license.PrefabName}; the canvas will overlay it instead.");
-                    }
-                }
-            }
-
-            if (license.PaperRenderer != null && license.PaperRenderer.enabled)
-            {
-                license.PaperRenderer.enabled = false;
-            }
-            if (license.PaperObject != null && license.PaperObject.activeSelf)
-            {
-                license.PaperObject.SetActive(false);
-            }
-        }
-
-        private void PositionNearObject(LicenseHost license)
-        {
-            if (license.MenuCanvas == null || license.LicenseObject == null)
-            {
-                return;
-            }
-
-            license.MenuCanvas.transform.position = license.LicenseObject.transform.position;
-            license.MenuCanvas.transform.rotation = license.LicenseObject.transform.rotation *
-                                                    Quaternion.Euler(90f, 180f, 0f) *
-                                                    Quaternion.Euler(panelConfigs[PanelType.Main].PanelRotationOffset);
         }
 
         // ------------------------------------------------------------------
@@ -614,6 +304,10 @@ namespace TwitchChat
             if (car == null || cabDisplay.MenuCanvas == null || cabDisplayCar == car)
             {
                 return;
+            }
+            if (cabDisplayHandles != null && cabDisplayHandles.IsHeld)
+            {
+                return; // the player is carrying it between cars; where they let go decides where it lands
             }
             TryRestoreCabDisplay(car);
         }
@@ -718,6 +412,43 @@ namespace TwitchChat
             {
                 NotificationManager.SetVariable("alertMessage", "The cab display has not been placed in this locomotive yet. Use Place Display first.");
             }
+        }
+
+        /// <summary>
+        /// Called by <see cref="PanelGrabHandles"/> when a hand lets go of the display. Re-parents it to whichever
+        /// car the player is in, so it rides along from wherever it was left, and saves the new pose for that
+        /// locomotive type.
+        /// </summary>
+        private void OnCabDisplayReleased()
+        {
+            if (cabDisplay.MenuCanvas == null)
+            {
+                return;
+            }
+
+            Transform canvas = cabDisplay.MenuCanvas.transform;
+            TrainCar? car = PlayerManager.Car;
+            Transform? parent = car != null
+                ? (car.interior != null ? car.interior : car.transform)
+                : WorldMover.OriginShiftParent;
+
+            if (parent != null && canvas.parent != parent)
+            {
+                canvas.SetParent(parent, true);
+            }
+
+            cabDisplayCar = car;
+            cabDisplay.Placed = true;
+
+            string location = "the world";
+            if (car != null)
+            {
+                location = CarKey(car);
+                SavePose(location, canvas.localPosition, canvas.localRotation.eulerAngles);
+            }
+            Settings.Instance.RequestSave();
+
+            Main.LogEntry("CabDisplay", $"Cab display released on {location}.");
         }
 
         private static string CarKey(TrainCar car)
@@ -885,6 +616,13 @@ namespace TwitchChat
             host.Config1Panel.OnBackButtonClicked += () => ShowPanel("Main", host);
             host.Config2Panel.OnBackButtonClicked += () => ShowPanel("Main", host);
             host.DebugPanel.OnBackButtonClicked += () => ShowPanel("Main", host);
+
+            // The cab display is the only host the player moves around, so it is the only one that gets grab bars
+            if (host is CabDisplayHost && menuPanel != null)
+            {
+                cabDisplayHandles = host.MenuCanvas.AddComponent<PanelGrabHandles>();
+                cabDisplayHandles.Initialize(menuPanel, OnCabDisplayReleased);
+            }
 
             Main.LogEntry("CreateMenuCanvas", $"Created panel stack for host {host.Name}.");
         }
