@@ -10,7 +10,7 @@ A mod that seamlessly integrates Twitch chat into your Derail Valley gameplay ex
 - **Authentication You Can Audit**: OAuth handled directly between you and Twitch, asking for only the four permissions the mod actually uses, revocable from inside the game
 - **Message Logging**: Detailed chat logs for post-stream review
 - **Automated Messages**: Schedule periodic announcements to keep your chat informed
-- **Display Panels**: Wide, Large, Medium, and Small sized message display panels
+- **Displays You Size Yourself**: Up to 5 panels per locomotive, each dragged to whatever size suits it
 - **Color Customization**: Ability to customize panel, section, and button coloring
 
 ### Upcoming Features (In Development)
@@ -41,22 +41,26 @@ A mod that seamlessly integrates Twitch chat into your Derail Valley gameplay ex
 
 The menus and chat displays live on world-space panels. There are two kinds of panel host:
 
-- **Cab display** - a panel parented to the locomotive you are in, so it rides along with the cab
--- Press the place key (default F7), or use the "Place Display" button on any Main panel, and the panel appears where you are looking
--- The position is remembered per locomotive type and restored automatically the next time you board that type
--- The toggle key (default F8), or the "Toggle Display" button, hides and shows it without moving it
--- In VR, faint grab bars run along all four edges: bring a hand to one (it lights up) and squeeze the grip to carry the display around, exactly like holding the old license papers. Let go and the new spot is saved for that locomotive
+- **Cab displays** - up to 5 panels per locomotive type, parented to the locomotive you are in so they ride along with the cab
+-- Press the place key (default F7), or use the "Place Display" button on any Main panel, and another display appears where you are looking
+-- Each display keeps its own position, size, and chosen panel. The whole set is restored automatically the next time you board that locomotive type
+-- The toggle key (default F8), or the "Toggle Display" button, hides and shows them all without moving anything
+-- In VR, faint grab bars run along all four edges of every display:
+--- Squeeze the **grip** on a bar to carry the whole display around, exactly like holding the old license papers
+--- Squeeze the **trigger** on a bar to drag that one edge in or out and resize the display. The opposite edge stays where it is, and chat panels simply show more or fewer lines rather than stretching the text
+--- Bars light up blue when a hand is in reach, green while carrying, amber while resizing, and go dim grey when both locks are on
+-- Outside VR, drag any bar with the mouse to resize the display the same way. Placement is still the place key
+-- Panels have no size of their own: a display stays the size you dragged it to whichever panel it shows, and new displays start at a sensible default
+-- The **Displays** panel lists every display in the current locomotive, with a Move and a Size lock for each, and a Close button
+-- The **x** button in the top right corner of any display closes that display and forgets its saved slot
 -- Keys, placement distance and scale are set in the Unity Mod Manager menu, where the grab bars can also be turned off
 - **Wrist panel** (VR only) - a smaller copy of the menus attached to a controller, glance at it like a watch
 -- Choose the hand, size, offset and rotation in the Unity Mod Manager menu; changes apply live
 -- Its "Place Display" button is the VR way to summon the cab display without a keyboard
 
 - Every host shows the same panels and remembers which panel it last showed
-- Display Panels:
--- Wide - Little wider than the large, but about 1/3 in height
--- Large - Approx same size as the DE2 back window
--- Medium - Roughly half a metre square
--- Small - About the size of a sheet of paper
+- Chat Panel
+-- Shows the incoming Twitch chat. How much of it you can read is decided by how big you have dragged the display, so there are no fixed Wide/Large/Medium/Small variants to pick between any more
 - Config Panels
 -- Config1 - Customize background panel and section coloring
 -- Config2 - Customize button coloring and reset color customizations
@@ -67,11 +71,12 @@ The menus and chat displays live on world-space panels. There are two kinds of p
 -- Standard Messages - Enable/Disable your automatic Connect/Disconnect messages
 -- Command Messages - Enable/Disable the !info and !command ...commands
 -- Timed Messages - Enable/Disable the timed messages system
+-- Displays - List the displays in this locomotive, lock each one's position or size, and close the ones you are done with
 -- Debug - Set debug level, several 'debug and testing' related buttons
 
 - Buttons can be interacted with in both VR and non-VR modes
 - Top left panel buttons will 'minimize' the displayed panel
-- Top right panel buttons will return to the 'Main' panel (does nothing 'on' the Main panel)
+- Top right panel buttons return to the 'Main' panel (does nothing 'on' the Main panel), and close the display on cab displays
 - Each 'click' of the Notification duration slider in VR mode will advance approx 10%, then reset after max
 
 ### Twitch Authentication
@@ -165,6 +170,10 @@ Access advanced options by expanding the "Debug and Troubleshooting" section in 
 
 ### 3.4.0 (September 4, 2026)
 
+- A locomotive type can now carry up to 5 displays instead of one. Each keeps its own position, size and chosen panel, and the whole set comes back when you board that locomotive type again
+- Displays are resized by hand in VR: squeeze the trigger on an edge bar and drag that edge. The grip still carries the whole display. Outside VR, drag the same bars with the mouse
+- The four sized chat panels (Wide, Large, Medium, Small) are now a single Chat panel, since a display is whatever size you drag it to. Panel size presets are gone with them, and a chat message now costs one entry per display instead of four
+- New Displays panel listing everything placed in the current locomotive, with a Move lock and a Size lock per display, plus a Close button. Every cab display also gets an x in its top right corner
 - Connecting to Twitch is now done entirely from inside the game. The Authentication panel shows a short code to enter at twitch.tv/activate on any device, so VR players no longer have to remove the headset or alt-tab to a browser
 - Connections no longer expire roughly monthly; the mod refreshes its own access in the background
 - The mod now asks Twitch for four permissions instead of nine. It no longer requests access to your email address, the legacy IRC chat scopes, or the bot scopes, none of which it used

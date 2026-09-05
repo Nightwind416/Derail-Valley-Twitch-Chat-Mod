@@ -14,8 +14,9 @@ namespace TwitchChat
     /// </summary>
     /// <remarks>
     /// Two kinds of host carry the panel stack:
-    /// - Cab display: one canvas parented to the current locomotive interior, placed where the player is looking.
-    ///   Its pose is remembered per locomotive type and restored when the player enters that type again.
+    /// - Cab displays: up to <see cref="Settings.MaxDisplaysPerCar"/> canvases parented to the current locomotive
+    ///   interior, each placed where the player is looking. Each one remembers its own pose, size, panel and locks
+    ///   against the locomotive type, and the whole set is restored when the player boards that type again.
     /// - Wrist panel: one canvas parented to a VR controller so it can be glanced at like a watch.
     /// </remarks>
     public class MenuManager : MonoBehaviour
@@ -23,13 +24,26 @@ namespace TwitchChat
         private const float WristSearchInterval = 2f;
         private const float BaseCanvasScale = 0.001f;
 
+        /// <summary>
+        /// How big a display starts out, in canvas units, before anyone drags it. Panels have no sizes of their
+        /// own any more: a display is whatever size the player has made it, whichever panel it is showing.
+        /// </summary>
+        public static readonly Vector2 DefaultPanelSize = new(240f, 380f);
+
+        /// <summary>Smallest a display can be dragged, in canvas units: still wide enough for the title row buttons.</summary>
+        public static readonly Vector2 MinPanelSize = new(140f, 120f);
+
+        /// <summary>Largest a display can be dragged, in canvas units. At scale 1 that is 2 by 1.4 metres.</summary>
+        public static readonly Vector2 MaxPanelSize = new(2000f, 1400f);
+
         private static MenuManager? instance;
-        private readonly CabDisplayHost cabDisplay = new();
+
+        /// <summary>The displays live in the locomotive the player is in, one per saved slot for its type.</summary>
+        private readonly List<CabDisplayHost> cabDisplays = new();
         private readonly WristPanelHost wristPanel = new();
         private GameObject? templateCanvas;
 
         private TrainCar? cabDisplayCar;
-        private PanelGrabHandles? cabDisplayHandles;
         private Transform? wristAnchor;
         private float nextWristSearchTime;
 
@@ -43,7 +57,10 @@ namespace TwitchChat
         {
             get
             {
-                yield return cabDisplay;
+                foreach (CabDisplayHost display in cabDisplays)
+                {
+                    yield return display;
+                }
                 yield return wristPanel;
             }
         }
@@ -57,54 +74,15 @@ namespace TwitchChat
             Authentication,
             Status,
             Notifications,
-            LargeDisplay,
-            MediumDisplay,
-            WideDisplay,
-            SmallDisplay,
+            Chat,
             StandardMessages,
             CommandMessages,
             TimedMessages,
             Config1,
             Config2,
+            Displays,
             Debug
         }
-
-        /// <summary>
-        /// Defines the configuration parameters for panel positioning and sizing.
-        /// </summary>
-        private struct PanelConfig
-        {
-            public Vector2 CanvasSize;
-            public Vector2 PanelSize;
-            public Vector2 PanelPosition;
-            public Vector3 PanelRotationOffset;
-
-            public PanelConfig(Vector2 canvasSize, Vector2 panelSize, Vector2 panelPosition, Vector3 panelRotationOffset)
-            {
-                CanvasSize = canvasSize;
-                PanelSize = panelSize;
-                PanelPosition = panelPosition;
-                PanelRotationOffset = panelRotationOffset;
-            }
-        }
-
-        private readonly Dictionary<PanelType, PanelConfig> panelConfigs = new()
-        {
-            { PanelType.Main, new(new Vector2(200, 360), new Vector2(200, 360), Vector2.zero, Vector3.zero) },
-            { PanelType.Authentication, new(new Vector2(230, 440), new Vector2(230, 440), Vector2.zero, Vector3.zero) },
-            { PanelType.Status, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
-            { PanelType.Notifications, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
-            { PanelType.LargeDisplay, new(new Vector2(1200, 650), new Vector2(1200, 650), Vector2.zero, Vector3.zero) },
-            { PanelType.MediumDisplay, new(new Vector2(500, 500), new Vector2(500, 500), Vector2.zero, Vector3.zero) },
-            { PanelType.WideDisplay, new(new Vector2(900, 220), new Vector2(900, 220), Vector2.zero, Vector3.zero) },
-            { PanelType.SmallDisplay, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
-            { PanelType.StandardMessages, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
-            { PanelType.CommandMessages, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
-            { PanelType.TimedMessages, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
-            { PanelType.Config1, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
-            { PanelType.Config2, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
-            { PanelType.Debug, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) }
-        };
 
         /// <summary>
         /// Gets the singleton instance of the MenuManager.
@@ -159,7 +137,7 @@ namespace TwitchChat
             canvas.sortingOrder = 1000;
 
             RectTransform canvasRect = templateCanvas.GetComponent<RectTransform>();
-            canvasRect.sizeDelta = panelConfigs[PanelType.Main].CanvasSize;
+            canvasRect.sizeDelta = DefaultPanelSize;
             canvasRect.localScale = Vector3.one * BaseCanvasScale;
 
             // Add GraphicRaycaster for non-VR clicks
@@ -169,12 +147,12 @@ namespace TwitchChat
             GameObject menuPanel = new("MenuPanel");
             menuPanel.transform.SetParent(templateCanvas.transform, false);
             RectTransform panelRect = menuPanel.AddComponent<RectTransform>();
-            panelRect.sizeDelta = panelConfigs[PanelType.Main].PanelSize;
+            panelRect.sizeDelta = DefaultPanelSize;
             panelRect.anchorMin = new Vector2(0f, 1f);
             panelRect.anchorMax = new Vector2(0f, 1f);
             panelRect.pivot = new Vector2(0.5f, 0.5f);
-            panelRect.localPosition = panelConfigs[PanelType.Main].PanelPosition;
-            panelRect.localRotation = Quaternion.Euler(panelConfigs[PanelType.Main].PanelRotationOffset);
+            panelRect.localPosition = Vector3.zero;
+            panelRect.localRotation = Quaternion.identity;
 
             // Create all panel templates
             CreatePanelTemplates(menuPanel.transform);
@@ -189,15 +167,13 @@ namespace TwitchChat
             _ = new MainPanel(parent, null);
             _ = new StatusPanel(parent);
             _ = new NotificationsPanel(parent);
-            _ = new LargeDisplayPanel(parent);
-            _ = new MediumDisplayPanel(parent);
-            _ = new WideDisplayPanel(parent);
-            _ = new SmallDisplayPanel(parent);
+            _ = new ChatPanel(parent);
             _ = new StandardMessagesPanel(parent);
             _ = new CommandMessagesPanel(parent);
             _ = new TimedMessagesPanel(parent);
             _ = new Config1Panel(parent);
             _ = new Config2Panel(parent);
+            _ = new DisplaysPanel(parent);
             _ = new DebugPanel(parent);
 
             // Hide all template panels
@@ -218,7 +194,7 @@ namespace TwitchChat
 
             bool inSession = PlayerManager.PlayerTransform != null;
 
-            UpdateCabDisplay(inSession);
+            UpdateCabDisplays(inSession);
             UpdateWristPanel(inSession);
         }
 
@@ -260,93 +236,166 @@ namespace TwitchChat
         }
 
         // ------------------------------------------------------------------
-        // Cab display
+        // Cab displays
         // ------------------------------------------------------------------
 
-        private void UpdateCabDisplay(bool inSession)
+        /// <summary>
+        /// Keeps the live displays matching the locomotive the player is in, then shows and feeds each one.
+        /// </summary>
+        private void UpdateCabDisplays(bool inSession)
         {
             if (!inSession)
             {
-                cabDisplay.Placed = false;
+                ClearCabDisplays();
                 cabDisplayCar = null;
                 return;
             }
 
-            if (cabDisplay.MenuCanvas == null)
-            {
-                // First frame of a session, or the canvas was destroyed along with the car it was parented to
-                CreateMenuCanvas(cabDisplay);
-                cabDisplay.Placed = false;
-                cabDisplayCar = null;
-                TryRestoreCabDisplay(PlayerManager.Car);
-            }
+            TrainCar? car = PlayerManager.Car;
 
-            GameObject canvas = cabDisplay.MenuCanvas!;
-            bool shouldShow = cabDisplay.Placed && Settings.Instance.cabDisplayVisible;
-            if (canvas.activeSelf != shouldShow)
+            // Only follow the player into an actual car. Stepping outside leaves the displays where they are,
+            // riding along with the locomotive they belong to.
+            if (car != null && (car != cabDisplayCar || AnyCanvasLost()))
             {
-                canvas.SetActive(shouldShow);
-                if (shouldShow)
+                if (!AnyDisplayHeld())
                 {
-                    ShowPanel(cabDisplay.ActivePanel, cabDisplay);
+                    SyncDisplaysToCar(car);
                 }
             }
 
-            if (shouldShow)
+            bool visible = Settings.Instance.cabDisplayVisible;
+
+            foreach (CabDisplayHost display in cabDisplays)
             {
-                canvas.transform.localScale = Vector3.one * BaseCanvasScale * Settings.Instance.cabDisplayScale;
-                UpdatePanelValues(cabDisplay);
+                if (display.MenuCanvas == null)
+                {
+                    continue;
+                }
+
+                bool shouldShow = display.Placed && visible;
+                if (display.MenuCanvas.activeSelf != shouldShow)
+                {
+                    display.MenuCanvas.SetActive(shouldShow);
+                    if (shouldShow)
+                    {
+                        ShowPanel(display.ActivePanel, display);
+                    }
+                }
+
+                if (shouldShow)
+                {
+                    display.MenuCanvas.transform.localScale = Vector3.one * BaseCanvasScale * Settings.Instance.cabDisplayScale;
+                    UpdatePanelValues(display);
+                }
             }
+        }
+
+        /// <summary>True if a canvas went away with the car it was parented to.</summary>
+        private bool AnyCanvasLost()
+        {
+            foreach (CabDisplayHost display in cabDisplays)
+            {
+                if (display.MenuCanvas == null)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private bool AnyDisplayHeld()
+        {
+            foreach (CabDisplayHost display in cabDisplays)
+            {
+                if (display.Handles != null && display.Handles.IsBusy)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         private void OnPlayerCarChanged(TrainCar car)
         {
-            if (car == null || cabDisplay.MenuCanvas == null || cabDisplayCar == car)
+            if (car == null || car == cabDisplayCar || AnyDisplayHeld())
             {
                 return;
             }
-            if (cabDisplayHandles != null && cabDisplayHandles.IsHeld)
-            {
-                return; // the player is carrying it between cars; where they let go decides where it lands
-            }
-            TryRestoreCabDisplay(car);
+            SyncDisplaysToCar(car);
         }
 
         /// <summary>
-        /// Moves the cab display onto the given car if a pose was saved for that locomotive type.
+        /// Rebuilds the live displays from the slots saved for the given car's locomotive type, dropping
+        /// whatever was built for the car before it.
         /// </summary>
-        private void TryRestoreCabDisplay(TrainCar? car)
+        private void SyncDisplaysToCar(TrainCar car)
         {
-            if (car == null || cabDisplay.MenuCanvas == null)
-            {
-                return;
-            }
+            ClearCabDisplays();
+            cabDisplayCar = car;
 
             string key = CarKey(car);
-            CabDisplayPose? pose = FindPose(key);
-            if (pose == null)
+            List<CabDisplayPose> slots = SlotsFor(key);
+
+            foreach (CabDisplayPose slot in slots)
+            {
+                CabDisplayHost display = CreateCabDisplay(slot);
+                AttachCabDisplay(display, car, slot.localPosition, Quaternion.Euler(slot.localEuler));
+            }
+
+            if (slots.Count > 0)
+            {
+                Main.LogEntry("CabDisplay", $"Restored {slots.Count} display(s) saved for {key}.");
+            }
+            RefreshDisplaysPanels();
+        }
+
+        private static List<CabDisplayPose> SlotsFor(string carId)
+        {
+            return Settings.Instance.cabDisplayPoses
+                .Where(p => p.carId == carId)
+                .Take(Settings.MaxDisplaysPerCar)
+                .ToList();
+        }
+
+        private CabDisplayHost CreateCabDisplay(CabDisplayPose slot)
+        {
+            CabDisplayHost display = new(slot, cabDisplays.Count + 1);
+            cabDisplays.Add(display);
+            CreateMenuCanvas(display);
+            return display;
+        }
+
+        private void ClearCabDisplays()
+        {
+            foreach (CabDisplayHost display in cabDisplays)
+            {
+                if (display.MenuCanvas != null)
+                {
+                    Destroy(display.MenuCanvas);
+                }
+            }
+            cabDisplays.Clear();
+        }
+
+        private void AttachCabDisplay(CabDisplayHost display, TrainCar car, Vector3 localPosition, Quaternion localRotation)
+        {
+            if (display.MenuCanvas == null)
             {
                 return;
             }
 
-            AttachCabDisplay(car, pose.localPosition, Quaternion.Euler(pose.localEuler));
-            Main.LogEntry("CabDisplay", $"Restored cab display pose for {key}.");
-        }
-
-        private void AttachCabDisplay(TrainCar car, Vector3 localPosition, Quaternion localRotation)
-        {
             Transform parent = car.interior != null ? car.interior : car.transform;
-            Transform canvas = cabDisplay.MenuCanvas!.transform;
+            Transform canvas = display.MenuCanvas.transform;
             canvas.SetParent(parent, false);
             canvas.localPosition = localPosition;
             canvas.localRotation = localRotation;
             canvas.localScale = Vector3.one * BaseCanvasScale * Settings.Instance.cabDisplayScale;
-            cabDisplayCar = car;
-            cabDisplay.Placed = true;
+            display.Placed = true;
         }
 
         /// <summary>
-        /// Places the cab display in front of the player's view, parents it to the current car, and remembers the pose for that locomotive type.
+        /// Adds a display where the player is looking and saves it as a new slot for this locomotive type,
+        /// up to <see cref="Settings.MaxDisplaysPerCar"/> of them.
         /// </summary>
         public void PlaceCabDisplay()
         {
@@ -355,122 +404,138 @@ namespace TwitchChat
             Camera? camera = PlayerManager.PlayerCamera != null ? PlayerManager.PlayerCamera : Camera.main;
             if (camera == null || PlayerManager.PlayerTransform == null)
             {
-                Main.LogEntry(methodName, "Cannot place the cab display outside of a game session.");
-                NotificationManager.SetVariable("alertMessage", "The cab display can only be placed while in a game session.");
+                Main.LogEntry(methodName, "Cannot place a display outside of a game session.");
+                NotificationManager.SetVariable("alertMessage", "Displays can only be placed while in a game session.");
                 return;
             }
 
-            if (cabDisplay.MenuCanvas == null)
+            TrainCar? car = PlayerManager.Car;
+            if (car == null)
             {
-                CreateMenuCanvas(cabDisplay);
+                Main.LogEntry(methodName, "Cannot place a display outside of a car; there would be no locomotive to save it against.");
+                NotificationManager.SetVariable("alertMessage", "Stand in a locomotive to place a display. Displays are saved per locomotive type.");
+                return;
             }
 
-            Transform canvas = cabDisplay.MenuCanvas!.transform;
+            if (car != cabDisplayCar)
+            {
+                SyncDisplaysToCar(car);
+            }
+
+            string key = CarKey(car);
+            if (cabDisplays.Count >= Settings.MaxDisplaysPerCar)
+            {
+                Main.LogEntry(methodName, $"{key} already has the maximum of {Settings.MaxDisplaysPerCar} displays.");
+                NotificationManager.SetVariable("alertMessage", $"This locomotive already has {Settings.MaxDisplaysPerCar} displays. Close one from the Displays panel first.");
+                return;
+            }
+
+            CabDisplayPose slot = new() { carId = key };
+            Settings.Instance.cabDisplayPoses.Add(slot);
+            CabDisplayHost display = CreateCabDisplay(slot);
+
+            if (display.MenuCanvas == null)
+            {
+                return;
+            }
+
+            Transform canvas = display.MenuCanvas.transform;
             Vector3 position = camera.transform.position + camera.transform.forward * Settings.Instance.cabDisplayDistance;
             Quaternion rotation = Quaternion.LookRotation(position - camera.transform.position, Vector3.up);
-
-            TrainCar? car = PlayerManager.Car;
-            Transform? parent = car != null
-                ? (car.interior != null ? car.interior : car.transform)
-                : WorldMover.OriginShiftParent;
+            Transform parent = car.interior != null ? car.interior : car.transform;
 
             canvas.SetParent(parent, true);
             canvas.SetPositionAndRotation(position, rotation);
             canvas.localScale = Vector3.one * BaseCanvasScale * Settings.Instance.cabDisplayScale;
 
-            cabDisplayCar = car;
-            cabDisplay.Placed = true;
+            display.Placed = true;
             Settings.Instance.cabDisplayVisible = true;
-
-            string location = "the world";
-            if (car != null)
-            {
-                location = CarKey(car);
-                SavePose(location, canvas.localPosition, canvas.localRotation.eulerAngles);
-            }
-            Settings.Instance.RequestSave();
+            SaveSlotPose(display);
 
             canvas.gameObject.SetActive(true);
-            ShowPanel(cabDisplay.ActivePanel, cabDisplay);
+            ShowPanel(display.ActivePanel, display);
+            RefreshDisplaysPanels();
 
-            Main.LogEntry(methodName, $"Cab display placed on {location} at {position}.");
-            NotificationManager.SetVariable("alertMessage", car != null
-                ? $"Cab display placed. Position saved for {location}."
-                : "Cab display placed. Not in a car, so this position is not saved.");
+            Main.LogEntry(methodName, $"Display {cabDisplays.Count} placed on {key} at {position}.");
+            NotificationManager.SetVariable("alertMessage", $"Display {cabDisplays.Count} of {Settings.MaxDisplaysPerCar} placed and saved for {key}.");
         }
 
         /// <summary>
-        /// Shows or hides the cab display without moving it.
+        /// Removes one display and forgets its saved slot.
+        /// </summary>
+        public void CloseCabDisplay(CabDisplayHost display)
+        {
+            if (!cabDisplays.Remove(display))
+            {
+                return;
+            }
+
+            Settings.Instance.cabDisplayPoses.Remove(display.Slot);
+            Settings.Instance.RequestSave();
+
+            if (display.MenuCanvas != null)
+            {
+                Destroy(display.MenuCanvas);
+            }
+
+            Main.LogEntry("CabDisplay", $"Display closed; {cabDisplays.Count} left in {display.Slot.carId}.");
+            NotificationManager.SetVariable("alertMessage", $"Display closed. {cabDisplays.Count} of {Settings.MaxDisplaysPerCar} left in this locomotive.");
+            RefreshDisplaysPanels();
+        }
+
+        /// <summary>
+        /// Shows or hides every display in the current locomotive, without moving any of them.
         /// </summary>
         public void ToggleCabDisplay()
         {
             Settings.Instance.cabDisplayVisible = !Settings.Instance.cabDisplayVisible;
             Settings.Instance.RequestSave();
-            Main.LogEntry("CabDisplay", $"Cab display visible: {Settings.Instance.cabDisplayVisible}");
+            Main.LogEntry("CabDisplay", $"Displays visible: {Settings.Instance.cabDisplayVisible}");
 
-            if (Settings.Instance.cabDisplayVisible && !cabDisplay.Placed)
+            if (Settings.Instance.cabDisplayVisible && cabDisplays.Count == 0)
             {
-                NotificationManager.SetVariable("alertMessage", "The cab display has not been placed in this locomotive yet. Use Place Display first.");
+                NotificationManager.SetVariable("alertMessage", "No displays have been placed in this locomotive yet. Use Place Display first.");
             }
         }
 
         /// <summary>
-        /// Called by <see cref="PanelGrabHandles"/> when a hand lets go of the display. Re-parents it to whichever
-        /// car the player is in, so it rides along from wherever it was left, and saves the new pose for that
-        /// locomotive type.
+        /// Called by <see cref="PanelGrabHandles"/> when a hand lets go of a display, or finishes resizing one.
         /// </summary>
-        private void OnCabDisplayReleased()
+        private void OnCabDisplayChanged(CabDisplayHost display)
         {
-            if (cabDisplay.MenuCanvas == null)
+            SaveSlotPose(display);
+        }
+
+        /// <summary>
+        /// Writes a display's current pose and size back to its slot.
+        /// </summary>
+        private static void SaveSlotPose(CabDisplayHost display)
+        {
+            if (display.MenuCanvas == null)
             {
                 return;
             }
 
-            Transform canvas = cabDisplay.MenuCanvas.transform;
-            TrainCar? car = PlayerManager.Car;
-            Transform? parent = car != null
-                ? (car.interior != null ? car.interior : car.transform)
-                : WorldMover.OriginShiftParent;
-
-            if (parent != null && canvas.parent != parent)
-            {
-                canvas.SetParent(parent, true);
-            }
-
-            cabDisplayCar = car;
-            cabDisplay.Placed = true;
-
-            string location = "the world";
-            if (car != null)
-            {
-                location = CarKey(car);
-                SavePose(location, canvas.localPosition, canvas.localRotation.eulerAngles);
-            }
+            Transform canvas = display.MenuCanvas.transform;
+            display.Slot.localPosition = canvas.localPosition;
+            display.Slot.localEuler = canvas.localRotation.eulerAngles;
             Settings.Instance.RequestSave();
+        }
 
-            Main.LogEntry("CabDisplay", $"Cab display released on {location}.");
+        /// <summary>
+        /// Redraws the Displays panel on every host, since it lists all the displays in the locomotive.
+        /// </summary>
+        private void RefreshDisplaysPanels()
+        {
+            foreach (PanelHost host in AllHosts)
+            {
+                host.DisplaysPanel?.Rebuild(cabDisplays, host);
+            }
         }
 
         private static string CarKey(TrainCar car)
         {
             return car.carLivery != null ? car.carLivery.id : car.carType.ToString();
-        }
-
-        private static CabDisplayPose? FindPose(string key)
-        {
-            return Settings.Instance.cabDisplayPoses.FirstOrDefault(p => p.carId == key);
-        }
-
-        private static void SavePose(string key, Vector3 localPosition, Vector3 localEuler)
-        {
-            CabDisplayPose? pose = FindPose(key);
-            if (pose == null)
-            {
-                pose = new CabDisplayPose { carId = key };
-                Settings.Instance.cabDisplayPoses.Add(pose);
-            }
-            pose.localPosition = localPosition;
-            pose.localEuler = localEuler;
         }
 
         // ------------------------------------------------------------------
@@ -588,15 +653,13 @@ namespace TwitchChat
             host.AuthenticationPanel = new AuthenticationPanel(menuPanel);
             host.StatusPanel = new StatusPanel(menuPanel);
             host.NotificationsPanel = new NotificationsPanel(menuPanel);
-            host.LargeDisplayPanel = new LargeDisplayPanel(menuPanel);
-            host.MediumDisplayPanel = new MediumDisplayPanel(menuPanel);
-            host.WideDisplayPanel = new WideDisplayPanel(menuPanel);
-            host.SmallDisplayPanel = new SmallDisplayPanel(menuPanel);
+            host.ChatPanel = new ChatPanel(menuPanel);
             host.StandardMessagesPanel = new StandardMessagesPanel(menuPanel);
             host.CommandMessagesPanel = new CommandMessagesPanel(menuPanel);
             host.TimedMessagesPanel = new TimedMessagesPanel(menuPanel);
             host.Config1Panel = new Config1Panel(menuPanel);
             host.Config2Panel = new Config2Panel(menuPanel);
+            host.DisplaysPanel = new DisplaysPanel(menuPanel);
             host.DebugPanel = new DebugPanel(menuPanel);
 
             // Explicitly hide all panels immediately after creation
@@ -606,22 +669,21 @@ namespace TwitchChat
             host.AuthenticationPanel.OnBackButtonClicked += () => ShowPanel("Main", host);
             host.StatusPanel.OnBackButtonClicked += () => ShowPanel("Main", host);
             host.NotificationsPanel.OnBackButtonClicked += () => ShowPanel("Main", host);
-            host.LargeDisplayPanel.OnBackButtonClicked += () => ShowPanel("Main", host);
-            host.MediumDisplayPanel.OnBackButtonClicked += () => ShowPanel("Main", host);
-            host.WideDisplayPanel.OnBackButtonClicked += () => ShowPanel("Main", host);
-            host.SmallDisplayPanel.OnBackButtonClicked += () => ShowPanel("Main", host);
+            host.ChatPanel.OnBackButtonClicked += () => ShowPanel("Main", host);
             host.StandardMessagesPanel.OnBackButtonClicked += () => ShowPanel("Main", host);
             host.CommandMessagesPanel.OnBackButtonClicked += () => ShowPanel("Main", host);
             host.TimedMessagesPanel.OnBackButtonClicked += () => ShowPanel("Main", host);
             host.Config1Panel.OnBackButtonClicked += () => ShowPanel("Main", host);
             host.Config2Panel.OnBackButtonClicked += () => ShowPanel("Main", host);
+            host.DisplaysPanel.OnBackButtonClicked += () => ShowPanel("Main", host);
             host.DebugPanel.OnBackButtonClicked += () => ShowPanel("Main", host);
 
-            // The cab display is the only host the player moves around, so it is the only one that gets grab bars
-            if (host is CabDisplayHost && menuPanel != null)
+            // Cab displays are the hosts the player moves and resizes, so they are the ones that get grab bars
+            if (host is CabDisplayHost display && menuPanel != null)
             {
-                cabDisplayHandles = host.MenuCanvas.AddComponent<PanelGrabHandles>();
-                cabDisplayHandles.Initialize(menuPanel, OnCabDisplayReleased);
+                display.Handles = host.MenuCanvas.AddComponent<PanelGrabHandles>();
+                display.Handles.Initialize(menuPanel, display, () => OnCabDisplayChanged(display));
+                host.SetCloseAction(() => CloseCabDisplay(display));
             }
 
             Main.LogEntry("CreateMenuCanvas", $"Created panel stack for host {host.Name}.");
@@ -633,15 +695,13 @@ namespace TwitchChat
             host.AuthenticationPanel?.Hide();
             host.StatusPanel?.Hide();
             host.NotificationsPanel?.Hide();
-            host.LargeDisplayPanel?.Hide();
-            host.MediumDisplayPanel?.Hide();
-            host.WideDisplayPanel?.Hide();
-            host.SmallDisplayPanel?.Hide();
+            host.ChatPanel?.Hide();
             host.StandardMessagesPanel?.Hide();
             host.CommandMessagesPanel?.Hide();
             host.TimedMessagesPanel?.Hide();
             host.Config1Panel?.Hide();
             host.Config2Panel?.Hide();
+            host.DisplaysPanel?.Hide();
             host.DebugPanel?.Hide();
         }
 
@@ -662,31 +722,43 @@ namespace TwitchChat
                 "Authentication" => PanelType.Authentication,
                 "Status" => PanelType.Status,
                 "Notifications" => PanelType.Notifications,
-                "Large Display" => PanelType.LargeDisplay,
-                "Medium Display" => PanelType.MediumDisplay,
-                "Wide Display" => PanelType.WideDisplay,
-                "Small Display" => PanelType.SmallDisplay,
+                "Chat" => PanelType.Chat,
+
+                // Settings written before the sized display panels were merged into one
+                "Large Display" or "Medium Display" or "Wide Display" or "Small Display" => PanelType.Chat,
+
                 "Standard Messages" => PanelType.StandardMessages,
                 "Command Messages" => PanelType.CommandMessages,
                 "Timed Messages" => PanelType.TimedMessages,
                 "Config1" => PanelType.Config1,
                 "Config2" => PanelType.Config2,
+                "Displays" => PanelType.Displays,
                 "Debug" => PanelType.Debug,
                 _ => PanelType.Main
             };
 
-            // Apply the configuration for this panel type
-            PanelConfig config = panelConfigs[panelType];
-            Transform menuPanel = host.MenuCanvas.transform.Find("MenuPanel");
-            if (menuPanel != null)
+            // Panels have no size of their own: a display keeps whatever size it has been dragged to, whichever
+            // panel it shows. A display that has never been sized starts at the default.
+            if (host is CabDisplayHost sizedDisplay)
             {
-                RectTransform canvasRect = host.MenuCanvas.GetComponent<RectTransform>();
-                RectTransform panelRect = menuPanel.GetComponent<RectTransform>();
+                Vector2 size = sizedDisplay.Slot.panelSize;
+                if (size.x < MinPanelSize.x || size.y < MinPanelSize.y)
+                {
+                    size = DefaultPanelSize;
+                    sizedDisplay.Slot.panelSize = size;
+                }
 
-                canvasRect.sizeDelta = config.CanvasSize;
-                panelRect.sizeDelta = config.PanelSize;
-                panelRect.localPosition = config.PanelPosition;
-                panelRect.localRotation = Quaternion.Euler(config.PanelRotationOffset);
+                Transform menuPanel = host.MenuCanvas.transform.Find("MenuPanel");
+                if (menuPanel != null)
+                {
+                    host.MenuCanvas.GetComponent<RectTransform>().sizeDelta = size;
+                    menuPanel.GetComponent<RectTransform>().sizeDelta = size;
+                }
+            }
+
+            if (panelType == PanelType.Displays)
+            {
+                host.DisplaysPanel?.Rebuild(cabDisplays, host);
             }
 
             // Show the selected panel
@@ -704,17 +776,8 @@ namespace TwitchChat
                 case PanelType.Notifications:
                     host.NotificationsPanel?.Show();
                     break;
-                case PanelType.LargeDisplay:
-                    host.LargeDisplayPanel?.Show();
-                    break;
-                case PanelType.MediumDisplay:
-                    host.MediumDisplayPanel?.Show();
-                    break;
-                case PanelType.WideDisplay:
-                    host.WideDisplayPanel?.Show();
-                    break;
-                case PanelType.SmallDisplay:
-                    host.SmallDisplayPanel?.Show();
+                case PanelType.Chat:
+                    host.ChatPanel?.Show();
                     break;
                 case PanelType.StandardMessages:
                     host.StandardMessagesPanel?.Show();
@@ -731,18 +794,23 @@ namespace TwitchChat
                 case PanelType.Config2:
                     host.Config2Panel?.Show();
                     break;
+                case PanelType.Displays:
+                    host.DisplaysPanel?.Show();
+                    break;
                 case PanelType.Debug:
                     host.DebugPanel?.Show();
                     break;
             }
 
-            // Remember the active panel for this host
-            host.ActivePanel = panelName;
+            // Remember the active panel for this host, under its current name so the legacy sized-display
+            // names are not written back out again
+            host.ActivePanel = panelType == PanelType.Chat ? "Chat" : panelName;
             Settings.Instance.RequestSave();
         }
 
         /// <summary>
-        /// Adds a chat message to the display panels of every host that has been created.
+        /// Adds a chat message to the Chat panel of every host that exists, so a message costs one entry per
+        /// display rather than one per display size as it used to.
         /// </summary>
         /// <param name="username">The username of the message sender.</param>
         /// <param name="message">The chat message content.</param>
@@ -757,11 +825,8 @@ namespace TwitchChat
 
                 try
                 {
-                    // Add message to all display panels regardless of which one is showing
-                    host.LargeDisplayPanel?.AddChatMessage(username, message);
-                    host.MediumDisplayPanel?.AddChatMessage(username, message);
-                    host.WideDisplayPanel?.AddChatMessage(username, message);
-                    host.SmallDisplayPanel?.AddChatMessage(username, message);
+                    // Kept up to date even while another panel is showing, so the history is there when Chat is opened
+                    host.ChatPanel?.AddChatMessage(username, message);
                 }
                 catch (Exception ex)
                 {

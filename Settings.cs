@@ -37,7 +37,10 @@ namespace TwitchChat
     {
         /// <summary>Singleton instance of Settings</summary>
         public static Settings Instance { get; set; } = null!;
-        
+
+        /// <summary>How many cab displays a single locomotive type can carry.</summary>
+        public const int MaxDisplaysPerCar = 5;
+
         /// <summary>
         /// The connected account's Twitch login name. Filled in from the token when the account is
         /// linked, so there is nothing for the user to type and nothing to type wrongly.
@@ -62,13 +65,14 @@ namespace TwitchChat
         public Color buttonColor = new(0, 0, 0, 0.5f);
 
         // Cab Display and Wrist Panel Settings
-        public string cabDisplayPanel = "Main";
         public bool cabDisplayVisible = true;
         public float cabDisplayDistance = 0.7f;
         public float cabDisplayScale = 1.0f;
         public bool cabDisplayGrabHandles = true;
         public string placeDisplayKey = "F7";
         public string toggleDisplayKey = "F8";
+
+        /// <summary>Every saved display, for every locomotive type. Grouped by <see cref="CabDisplayPose.carId"/>.</summary>
         public List<CabDisplayPose> cabDisplayPoses = new();
         public bool wristPanelEnabled = true;
         public string wristPanel = "Main";
@@ -430,7 +434,8 @@ namespace TwitchChat
                 GUILayout.EndHorizontal();
                 cabDisplayDistance = SliderRow("Placement distance (m)", cabDisplayDistance, 0.3f, 2.0f, "0.00");
                 cabDisplayScale = SliderRow("Cab display scale", cabDisplayScale, 0.5f, 2.0f, "0.00");
-                cabDisplayGrabHandles = GUILayout.Toggle(cabDisplayGrabHandles, " Grab bars around the cab display (VR only: squeeze the grip on a bar to move it)");
+                cabDisplayGrabHandles = GUILayout.Toggle(cabDisplayGrabHandles, $" Grab bars around each display (VR only: grip a bar to move it, trigger to drag that edge and resize it)");
+                GUILayout.Label($"    Up to {MaxDisplaysPerCar} displays per locomotive type. Place, lock and close them from the in-game Displays panel.");
                 GUILayout.Space(5);
                 wristPanelEnabled = GUILayout.Toggle(wristPanelEnabled, " Wrist panel (VR only)");
                 GUILayout.BeginHorizontal();
@@ -550,11 +555,32 @@ namespace TwitchChat
     /// Where the cab display sits inside one locomotive type, stored relative to the car interior transform.
     /// </summary>
     [Serializable]
+    /// <summary>
+    /// One saved cab display: where it sits inside a locomotive type, how big it is, which panel it was
+    /// last showing, and whether the player has pinned it down. Up to
+    /// <see cref="Settings.MaxDisplaysPerCar"/> of these share a <see cref="carId"/>, one per display.
+    /// </summary>
+    /// <remarks>
+    /// Everything past <see cref="localEuler"/> was added after the single-display versions, so settings
+    /// files written by those simply fall back to the defaults here.
+    /// </remarks>
     public class CabDisplayPose
     {
         public string carId = string.Empty;
         public Vector3 localPosition;
         public Vector3 localEuler;
+
+        /// <summary>Panel size in canvas units. Zero until the display is first shown, when the panel's own preset seeds it.</summary>
+        public Vector2 panelSize = Vector2.zero;
+
+        /// <summary>The panel this display was last showing.</summary>
+        public string activePanel = "Main";
+
+        /// <summary>Pinned in place: the grip no longer carries it.</summary>
+        public bool lockPosition;
+
+        /// <summary>Pinned at its size: the trigger no longer resizes it.</summary>
+        public bool lockSize;
     }
 
     /// <summary>
