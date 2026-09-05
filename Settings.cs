@@ -78,11 +78,24 @@ namespace TwitchChat
         public string wristPanel = "Main";
         public bool wristPanelOnLeftHand = true;
         public float wristPanelScale = 0.6f;
-        public Vector3 wristPanelOffset = DefaultWristOffset;
-        public Vector3 wristPanelRotation = DefaultWristRotation;
 
-        public static readonly Vector3 DefaultWristOffset = new(0f, 0.04f, -0.10f);
-        public static readonly Vector3 DefaultWristRotation = new(90f, 0f, 0f);
+        /// <summary>
+        /// Where the open menus sit, measured from where the mod puts them on the back of the hand, in metres:
+        /// x across the menus, y along them, z out of the hand. Zero leaves them where the mod puts them.
+        /// </summary>
+        public Vector3 wristMenuOffset = Vector3.zero;
+
+        /// <summary>Extra turn in degrees on top of that, for players who want the menus at another angle.</summary>
+        public Vector3 wristMenuAngle = Vector3.zero;
+
+        /// <summary>
+        /// Where the button the menus fold down to sits, in the same terms. Kept apart from the menus, since the
+        /// button wants to lie on the back of the hand while the menus want to stand up where they can be read.
+        /// </summary>
+        public Vector3 wristButtonOffset = Vector3.zero;
+
+        /// <summary>Extra turn in degrees for the button, on top of where the mod puts it.</summary>
+        public Vector3 wristButtonAngle = Vector3.zero;
         
         // Standard Messages Settings
         public bool connectMessageEnabled = true;
@@ -446,16 +459,14 @@ namespace TwitchChat
                     }
                 GUILayout.EndHorizontal();
                 wristPanelScale = SliderRow("Wrist panel scale", wristPanelScale, 0.2f, 1.5f, "0.00");
-                wristPanelOffset.x = SliderRow("Wrist offset X (m)", wristPanelOffset.x, -0.3f, 0.3f, "0.000");
-                wristPanelOffset.y = SliderRow("Wrist offset Y (m)", wristPanelOffset.y, -0.3f, 0.3f, "0.000");
-                wristPanelOffset.z = SliderRow("Wrist offset Z (m)", wristPanelOffset.z, -0.3f, 0.3f, "0.000");
-                wristPanelRotation.x = SliderRow("Wrist rotation X (deg)", wristPanelRotation.x, -180f, 180f, "0");
-                wristPanelRotation.y = SliderRow("Wrist rotation Y (deg)", wristPanelRotation.y, -180f, 180f, "0");
-                wristPanelRotation.z = SliderRow("Wrist rotation Z (deg)", wristPanelRotation.z, -180f, 180f, "0");
+                GUILayout.Label("    The panel sits on the back of the hand by itself. To move it, use the in-game Wrist Adjust panel,");
+                GUILayout.Label("    which places the button and the open menus separately and can be reached from any Main panel.");
                 if (GUILayout.Button("Reset wrist panel to defaults", GUILayout.Width(200)))
                 {
-                    wristPanelOffset = DefaultWristOffset;
-                    wristPanelRotation = DefaultWristRotation;
+                    wristMenuOffset = Vector3.zero;
+                    wristMenuAngle = Vector3.zero;
+                    wristButtonOffset = Vector3.zero;
+                    wristButtonAngle = Vector3.zero;
                     wristPanelScale = 0.6f;
                 }
             GUILayout.EndVertical();

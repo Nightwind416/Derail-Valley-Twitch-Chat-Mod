@@ -575,9 +575,10 @@ namespace TwitchChat
         /// <summary>
         /// Takes the controller transform and its button events, preferring the script alias object that carries
         /// the events and falling back to the actual controller. Leaves both null until the events turn up, so a
-        /// hand is never tracked without buttons to go with it.
+        /// hand is never tracked without buttons to go with it. Shared with the wrist panel, which picks its
+        /// hands out the same way.
         /// </summary>
-        private static void Resolve(GameObject? alias, GameObject? actual, ref Transform? hand, ref VRTK_ControllerEvents? events)
+        internal static void Resolve(GameObject? alias, GameObject? actual, ref Transform? hand, ref VRTK_ControllerEvents? events)
         {
             GameObject? source = alias != null ? alias : actual;
             if (source == null)
