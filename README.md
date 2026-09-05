@@ -54,8 +54,16 @@ The menus and chat displays live on world-space panels. There are two kinds of p
 -- The **Displays** panel lists every display in the current locomotive, with a Move and a Size lock for each, and a Close button
 -- The **x** button in the top right corner of any display closes that display and forgets its saved slot
 -- Keys, placement distance and scale are set in the Unity Mod Manager menu, where the grab bars can also be turned off
-- **Wrist panel** (VR only) - a smaller copy of the menus attached to a controller, glance at it like a watch
--- Choose the hand, size, offset and rotation in the Unity Mod Manager menu; changes apply live
+- **Wrist panel** (VR only) - a small button on the back of your hand that opens into the full menus, glance at it like a watch
+-- It rides the same sticky pad the game uses for anything you carry, so it lies flat against the back of the hand whichever controllers you have
+-- It rests as a compact button, so it stays out of the way until you press it
+-- Opened, the menus unfold back down your forearm instead of sitting on top of your hand
+-- Press the back button on its Main panel to fold the menus back down to the button
+-- **Wrist Adjust** on any Main panel places it without leaving VR: three rows move it across the hand, along the arm and out from it, three more turn it, and each row has a fine and a coarse step either side of the number
+-- The button and the open menus are placed separately, and each remembers its own spot: press "Placing:" to switch between them. While you are placing the button it stays on show next to the menus so you can see where it is going
+-- In VR you can also just take hold of it: with the Wrist Adjust panel open, squeeze the grip on your free hand next to the panel to carry it, and let go where you want it. Where it lands is saved straight away
+-- Both start where they were measured to sit on the hand, so there is nothing to set up unless you want them elsewhere
+-- Choose the hand and the size in the Unity Mod Manager menu; changes apply live
 -- Its "Place Display" button is the VR way to summon the cab display without a keyboard
 
 - Every host shows the same panels and remembers which panel it last showed
@@ -71,12 +79,13 @@ The menus and chat displays live on world-space panels. There are two kinds of p
 -- Standard Messages - Enable/Disable your automatic Connect/Disconnect messages
 -- Command Messages - Enable/Disable the !info and !command ...commands
 -- Timed Messages - Enable/Disable the timed messages system
--- Displays - List the displays in this locomotive, lock each one's position or size, and close the ones you are done with
+-- Displays - List the displays in this locomotive, lock the position or size of each, and close the ones you are done with
+-- Wrist Adjust - Move and turn the wrist panel on your hand, or grab it and put it there by hand in VR
 -- Debug - Set debug level, several 'debug and testing' related buttons
 
 - Buttons can be interacted with in both VR and non-VR modes
 - Top left panel buttons will 'minimize' the displayed panel
-- Top right panel buttons return to the 'Main' panel (does nothing 'on' the Main panel), and close the display on cab displays
+- Top right panel buttons return to the 'Main' panel, and close the display on cab displays. From the Main panel, back does nothing on a cab display and folds the wrist panel away to its button
 - Each 'click' of the Notification duration slider in VR mode will advance approx 10%, then reset after max
 
 ### Twitch Authentication
@@ -167,6 +176,14 @@ Access advanced options by expanding the "Debug and Troubleshooting" section in 
 - [GitHub Repository](https://github.com/Nightwind416/Derail-Valley-Twitch-Chat-Mod)
 
 ## Version History
+
+### 3.4.2 (September 4, 2026)
+
+- The wrist panel now sits on the back of your hand instead of floating off the controller. It hangs off the game's own hand pad, the one your licenses and gadgets stick to, so it lands on the hand whichever controllers you use rather than wherever the controller pose happens to be
+- The VR wrist panel now starts as a small button rather than the full menus. Press it to open them, and press back on the Main panel to fold it away again
+- The hand button and the open menus are placed separately and each keeps its own spot, so the button can lie on the back of your hand while the menus stand up where you can read them
+- New Wrist Adjust panel, reachable from any Main panel, for placing them from inside VR: six stepped rows for moving and turning whichever one you are placing, and in VR you can simply take hold of it with your free hand and let go where you want it
+- Both start where they were measured to sit, so there should be nothing to adjust unless you want it elsewhere. The old wrist offset and rotation sliders have left the Unity Mod Manager menu, since the in-game panel does the job properly
 
 ### 3.4.0 (September 4, 2026)
 

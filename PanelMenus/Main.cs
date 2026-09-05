@@ -49,6 +49,9 @@ namespace TwitchChat.PanelMenus
             // Cab display controls side by side
             CreateActionButton("Place Display", 260, -42, () => MenuManager.Instance.PlaceCabDisplay());
             CreateActionButton("Toggle Display", 260, 42, () => MenuManager.Instance.ToggleCabDisplay());
+
+            // Where the wrist panel sits on the hand, adjustable from any host
+            CreateMenuButton("Wrist Adjust", 285);
         }
 
         /// <summary>

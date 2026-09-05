@@ -9,7 +9,7 @@
 		<DerailValleyManagedAssets>D:\SteamLibrary\steamapps\common\Derail Valley\DerailValley_Data\Managed\</DerailValleyManagedAssets> <!-- Change to local game install path during build -->
 		<CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
 		<DebugType>none</DebugType>
-		<ModVersion>3.4.0</ModVersion>
+		<ModVersion>3.4.2</ModVersion>
 		<ModAuthor>Nightwind416</ModAuthor>
 		<GameVersion>build 99</GameVersion>
 		<EntryMethod>TwitchChat.Main.Load</EntryMethod>
