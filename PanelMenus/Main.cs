@@ -34,21 +34,21 @@ namespace TwitchChat.PanelMenus
             CreateMenuButton("Standard Messages", 110);
             CreateMenuButton("Command Messages", 135);
             CreateMenuButton("Timed Messages", 160);
-            CreateMenuButton("Debug", 185);
+
+            // Debug and Displays side by side
+            CreateMenuButton("Debug", 185, -35);
+            CreateMenuButton("Displays", 185, 35);
 
             // Config buttons side by side
             CreateMenuButton("Config1", 210, -35); // Offset to the left
             CreateMenuButton("Config2", 210, 35);  // Offset to the right
 
-            // Display buttons
-            CreateMenuButton("Wide Display", 235);
-            CreateMenuButton("Large Display", 260);
-            CreateMenuButton("Medium Display", 285);
-            CreateMenuButton("Small Display", 310);
+            // Chat, sized by dragging the display it is on rather than by picking a preset
+            CreateMenuButton("Chat", 235);
 
             // Cab display controls side by side
-            CreateActionButton("Place Display", 335, -42, () => MenuManager.Instance.PlaceCabDisplay());
-            CreateActionButton("Toggle Display", 335, 42, () => MenuManager.Instance.ToggleCabDisplay());
+            CreateActionButton("Place Display", 260, -42, () => MenuManager.Instance.PlaceCabDisplay());
+            CreateActionButton("Toggle Display", 260, 42, () => MenuManager.Instance.ToggleCabDisplay());
         }
 
         /// <summary>
@@ -78,7 +78,7 @@ namespace TwitchChat.PanelMenus
             Button button = PanelConstructor.Button.Create(
                 panelObject.transform,
                 text,
-                (int)(100 + horizontalOffset),  // Add horizontal offset to base position
+                0,
                 verticalPosition,
                 clicked: () =>
                 {
@@ -86,6 +86,12 @@ namespace TwitchChat.PanelMenus
                     action();
                 }
             );
+
+            // Anchor to the top centre so the menu stays centred however wide the display is dragged
+            RectTransform rect = button.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 1f);
+            rect.anchorMax = new Vector2(0.5f, 1f);
+            rect.anchoredPosition = new Vector2(horizontalOffset, -verticalPosition);
         }
     }
 }

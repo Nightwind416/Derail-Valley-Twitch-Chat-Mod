@@ -1,3 +1,4 @@
+using System;
 using TwitchChat.PanelDisplays;
 using TwitchChat.PanelMenus;
 using UnityEngine;
@@ -24,13 +25,11 @@ namespace TwitchChat
         public TimedMessagesPanel? TimedMessagesPanel { get; set; }
         public Config1Panel? Config1Panel { get; set; }
         public Config2Panel? Config2Panel { get; set; }
+        public DisplaysPanel? DisplaysPanel { get; set; }
         public DebugPanel? DebugPanel { get; set; }
 
         // Panel Displays
-        public LargeDisplayPanel? LargeDisplayPanel { get; set; }
-        public MediumDisplayPanel? MediumDisplayPanel { get; set; }
-        public SmallDisplayPanel? SmallDisplayPanel { get; set; }
-        public WideDisplayPanel? WideDisplayPanel { get; set; }
+        public ChatPanel? ChatPanel { get; set; }
 
         protected PanelHost(string name)
         {
@@ -39,22 +38,52 @@ namespace TwitchChat
 
         /// <summary>Name of the panel currently shown on this host. Persisted in settings.</summary>
         public abstract string ActivePanel { get; set; }
+
+        /// <summary>
+        /// Puts a close button on every panel of this host. Hosts that cannot be closed, such as the wrist
+        /// panel, simply never call this and their close buttons stay hidden.
+        /// </summary>
+        public void SetCloseAction(Action? action)
+        {
+            MainPanel?.SetCloseAction(action);
+            AuthenticationPanel?.SetCloseAction(action);
+            StatusPanel?.SetCloseAction(action);
+            NotificationsPanel?.SetCloseAction(action);
+            StandardMessagesPanel?.SetCloseAction(action);
+            CommandMessagesPanel?.SetCloseAction(action);
+            TimedMessagesPanel?.SetCloseAction(action);
+            Config1Panel?.SetCloseAction(action);
+            Config2Panel?.SetCloseAction(action);
+            DisplaysPanel?.SetCloseAction(action);
+            DebugPanel?.SetCloseAction(action);
+            ChatPanel?.SetCloseAction(action);
+        }
     }
 
     /// <summary>
-    /// Host parented to the current locomotive's interior so it rides along with the cab.
+    /// Host parented to the current locomotive's interior so it rides along with the cab. A locomotive type
+    /// can carry several of these, each backed by its own saved slot.
     /// </summary>
     public class CabDisplayHost : PanelHost
     {
-        /// <summary>True once the display has been placed (or restored from a saved pose) on a car.</summary>
+        /// <summary>The saved slot this display reads and writes: pose, size, panel and locks.</summary>
+        public CabDisplayPose Slot { get; }
+
+        /// <summary>True once the display has been placed, or restored from its saved pose, on a car.</summary>
         public bool Placed { get; set; }
 
-        public CabDisplayHost() : base("CabDisplay") { }
+        /// <summary>The grab bars framing this display, once its canvas exists.</summary>
+        public PanelGrabHandles? Handles { get; set; }
+
+        public CabDisplayHost(CabDisplayPose slot, int number) : base($"CabDisplay{number}")
+        {
+            Slot = slot;
+        }
 
         public override string ActivePanel
         {
-            get => string.IsNullOrEmpty(Settings.Instance.cabDisplayPanel) ? "Main" : Settings.Instance.cabDisplayPanel;
-            set => Settings.Instance.cabDisplayPanel = value;
+            get => string.IsNullOrEmpty(Slot.activePanel) ? "Main" : Slot.activePanel;
+            set => Slot.activePanel = value;
         }
     }
 

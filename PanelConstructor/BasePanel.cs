@@ -30,6 +30,26 @@ namespace TwitchChat.PanelConstructor
         protected bool showBackButton = true;
         protected bool showMinimizeButton = true;
 
+        /// <summary>
+        /// Closes the display this panel is on. Created hidden and only revealed for hosts that can be
+        /// closed, which is the cab displays; the wrist panel never shows one.
+        /// </summary>
+        protected UnityEngine.UI.Button? closeButton;
+        private System.Action? closeAction;
+
+        /// <summary>
+        /// Gives the panel something to do when its close button is pressed, and shows the button.
+        /// Passing null hides it again.
+        /// </summary>
+        public void SetCloseAction(System.Action? action)
+        {
+            closeAction = action;
+            if (closeButton != null)
+            {
+                closeButton.gameObject.SetActive(action != null);
+            }
+        }
+
         public virtual void Show() => panelObject.SetActive(true);
         public virtual void Hide() => panelObject.SetActive(false);
 
@@ -72,8 +92,16 @@ namespace TwitchChat.PanelConstructor
             // Create title using Title factory
             Title.Create(panelObject.transform, GetType().Name.Replace("Panel", ""), 18);
 
+            // Create close button, in the top right corner with the back button beside it
+            closeButton = Button.Create(panelObject.transform, " x ", 0, 0, Color.white, () => closeAction?.Invoke());
+            RectTransform closeRect = closeButton.GetComponent<RectTransform>();
+            closeRect.anchorMin = new Vector2(1, 1);
+            closeRect.anchorMax = new Vector2(1, 1);
+            closeRect.pivot = new Vector2(1, 1);
+            closeButton.gameObject.SetActive(false); // shown only once a host gives it something to close
+
             // Create back button
-            UnityEngine.UI.Button backButton = Button.Create(panelObject.transform, " < ", 0, 0, Color.white, () => OnBackButtonClicked?.Invoke());
+            UnityEngine.UI.Button backButton = Button.Create(panelObject.transform, " < ", -22, 0, Color.white, () => OnBackButtonClicked?.Invoke());
             RectTransform backRect = backButton.GetComponent<RectTransform>();
             backRect.anchorMin = new Vector2(1, 1);
             backRect.anchorMax = new Vector2(1, 1);
