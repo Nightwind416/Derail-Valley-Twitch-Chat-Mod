@@ -303,8 +303,6 @@ namespace TwitchChat
             "ValidateAuthToken",
             "TokenStore",
             "UnityMainThreadDispatcher",
-            "LicenseScan",
-            "HandleLicenseAttachment",
             "CabDisplay",
             "WristPanel"
         ];

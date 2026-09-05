@@ -44,6 +44,8 @@ namespace TwitchChat.PanelConstructor
             {
                 BoxCollider boxCollider = buttonObj.AddComponent<BoxCollider>();
                 boxCollider.size = new Vector3(textWidth + 10, 20, 1);
+                // A trigger, so the collider stays out of the physics of whatever the panel is parented to
+                boxCollider.isTrigger = true;
                 
                 WorldUiButtonVr vrButton = buttonObj.AddComponent<WorldUiButtonVr>();
                 vrButton.SetAction(() => clicked?.Invoke());

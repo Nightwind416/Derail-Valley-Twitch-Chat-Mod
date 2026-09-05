@@ -51,7 +51,6 @@ namespace TwitchChat
         /// <summary>Refresh token, written by <see cref="TokenStore"/>. Never log this.</summary>
         public string EncodedRefreshToken = string.Empty;
         public DebugLevel debugLevel = DebugLevel.Minimal;
-        public string[] activePanels = ["Main", "Main", "Main", "Main", "Main", "Main"];
         public bool notificationsEnabled = true;
         public float notificationDuration = 10;
         public bool processOwn = true;
@@ -63,11 +62,11 @@ namespace TwitchChat
         public Color buttonColor = new(0, 0, 0, 0.5f);
 
         // Cab Display and Wrist Panel Settings
-        public bool licensePanelsEnabled = true;
         public string cabDisplayPanel = "Main";
         public bool cabDisplayVisible = true;
         public float cabDisplayDistance = 0.7f;
         public float cabDisplayScale = 1.0f;
+        public bool cabDisplayGrabHandles = true;
         public string placeDisplayKey = "F7";
         public string toggleDisplayKey = "F8";
         public List<CabDisplayPose> cabDisplayPoses = new();
@@ -431,8 +430,7 @@ namespace TwitchChat
                 GUILayout.EndHorizontal();
                 cabDisplayDistance = SliderRow("Placement distance (m)", cabDisplayDistance, 0.3f, 2.0f, "0.00");
                 cabDisplayScale = SliderRow("Cab display scale", cabDisplayScale, 0.5f, 2.0f, "0.00");
-                GUILayout.Space(5);
-                licensePanelsEnabled = GUILayout.Toggle(licensePanelsEnabled, " Also show the menus on the six license papers (legacy mode)");
+                cabDisplayGrabHandles = GUILayout.Toggle(cabDisplayGrabHandles, " Grab bars around the cab display (VR only: squeeze the grip on a bar to move it)");
                 GUILayout.Space(5);
                 wristPanelEnabled = GUILayout.Toggle(wristPanelEnabled, " Wrist panel (VR only)");
                 GUILayout.BeginHorizontal();
