@@ -38,10 +38,18 @@ namespace TwitchChat
         /// <summary>Singleton instance of Settings</summary>
         public static Settings Instance { get; set; } = null!;
         
-        /// <summary>User's Twitch username</summary>
+        /// <summary>
+        /// The connected account's Twitch login name. Filled in from the token when the account is
+        /// linked, so there is nothing for the user to type and nothing to type wrongly.
+        /// </summary>
         public string twitchUsername = string.Empty;
         public string authentication_status = "Unverified or not set";
+
+        /// <summary>Access token, written by <see cref="TokenStore"/>. Never log this.</summary>
         public string EncodedOAuthToken = string.Empty;
+
+        /// <summary>Refresh token, written by <see cref="TokenStore"/>. Never log this.</summary>
+        public string EncodedRefreshToken = string.Empty;
         public DebugLevel debugLevel = DebugLevel.Minimal;
         public string[] activePanels = ["Main", "Main", "Main", "Main", "Main", "Main"];
         public bool notificationsEnabled = true;
@@ -183,12 +191,32 @@ namespace TwitchChat
         {
             GUILayout.Space(10);
 
-            // Twitch Username Section
+            // Twitch Account Section
             GUILayout.BeginVertical(GUI.skin.box);
+                GUILayout.Label("Twitch Account");
+                GUILayout.Space(10);
                 GUILayout.BeginHorizontal();
-                    GUILayout.Label("Twitch Username:", GUILayout.Width(160));
-                    twitchUsername = GUILayout.TextField(twitchUsername);
+                    GUILayout.Label("Account:", GUILayout.Width(160));
+                    bool linked = OAuthTokenManager.Phase == AuthPhase.Connected && !string.IsNullOrEmpty(twitchUsername);
+                    GUI.color = linked ? Color.green : Color.yellow;
+                    GUILayout.Label(linked ? twitchUsername : "Not connected");
+                    GUI.color = Color.white;
                 GUILayout.EndHorizontal();
+                GUILayout.BeginHorizontal();
+                    GUILayout.Label("Status:", GUILayout.Width(160));
+                    GUILayout.Label(OAuthTokenManager.StatusMessage);
+                GUILayout.EndHorizontal();
+                GUILayout.Space(5);
+                GUILayout.Label("Connect and disconnect your account from the Authentication panel in game.");
+                GUILayout.Label($"Access token storage on this PC: {(TokenStore.IsEncrypted ? "encrypted (Windows DPAPI)" : "encoded only - encryption unavailable on this system")}");
+                if (!string.IsNullOrEmpty(EncodedOAuthToken))
+                {
+                    GUILayout.Space(5);
+                    if (GUILayout.Button("Sign Out & Revoke Access", GUILayout.Width(200)))
+                    {
+                        _ = OAuthTokenManager.RevokeAndSignOut();
+                    }
+                }
             GUILayout.EndVertical();
 
             GUILayout.Space(10);

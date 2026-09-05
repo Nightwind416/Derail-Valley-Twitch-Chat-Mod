@@ -17,6 +17,7 @@ namespace TwitchChat
 
         // Panel Menus
         public MainPanel? MainPanel { get; set; }
+        public AuthenticationPanel? AuthenticationPanel { get; set; }
         public StatusPanel? StatusPanel { get; set; }
         public NotificationsPanel? NotificationsPanel { get; set; }
         public StandardMessagesPanel? StandardMessagesPanel { get; set; }

@@ -10,8 +10,8 @@ namespace TwitchChat.PanelMenus
     public class StatusPanel : PanelConstructor.BasePanel
     {
         private Button? authButton;
-        private Button? revokeButton;
         private Text? authStatus;
+        private Text? authAccount;
         private Button? connectButton;
         private Text? connectionStatus;
         private Text? connectionIndicator;
@@ -37,34 +37,20 @@ namespace TwitchChat.PanelMenus
             
             // Dimensions - Menu width minus 20
 
-            // Authentication Section
-            authSection = PanelConstructor.Section.Create(panelObject.transform, "Twitch Authentication", 25, 100);
+            // Authentication Section. Connecting and disconnecting live on the Authentication
+            // panel; this is a read-out so the status page can be glanced at without acting on it.
+            authSection = PanelConstructor.Section.Create(panelObject.transform, "Twitch Account", 25, 85);
 
-            // Authentication Status Message
-            authStatus = PanelConstructor.DisplayText.Create(authSection.transform, OAuthTokenManager.StatusMessage, 15, 25);
+            authAccount = PanelConstructor.DisplayText.Create(authSection.transform, "Not connected", 15, 25, Color.yellow);
+            authStatus = PanelConstructor.DisplayText.Create(authSection.transform, OAuthTokenManager.StatusMessage, 15, 42, Color.cyan, 2, 11);
 
-            // Authentication Button
+            // Re-checks the stored token, refreshing it if Twitch says it has expired.
             authButton = PanelConstructor.Button.Create(authSection.transform,
-            string.IsNullOrEmpty(Settings.Instance.EncodedOAuthToken) ? "Request Authorization Token" : "Validate Token",
-            90, 55,
+            "Check Connection",
+            90, 70,
             Color.white,
             () => {
-                if (string.IsNullOrEmpty(Settings.Instance.EncodedOAuthToken))
-                _ = OAuthTokenManager.GetOathToken();
-                else
                 _ = OAuthTokenManager.ValidateAuthToken();
-            }
-            );
-
-            // Sign Out button. Revokes the token at Twitch and deletes the local copy, so a user
-            // can withdraw the mod's access from inside the game rather than hunting through
-            // Twitch's own connection settings.
-            revokeButton = PanelConstructor.Button.Create(authSection.transform,
-            "Sign Out & Revoke Access",
-            90, 80,
-            Color.white,
-            () => {
-                _ = OAuthTokenManager.RevokeAndSignOut();
             }
             );
         }
@@ -79,7 +65,7 @@ namespace TwitchChat.PanelMenus
             // Dimensions - Menu width minus 20
 
             // WebSocket Section
-            wsSection = PanelConstructor.Section.Create(panelObject.transform, "WebSocket Status", 135, 155);
+            wsSection = PanelConstructor.Section.Create(panelObject.transform, "WebSocket Status", 120, 170);
 
             // Connection Status Indicator
             connectionIndicator = PanelConstructor.DisplayText.Create(wsSection.transform, "■", 25, 25);
@@ -124,17 +110,20 @@ namespace TwitchChat.PanelMenus
         /// </summary>
         public void UpdateStatusPanelValues()
         {
-            if (authButton != null && authStatus != null && revokeButton != null && connectButton != null &&
+            if (authButton != null && authStatus != null && authAccount != null && connectButton != null &&
                 connectionIndicator != null && connectionStatus != null && lastMessageType != null &&
                 lastTypeReceivedTime != null && lastKeepaliveTime != null)
             {
                 // Update authentication status
                 bool hasToken = !string.IsNullOrEmpty(Settings.Instance.EncodedOAuthToken);
-                authButton.GetComponentInChildren<Text>().text = hasToken
-                    ? "Validate Token"
-                    : "Request Authorization Token";
+                AuthPhase phase = OAuthTokenManager.Phase;
 
-                authStatus.color = OAuthTokenManager.Phase switch
+                authAccount.text = phase == AuthPhase.Connected && !string.IsNullOrEmpty(Settings.Instance.twitchUsername)
+                    ? Settings.Instance.twitchUsername
+                    : "Not connected";
+                authAccount.color = phase == AuthPhase.Connected ? Color.green : Color.yellow;
+
+                authStatus.color = phase switch
                 {
                     AuthPhase.Connected => Color.green,
                     AuthPhase.Failed => Color.red,
@@ -142,10 +131,9 @@ namespace TwitchChat.PanelMenus
                     _ => Color.yellow
                 };
                 authStatus.text = OAuthTokenManager.StatusMessage;
-                authButton.interactable = OAuthTokenManager.Phase != AuthPhase.Connected;
 
-                // Signing out is only meaningful while something is stored to sign out of.
-                revokeButton.gameObject.SetActive(hasToken);
+                // Nothing to re-check until an account has been linked.
+                authButton.gameObject.SetActive(hasToken);
 
                 // Update websocket status
                 connectButton.GetComponentInChildren<Text>().text = 

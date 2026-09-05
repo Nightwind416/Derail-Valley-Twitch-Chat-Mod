@@ -28,7 +28,7 @@ A mod that seamlessly integrates Twitch chat into your Derail Valley gameplay ex
 1. Download mod zip from NexusMods: [TwitchChat](https://www.nexusmods.com/derailvalley/mods/1069)
 2. Extract the mod to your Derail Valley mods folder
 3. Launch the game and open Unity Mod Manager (default: Ctrl + F10)
-4. Configure your Twitch username and adjust any of the 'pre canned messages'
+4. Connect your Twitch account from the in-game Authentication panel, and adjust any of the 'pre canned messages'
     Note: you can also directly edit the settings.xml file in the TwitchChat mod folder
 
 ## Dependencies
@@ -66,6 +66,7 @@ The menus and chat displays live on world-space panels. There are three kinds of
 -- Config2 - Customize button coloring and reset color customizations
 - Menu Panels
 -- Main - Access all other panels from here, plus the Place Display and Toggle Display buttons
+-- Authentication - Connect or disconnect your Twitch account, and see exactly what is being authorized
 -- Notifications - Enable/Disable the notification popups when new messages are received and set duration
 -- Standard Messages - Enable/Disable your automatic Connect/Disconnect messages
 -- Command Messages - Enable/Disable the !info and !command ...commands
@@ -79,20 +80,31 @@ The menus and chat displays live on world-space panels. There are three kinds of
 
 ### Twitch Authentication
 
-1. Enter your Twitch username using the UnityModManager menu, or edit the settings.xml
-    Note: You have to run the game and enable the mod for the settings file to initially generate
-2. Click "Request Authorization Token"
-3. Complete the OAuth authentication in your default browser, outside the game
-    Note: If playing in VR, you need to take your headset off or be able to 'alt tab' to your PC to authorize the connection
-    Note: If you wait too long, the request will time out. If clicking the button does not work, restart the game and try again.
-4. The access token is stored in `Settings.xml` in the mod folder on your own PC
-5. If you are SURE your username is set correctly in the UMM menu, try restarting the game to 'hard reload' from the settings
+There is nothing to type and no username to get wrong. Open the **Authentication** panel from the
+Main panel and follow it:
+
+1. Click "Connect Twitch Account". A screen appears listing exactly what you are about to approve
+2. Click "Continue to Twitch". The panel shows an eight-character code, for example `YLHWFTKX`
+3. On any device — a phone works, so you can stay in VR — go to
+   [twitch.tv/activate](https://www.twitch.tv/activate), sign in, and enter the code
+4. The panel switches to "Connected as *yourname*" on its own within a few seconds
+
+The code is good for 30 minutes. If it expires, press the button again for a new one.
+
+Your account name is read back from Twitch once you are connected, so it is a result of connecting
+rather than something you configure.
+
+Connections last indefinitely. The mod holds a refresh token and renews its access quietly in the
+background, so the roughly monthly re-authorization the old versions needed is gone. If a
+connection ever does lapse, the Authentication panel says so and one button gets you a new code.
+
 TODO: Improve websocket error/bad authentication response
 
 #### What you are authorizing
 
-You approve this on Twitch's own site, so the mod never sees your Twitch password. The mod asks
-for four permissions, and nothing else:
+You approve this on Twitch's own site, so the mod never sees your Twitch password, and the mod
+never opens a browser or a local web server on your PC. The same list below is shown in game,
+before anything is sent to Twitch. The mod asks for four permissions, and nothing else:
 
 | Permission | Twitch scope | Used for |
 | --- | --- | --- |
@@ -106,20 +118,26 @@ your stream, or follow or subscribe to anything as you.
 
 #### Where your access token lives
 
-Your access token is written to `Settings.xml` in the mod's folder, on your PC and nowhere else. It
-is sent only to Twitch, over HTTPS. There is no server behind this mod, and the mod author has no
-way to see your token, your chat, or your game session. The token is deliberately kept out of the
-mod's log files so that sharing a log when reporting a bug does not hand over your account.
+Your tokens are written to `Settings.xml` in the mod's folder, on your PC and nowhere else. They are
+encrypted with Windows DPAPI under your own Windows account, so another user on the same machine
+cannot read them out of the file. The Authentication panel says which storage is actually in use on
+your system: if the game's runtime does not provide DPAPI, the mod says so plainly rather than
+claiming encryption it did not perform.
+
+Tokens are sent only to Twitch, over HTTPS. There is no server behind this mod, and the mod author
+has no way to see your token, your chat, or your game session. Tokens are deliberately kept out of
+the mod's log files, so sharing a log when reporting a bug does not hand over your account.
 
 If you want to check any of this, the code that talks to Twitch is in
-[`OAuthManager.cs`](OAuthManager.cs) and [`TwitchEventHandler.cs`](TwitchEventHandler.cs).
+[`OAuthManager.cs`](OAuthManager.cs), [`TokenStore.cs`](TokenStore.cs) and
+[`TwitchEventHandler.cs`](TwitchEventHandler.cs).
 
 #### Withdrawing access
 
-Use **Sign Out & Revoke Access** on the Status panel. That tells Twitch to invalidate the token
-immediately and deletes the local copy. You can also revoke it from Twitch's side at any time under
-[Twitch Connection Settings](https://www.twitch.tv/settings/connections) — find *DerailValleyChatMod*
-under "Other Connections" and click Disconnect.
+Use **Sign Out & Revoke Access** on the Authentication panel. That tells Twitch to invalidate the
+token immediately and deletes the local copy. You can also revoke it from Twitch's side at any time
+under [Twitch Connection Settings](https://www.twitch.tv/settings/connections) — find
+*DerailValleyChatMod* under "Other Connections" and click Disconnect.
 
 ### UnityModManager Configurations
 
@@ -148,6 +166,17 @@ Access advanced options by expanding the "Debug and Troubleshooting" section in 
 - [GitHub Repository](https://github.com/Nightwind416/Derail-Valley-Twitch-Chat-Mod)
 
 ## Version History
+
+### 3.4.0 (September 4, 2026)
+
+- Connecting to Twitch is now done entirely from inside the game. The Authentication panel shows a short code to enter at twitch.tv/activate on any device, so VR players no longer have to remove the headset or alt-tab to a browser
+- Connections no longer expire roughly monthly; the mod refreshes its own access in the background
+- The mod now asks Twitch for four permissions instead of nine. It no longer requests access to your email address, the legacy IRC chat scopes, or the bot scopes, none of which it used
+- Added a Sign Out & Revoke Access button, which revokes the token at Twitch and deletes the local copy
+- The Authentication panel spells out what each permission allows, what the mod cannot do, and where your access token is kept, before anything is sent to Twitch
+- Fixed the access token being written to the mod debug log on every authorization
+- Tokens are now encrypted at rest with Windows DPAPI where the runtime supports it, instead of being merely base64 encoded
+- The Twitch username setting is gone. Your account is identified from the token itself
 
 ### 3.3.0 (September 4, 2026)
 

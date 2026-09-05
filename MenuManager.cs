@@ -68,6 +68,7 @@ namespace TwitchChat
         private enum PanelType
         {
             Main,
+            Authentication,
             Status,
             Notifications,
             LargeDisplay,
@@ -103,7 +104,8 @@ namespace TwitchChat
 
         private readonly Dictionary<PanelType, PanelConfig> panelConfigs = new()
         {
-            { PanelType.Main, new(new Vector2(200, 330), new Vector2(200, 330), Vector2.zero, Vector3.zero) },
+            { PanelType.Main, new(new Vector2(200, 360), new Vector2(200, 360), Vector2.zero, Vector3.zero) },
+            { PanelType.Authentication, new(new Vector2(230, 440), new Vector2(230, 440), Vector2.zero, Vector3.zero) },
             { PanelType.Status, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
             { PanelType.Notifications, new(new Vector2(200, 300), new Vector2(200, 300), Vector2.zero, Vector3.zero) },
             { PanelType.LargeDisplay, new(new Vector2(1200, 650), new Vector2(1200, 650), Vector2.zero, Vector3.zero) },
@@ -824,6 +826,7 @@ namespace TwitchChat
         /// </summary>
         private void UpdatePanelValues(PanelHost host)
         {
+            host.AuthenticationPanel?.UpdateAuthenticationPanelValues();
             host.StatusPanel?.UpdateStatusPanelValues();
             host.StandardMessagesPanel?.UpdateStandardMessagesPanelValues();
             host.CommandMessagesPanel?.UpdateCommandMessagesPanelValues();
@@ -851,6 +854,7 @@ namespace TwitchChat
 
             // Create and wire up all panels from the templates
             host.MainPanel = new MainPanel(menuPanel, host);
+            host.AuthenticationPanel = new AuthenticationPanel(menuPanel);
             host.StatusPanel = new StatusPanel(menuPanel);
             host.NotificationsPanel = new NotificationsPanel(menuPanel);
             host.LargeDisplayPanel = new LargeDisplayPanel(menuPanel);
@@ -868,6 +872,7 @@ namespace TwitchChat
             HideAllPanels(host);
 
             // Wire up back button events
+            host.AuthenticationPanel.OnBackButtonClicked += () => ShowPanel("Main", host);
             host.StatusPanel.OnBackButtonClicked += () => ShowPanel("Main", host);
             host.NotificationsPanel.OnBackButtonClicked += () => ShowPanel("Main", host);
             host.LargeDisplayPanel.OnBackButtonClicked += () => ShowPanel("Main", host);
@@ -887,6 +892,7 @@ namespace TwitchChat
         private static void HideAllPanels(PanelHost host)
         {
             host.MainPanel?.Hide();
+            host.AuthenticationPanel?.Hide();
             host.StatusPanel?.Hide();
             host.NotificationsPanel?.Hide();
             host.LargeDisplayPanel?.Hide();
@@ -915,6 +921,7 @@ namespace TwitchChat
             PanelType panelType = panelName switch
             {
                 "Main" => PanelType.Main,
+                "Authentication" => PanelType.Authentication,
                 "Status" => PanelType.Status,
                 "Notifications" => PanelType.Notifications,
                 "Large Display" => PanelType.LargeDisplay,
@@ -949,6 +956,9 @@ namespace TwitchChat
             {
                 case PanelType.Main:
                     host.MainPanel?.Show();
+                    break;
+                case PanelType.Authentication:
+                    host.AuthenticationPanel?.Show();
                     break;
                 case PanelType.Status:
                     host.StatusPanel?.Show();
