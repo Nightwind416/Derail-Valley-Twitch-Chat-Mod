@@ -174,6 +174,32 @@ namespace TwitchChat.Api
             }
         }
 
+        /// <summary>Reads a public static property or field off a type, whichever it turns out to be.</summary>
+        public object? ReadStatic(Type? owner, string name)
+        {
+            if (owner == null)
+            {
+                return null;
+            }
+
+            try
+            {
+                PropertyInfo? property = Property(owner, name);
+                if (property != null)
+                {
+                    return property.GetValue(null);
+                }
+
+                FieldInfo? field = Field(owner, name);
+                return field?.GetValue(null);
+            }
+            catch (Exception ex)
+            {
+                Fail($"reading static '{owner.Name}.{name}' from '{ModId}' threw: {ex.Message}");
+                return null;
+            }
+        }
+
         /// <summary>
         /// Reads a value type off an object by name, falling back to the given default when the member is
         /// missing or holds something unexpected.
@@ -182,6 +208,65 @@ namespace TwitchChat.Api
         {
             object? value = Read(target, name);
             return value is T typed ? typed : fallback;
+        }
+
+        /// <summary>
+        /// Reads a number off an object by name, whatever numeric type the other mod happens to use for
+        /// it. Worth having: whether a figure is stored as a float, a double or an int is exactly the sort
+        /// of detail that changes between versions and should not cost a row on a panel.
+        /// </summary>
+        public float ReadFloat(object? target, string name, float fallback = 0f)
+        {
+            return AsFloat(Read(target, name), fallback);
+        }
+
+        /// <summary>Reads a whole number off an object by name, rounding if it is stored as a fraction.</summary>
+        public int ReadInt(object? target, string name, int fallback = 0)
+        {
+            object? value = Read(target, name);
+            if (value == null)
+            {
+                return fallback;
+            }
+
+            try
+            {
+                return Convert.ToInt32(value);
+            }
+            catch (Exception)
+            {
+                return fallback;
+            }
+        }
+
+        /// <summary>Reads a flag off an object by name.</summary>
+        public bool ReadBool(object? target, string name, bool fallback = false)
+        {
+            return Read(target, name) is bool value ? value : fallback;
+        }
+
+        /// <summary>Reads text off an object by name, using the value's own ToString if it is not a string.</summary>
+        public string ReadString(object? target, string name, string fallback = "")
+        {
+            object? value = Read(target, name);
+            return value == null ? fallback : value as string ?? value.ToString();
+        }
+
+        private static float AsFloat(object? value, float fallback)
+        {
+            if (value == null)
+            {
+                return fallback;
+            }
+
+            try
+            {
+                return Convert.ToSingle(value);
+            }
+            catch (Exception)
+            {
+                return fallback;
+            }
         }
 
         /// <summary>Calls a method, returning null rather than throwing if anything goes wrong.</summary>

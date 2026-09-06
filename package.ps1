@@ -17,8 +17,9 @@ $FilesToInclude = @(
 )
 
 # Plugin assemblies, each contributing panels through TwitchChat.Api. Shipped in their own folder so a
-# player can remove one without touching the mod itself.
+# player can remove one without touching the mod itself. Each is listed as project directory / file name.
 $PluginsToInclude = @(
+    @{ Project = "TwitchChat.Plugins.Bundled"; File = "TwitchChat.Plugins.Bundled.dll" }
 )
 
 # Get mod info from build output
@@ -53,7 +54,8 @@ if ($PluginsToInclude.Count -gt 0) {
     New-Item "$PluginDir" -ItemType Directory -Force | Out-Null
 
     foreach ($plugin in $PluginsToInclude) {
-        $sourcePath = "$BuildDir/$plugin"
+        # Each plugin is its own project, so it builds into its own bin rather than the mod's
+        $sourcePath = "$PSScriptRoot/$($plugin.Project)/bin/$Configuration/net48/$($plugin.File)"
         if (Test-Path $sourcePath) {
             Copy-Item -Force -Path $sourcePath -Destination "$PluginDir"
         } else {

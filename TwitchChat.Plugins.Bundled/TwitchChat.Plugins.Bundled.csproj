@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<AssemblyName>TwitchChat.Api</AssemblyName>
-		<RootNamespace>TwitchChat.Api</RootNamespace>
+		<AssemblyName>TwitchChat.Plugins.Bundled</AssemblyName>
+		<RootNamespace>TwitchChat.Plugins.Bundled</RootNamespace>
 		<TargetFramework>net48</TargetFramework>
 		<LangVersion>latest</LangVersion>
 		<Nullable>enable</Nullable>
@@ -9,14 +9,25 @@
 		<OutputType>Library</OutputType>
 		<CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
 		<DebugType>none</DebugType>
-		<!--
-			The version third-party plugins compile against. Bump the minor for additive changes and the
-			major for anything that breaks an existing plugin; TwitchChatPlugins.ApiVersion must match.
-		-->
-		<Version>1.1.0</Version>
 	</PropertyGroup>
 
+	<!--
+		The panels shipped with the mod, loaded through exactly the same folder as any third-party plugin.
+		Nothing here references TwitchChat.dll: if the API is not enough to write these three panels with,
+		it is not enough for anyone else either.
+
+		Nor does anything here reference the mods being reported on. Those are read by reflection through
+		ModBinder, so a panel for a mod that is not installed costs nothing and breaks nothing.
+	-->
 	<ItemGroup>
+		<ProjectReference Include="..\TwitchChat.Api\TwitchChat.Api.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Reference Include="Assembly-CSharp">
+			<HintPath>$(DerailValleyManagedAssets)Assembly-CSharp.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
 		<Reference Include="UnityEngine">
 			<HintPath>$(DerailValleyManagedAssets)UnityEngine.dll</HintPath>
 			<Private>false</Private>
@@ -37,14 +48,18 @@
 			<HintPath>$(DerailValleyManagedAssets)UnityEngine.TextRenderingModule.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
+		<Reference Include="Newtonsoft.Json">
+			<HintPath>$(DerailValleyManagedAssets)Newtonsoft.Json.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
 		<Reference Include="UnityModManager">
 			<HintPath>$(DerailValleyManagedAssets)UnityModManager\UnityModManager.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
 	</ItemGroup>
 
-	<Target Name="CopyApiToMods" AfterTargets="PostBuildEvent">
-		<MakeDir Directories="$(ModOutputPath)" />
-		<Copy SourceFiles="$(OutputPath)$(AssemblyName).dll" DestinationFolder="$(ModOutputPath)" />
+	<Target Name="CopyPluginToMods" AfterTargets="PostBuildEvent">
+		<MakeDir Directories="$(ModOutputPath)\Plugins" />
+		<Copy SourceFiles="$(OutputPath)$(AssemblyName).dll" DestinationFolder="$(ModOutputPath)\Plugins" />
 	</Target>
 </Project>

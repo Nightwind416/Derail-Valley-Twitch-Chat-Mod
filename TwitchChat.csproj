@@ -135,14 +135,21 @@
 		match. Keep it referenced and not compiled.
 	-->
 	<ItemGroup>
-		<Compile Remove="TwitchChat.Api\**" />
-		<None Remove="TwitchChat.Api\**" />
-		<EmbeddedResource Remove="TwitchChat.Api\**" />
+		<Compile Remove="TwitchChat.Api\**;TwitchChat.Plugins.Bundled\**" />
+		<None Remove="TwitchChat.Api\**;TwitchChat.Plugins.Bundled\**" />
+		<EmbeddedResource Remove="TwitchChat.Api\**;TwitchChat.Plugins.Bundled\**" />
 	</ItemGroup>
 
 	<!-- The public contract plugins compile against; shipped beside this assembly -->
 	<ItemGroup>
 		<ProjectReference Include="TwitchChat.Api\TwitchChat.Api.csproj" />
+
+		<!--
+			Not a reference, only an ordering: the mod knows nothing about the bundled plugins and finds
+			them the same way it would find anyone else's. This is here so that the Release packaging step,
+			which runs after this project builds, has their assemblies to pick up.
+		-->
+		<ProjectReference Include="TwitchChat.Plugins.Bundled\TwitchChat.Plugins.Bundled.csproj" ReferenceOutputAssembly="false" />
 	</ItemGroup>
 
 	<!-- Development/Build Time Only Packages -->

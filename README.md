@@ -85,6 +85,24 @@ The menus and chat displays live on world-space panels. There are two kinds of p
 -- Wrist Adjust - Move and turn the wrist panel on your hand, or grab it and put it there by hand in VR
 -- Debug - Set debug level, several 'debug and testing' related buttons
 
+### Panels From Other Mods
+
+Several mods show things worth reading while driving, but all of them draw to the flat screen, where
+a headset never sees them. The **Mods** panel, reachable from any Main panel, lists panels that put
+that information on a display instead. Each is drawn from the other mod's own live data, so there is
+nothing to keep in step by hand, and each appears only if the mod it reports on is installed. Switch
+any of them off from the Mods panel or the Unity Mod Manager menu; changes apply the next time you
+board a locomotive.
+
+- **Metrics** — the consist figures from
+  [Unrestored Museum Loco Tracker And Loco Metrics](https://github.com/DmytroShulha/DerailValley_mod_MuseumAndMetrics)
+  by DSH: cars, axles, length, total, tare and cargo mass, braked mass and percentage, handbrakes set,
+  whether the brake line is continuous, rear pipe pressure, locomotives running, and hazmat cars, with
+  bars for throttle, train brake, loco brake and dynamic brake. It honours that mod's own settings for
+  which figures to show, so the panel matches its overlay
+
+If you write mods yourself, the displays are open to yours as well: see [docs/PLUGINS.md](docs/PLUGINS.md).
+
 - Buttons can be interacted with in both VR and non-VR modes
 - Top left panel buttons will 'minimize' the displayed panel
 - Top right panel buttons return to the 'Main' panel, and close the display on cab displays. From the Main panel, back does nothing on a cab display and folds the wrist panel away to its button
