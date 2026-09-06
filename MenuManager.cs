@@ -126,24 +126,16 @@ namespace TwitchChat
         }
 
         /// <summary>
-        /// Defines the types of panels available in the mod interface.
+        /// Panel names written into settings before the sized chat displays were merged into one. A
+        /// display saved under one of these still opens, on the single Chat panel that replaced them.
         /// </summary>
-        private enum PanelType
+        private static readonly Dictionary<string, string> RenamedPanels = new()
         {
-            Main,
-            Authentication,
-            Status,
-            Notifications,
-            Chat,
-            StandardMessages,
-            CommandMessages,
-            TimedMessages,
-            Config1,
-            Config2,
-            Displays,
-            WristAdjust,
-            Debug
-        }
+            ["Large Display"] = "Chat",
+            ["Medium Display"] = "Chat",
+            ["Wide Display"] = "Chat",
+            ["Small Display"] = "Chat"
+        };
 
         /// <summary>
         /// Gets the singleton instance of the MenuManager.
@@ -165,6 +157,10 @@ namespace TwitchChat
 
         private void Awake()
         {
+            // Normally already done during Load; harmless to repeat, and it means a display can still be
+            // built if the manager is reached before the plugins have been looked for
+            Plugins.PanelRegistry.RegisterBuiltIns();
+
             CreateTemplateCanvas();
             PlayerManager.CarChanged += OnPlayerCarChanged;
         }
@@ -223,20 +219,12 @@ namespace TwitchChat
         /// Creates template instances of all panel types.
         /// </summary>
         /// <param name="parent">Parent transform to attach panel templates to.</param>
-        private void CreatePanelTemplates(Transform parent)
+        private static void CreatePanelTemplates(Transform parent)
         {
-            _ = new MainPanel(parent, null);
-            _ = new StatusPanel(parent);
-            _ = new NotificationsPanel(parent);
-            _ = new ChatPanel(parent);
-            _ = new StandardMessagesPanel(parent);
-            _ = new CommandMessagesPanel(parent);
-            _ = new TimedMessagesPanel(parent);
-            _ = new Config1Panel(parent);
-            _ = new Config2Panel(parent);
-            _ = new DisplaysPanel(parent);
-            _ = new WristAdjustPanel(parent);
-            _ = new DebugPanel(parent);
+            foreach (Plugins.PanelDescriptor descriptor in Plugins.PanelRegistry.Available)
+            {
+                _ = descriptor.Create(parent, null);
+            }
 
             // Hide all template panels
             foreach (Transform child in parent)
@@ -592,7 +580,7 @@ namespace TwitchChat
         {
             foreach (PanelHost host in AllHosts)
             {
-                host.DisplaysPanel?.Rebuild(cabDisplays, host);
+                host.Get<DisplaysPanel>()?.Rebuild(cabDisplays, host);
             }
         }
 
@@ -1088,15 +1076,19 @@ namespace TwitchChat
         // ------------------------------------------------------------------
 
         /// <summary>
-        /// Updates values displayed on active panels.
+        /// Refreshes whatever the host is currently showing. Only the visible panel is asked: the rest are
+        /// hidden behind it, and a plugin panel reading another mod's state has no business doing so
+        /// thirteen times over for panels nobody is looking at.
         /// </summary>
-        private void UpdatePanelValues(PanelHost host)
+        private static void UpdatePanelValues(PanelHost host)
         {
-            host.AuthenticationPanel?.UpdateAuthenticationPanelValues();
-            host.StatusPanel?.UpdateStatusPanelValues();
-            host.StandardMessagesPanel?.UpdateStandardMessagesPanelValues();
-            host.CommandMessagesPanel?.UpdateCommandMessagesPanelValues();
-            host.WristAdjustPanel?.UpdateValues();
+            foreach (PanelConstructor.BasePanel panel in host.Panels)
+            {
+                if (panel.IsVisible)
+                {
+                    panel.Tick(Time.deltaTime);
+                }
+            }
         }
 
         public void OnPanelButtonClicked(string panelName, PanelHost host)
@@ -1119,37 +1111,28 @@ namespace TwitchChat
 
             Transform menuPanel = host.MenuCanvas.transform.Find("MenuPanel");
 
-            // Create and wire up all panels from the templates
-            host.MainPanel = new MainPanel(menuPanel, host);
-            host.AuthenticationPanel = new AuthenticationPanel(menuPanel);
-            host.StatusPanel = new StatusPanel(menuPanel);
-            host.NotificationsPanel = new NotificationsPanel(menuPanel);
-            host.ChatPanel = new ChatPanel(menuPanel);
-            host.StandardMessagesPanel = new StandardMessagesPanel(menuPanel);
-            host.CommandMessagesPanel = new CommandMessagesPanel(menuPanel);
-            host.TimedMessagesPanel = new TimedMessagesPanel(menuPanel);
-            host.Config1Panel = new Config1Panel(menuPanel);
-            host.Config2Panel = new Config2Panel(menuPanel);
-            host.DisplaysPanel = new DisplaysPanel(menuPanel);
-            host.WristAdjustPanel = new WristAdjustPanel(menuPanel);
-            host.DebugPanel = new DebugPanel(menuPanel);
+            // Build every panel the registry currently offers, the mod's own and any from plugins alike.
+            // Back on any of them returns to the main menu; back on the main menu is the one exception,
+            // wired up below by whichever kind of host this is.
+            host.ClearPanels();
+            foreach (Plugins.PanelDescriptor descriptor in Plugins.PanelRegistry.Available)
+            {
+                PanelConstructor.BasePanel? panel = descriptor.Create(menuPanel, host);
+                if (panel == null)
+                {
+                    continue;
+                }
+
+                host.AddPanel(descriptor.Id, panel);
+
+                if (descriptor.Id != "Main")
+                {
+                    panel.OnBackButtonClicked += () => ShowPanel("Main", host);
+                }
+            }
 
             // Explicitly hide all panels immediately after creation
             HideAllPanels(host);
-
-            // Wire up back button events
-            host.AuthenticationPanel.OnBackButtonClicked += () => ShowPanel("Main", host);
-            host.StatusPanel.OnBackButtonClicked += () => ShowPanel("Main", host);
-            host.NotificationsPanel.OnBackButtonClicked += () => ShowPanel("Main", host);
-            host.ChatPanel.OnBackButtonClicked += () => ShowPanel("Main", host);
-            host.StandardMessagesPanel.OnBackButtonClicked += () => ShowPanel("Main", host);
-            host.CommandMessagesPanel.OnBackButtonClicked += () => ShowPanel("Main", host);
-            host.TimedMessagesPanel.OnBackButtonClicked += () => ShowPanel("Main", host);
-            host.Config1Panel.OnBackButtonClicked += () => ShowPanel("Main", host);
-            host.Config2Panel.OnBackButtonClicked += () => ShowPanel("Main", host);
-            host.DisplaysPanel.OnBackButtonClicked += () => ShowPanel("Main", host);
-            host.WristAdjustPanel.OnBackButtonClicked += () => ShowPanel("Main", host);
-            host.DebugPanel.OnBackButtonClicked += () => ShowPanel("Main", host);
 
             // Cab displays are the hosts the player moves and resizes, so they are the ones that get grab bars
             if (host is CabDisplayHost display && menuPanel != null)
@@ -1163,7 +1146,12 @@ namespace TwitchChat
             if (host is WristPanelHost wrist)
             {
                 CreateWristButton(wrist);
-                host.MainPanel.OnBackButtonClicked += () => SetWristExpanded(false);
+
+                PanelConstructor.BasePanel? mainPanel = host.GetPanel("Main");
+                if (mainPanel != null)
+                {
+                    mainPanel.OnBackButtonClicked += () => SetWristExpanded(false);
+                }
 
                 wristGrab = host.MenuCanvas.AddComponent<WristPanelGrab>();
                 wristGrab.Initialize(() => OnWristSurfacePlaced(false));
@@ -1184,19 +1172,10 @@ namespace TwitchChat
 
         private static void HideAllPanels(PanelHost host)
         {
-            host.MainPanel?.Hide();
-            host.AuthenticationPanel?.Hide();
-            host.StatusPanel?.Hide();
-            host.NotificationsPanel?.Hide();
-            host.ChatPanel?.Hide();
-            host.StandardMessagesPanel?.Hide();
-            host.CommandMessagesPanel?.Hide();
-            host.TimedMessagesPanel?.Hide();
-            host.Config1Panel?.Hide();
-            host.Config2Panel?.Hide();
-            host.DisplaysPanel?.Hide();
-            host.WristAdjustPanel?.Hide();
-            host.DebugPanel?.Hide();
+            foreach (PanelConstructor.BasePanel panel in host.Panels)
+            {
+                panel.Hide();
+            }
         }
 
         private void ShowPanel(string panelName, PanelHost host)
@@ -1210,28 +1189,7 @@ namespace TwitchChat
 
             HideAllPanels(host);
 
-            PanelType panelType = panelName switch
-            {
-                "Main" => PanelType.Main,
-                "Authentication" => PanelType.Authentication,
-                "Status" => PanelType.Status,
-                "Notifications" => PanelType.Notifications,
-                "Chat" => PanelType.Chat,
-
-                // Settings written before the sized display panels were merged into one
-                "Large Display" or "Medium Display" or "Wide Display" or "Small Display" => PanelType.Chat,
-
-                "Standard Messages" => PanelType.StandardMessages,
-                "Command Messages" => PanelType.CommandMessages,
-                "Timed Messages" => PanelType.TimedMessages,
-                "Config1" => PanelType.Config1,
-                "Config2" => PanelType.Config2,
-                "Displays" => PanelType.Displays,
-                "Wrist Adjust" => PanelType.WristAdjust,
-                "Debug" => PanelType.Debug,
-                _ => PanelType.Main
-            };
-
+            string panelId = ResolvePanelId(panelName, host);
 
             // Panels have no size of their own: a display keeps whatever size it has been dragged to, whichever
             // panel it shows. A display that has never been sized starts at the default.
@@ -1252,59 +1210,44 @@ namespace TwitchChat
                 }
             }
 
-            if (panelType == PanelType.Displays)
+            // The two panels that list something the player has changed elsewhere are rebuilt on the way in
+            if (panelId == "Displays")
             {
-                host.DisplaysPanel?.Rebuild(cabDisplays, host);
+                host.Get<DisplaysPanel>()?.Rebuild(cabDisplays, host);
+            }
+            else if (panelId == "Mods")
+            {
+                host.Get<ModsPanel>()?.Rebuild();
             }
 
-            // Show the selected panel
-            switch (panelType)
-            {
-                case PanelType.Main:
-                    host.MainPanel?.Show();
-                    break;
-                case PanelType.Authentication:
-                    host.AuthenticationPanel?.Show();
-                    break;
-                case PanelType.Status:
-                    host.StatusPanel?.Show();
-                    break;
-                case PanelType.Notifications:
-                    host.NotificationsPanel?.Show();
-                    break;
-                case PanelType.Chat:
-                    host.ChatPanel?.Show();
-                    break;
-                case PanelType.StandardMessages:
-                    host.StandardMessagesPanel?.Show();
-                    break;
-                case PanelType.CommandMessages:
-                    host.CommandMessagesPanel?.Show();
-                    break;
-                case PanelType.TimedMessages:
-                    host.TimedMessagesPanel?.Show();
-                    break;
-                case PanelType.Config1:
-                    host.Config1Panel?.Show();
-                    break;
-                case PanelType.Config2:
-                    host.Config2Panel?.Show();
-                    break;
-                case PanelType.Displays:
-                    host.DisplaysPanel?.Show();
-                    break;
-                case PanelType.WristAdjust:
-                    host.WristAdjustPanel?.Show();
-                    break;
-                case PanelType.Debug:
-                    host.DebugPanel?.Show();
-                    break;
-            }
+            host.GetPanel(panelId)?.Show();
 
-            // Remember the active panel for this host, under its current name so the legacy sized-display
-            // names are not written back out again
-            host.ActivePanel = panelType == PanelType.Chat ? "Chat" : panelName;
+            // Remember the active panel for this host, under the id it resolved to, so a name that has
+            // since been renamed or removed is not written straight back out again
+            host.ActivePanel = panelId;
             Settings.Instance.RequestSave();
+        }
+
+        /// <summary>
+        /// Works out which panel a saved or clicked name means. A name that has been renamed since it was
+        /// saved is followed to its replacement, and one this host has no panel for - a plugin that has
+        /// been uninstalled, or switched off - falls back to the main menu rather than leaving the display
+        /// blank.
+        /// </summary>
+        private static string ResolvePanelId(string panelName, PanelHost host)
+        {
+            if (RenamedPanels.TryGetValue(panelName, out string? renamed))
+            {
+                panelName = renamed;
+            }
+
+            if (host.GetPanel(panelName) != null)
+            {
+                return panelName;
+            }
+
+            Main.LogEntry("ShowPanel", $"Host {host.Name} has no panel called '{panelName}'; showing Main instead.");
+            return "Main";
         }
 
         /// <summary>
@@ -1338,7 +1281,7 @@ namespace TwitchChat
         {
             foreach (PanelHost host in AllHosts)
             {
-                host.NotificationsPanel?.UpdateNotificationsEnabled(value);
+                host.Get<NotificationsPanel>()?.UpdateNotificationsEnabled(value);
             }
         }
 
@@ -1346,7 +1289,7 @@ namespace TwitchChat
         {
             foreach (PanelHost host in AllHosts)
             {
-                host.NotificationsPanel?.UpdateNotificationDuration(value);
+                host.Get<NotificationsPanel>()?.UpdateNotificationDuration(value);
             }
         }
 
@@ -1354,7 +1297,7 @@ namespace TwitchChat
         {
             foreach (PanelHost host in AllHosts)
             {
-                host.DebugPanel?.UpdateProcessOwn(value);
+                host.Get<DebugPanel>()?.UpdateProcessOwn(value);
             }
         }
 
@@ -1362,7 +1305,7 @@ namespace TwitchChat
         {
             foreach (PanelHost host in AllHosts)
             {
-                host.DebugPanel?.UpdateProcessDuplicates(value);
+                host.Get<DebugPanel>()?.UpdateProcessDuplicates(value);
             }
         }
 
@@ -1370,7 +1313,7 @@ namespace TwitchChat
         {
             foreach (PanelHost host in AllHosts)
             {
-                host.StandardMessagesPanel?.UpdateConnectMessageEnabled(value);
+                host.Get<StandardMessagesPanel>()?.UpdateConnectMessageEnabled(value);
             }
         }
 
@@ -1378,7 +1321,7 @@ namespace TwitchChat
         {
             foreach (PanelHost host in AllHosts)
             {
-                host.StandardMessagesPanel?.UpdateDisconnectMessageEnabled(value);
+                host.Get<StandardMessagesPanel>()?.UpdateDisconnectMessageEnabled(value);
             }
         }
 
@@ -1386,7 +1329,7 @@ namespace TwitchChat
         {
             foreach (PanelHost host in AllHosts)
             {
-                host.CommandMessagesPanel?.UpdateCommandsMessageEnabled(value);
+                host.Get<CommandMessagesPanel>()?.UpdateCommandsMessageEnabled(value);
             }
         }
 
@@ -1394,7 +1337,7 @@ namespace TwitchChat
         {
             foreach (PanelHost host in AllHosts)
             {
-                host.CommandMessagesPanel?.UpdateInfoMessageEnabled(value);
+                host.Get<CommandMessagesPanel>()?.UpdateInfoMessageEnabled(value);
             }
         }
 
@@ -1402,7 +1345,7 @@ namespace TwitchChat
         {
             foreach (PanelHost host in AllHosts)
             {
-                host.TimedMessagesPanel?.UpdateTimedMessagesEnabled(value);
+                host.Get<TimedMessagesPanel>()?.UpdateTimedMessagesEnabled(value);
             }
         }
 

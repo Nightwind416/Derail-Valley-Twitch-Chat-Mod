@@ -6,10 +6,10 @@
 		<Nullable>enable</Nullable>
 		<WarningsAsErrors>CS8600;CS8602;CS8603</WarningsAsErrors>
 		<OutputType>Library</OutputType>
-		<DerailValleyManagedAssets>D:\SteamLibrary\steamapps\common\Derail Valley\DerailValley_Data\Managed\</DerailValleyManagedAssets> <!-- Change to local game install path during build -->
+		<!-- DerailValleyManagedAssets and ModOutputPath come from Directory.Build.props, shared with the API project -->
 		<CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
 		<DebugType>none</DebugType>
-		<ModVersion>3.4.2</ModVersion>
+		<ModVersion>3.5.0</ModVersion>
 		<ModAuthor>Nightwind416</ModAuthor>
 		<GameVersion>build 99</GameVersion>
 		<EntryMethod>TwitchChat.Main.Load</EntryMethod>
@@ -128,6 +128,23 @@
 		</PackageReference>
 	</ItemGroup>
 
+	<!--
+		The API project lives in a subfolder, so the SDK's source glob would otherwise compile its files
+		into this assembly as well as referencing them. That would give the mod its own private copies of
+		the interfaces, which would not be the same types a plugin implements, and no plugin would ever
+		match. Keep it referenced and not compiled.
+	-->
+	<ItemGroup>
+		<Compile Remove="TwitchChat.Api\**" />
+		<None Remove="TwitchChat.Api\**" />
+		<EmbeddedResource Remove="TwitchChat.Api\**" />
+	</ItemGroup>
+
+	<!-- The public contract plugins compile against; shipped beside this assembly -->
+	<ItemGroup>
+		<ProjectReference Include="TwitchChat.Api\TwitchChat.Api.csproj" />
+	</ItemGroup>
+
 	<!-- Development/Build Time Only Packages -->
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" PrivateAssets="all" />
@@ -146,6 +163,7 @@
 	"GameVersion": "$(GameVersion)",
 	"EntryMethod": "$(EntryMethod)",
 	"ManagerVersion": "$(ManagerVersion)",
+	"LoadAfter": [ "RemoteDispatch", "AITraffic", "UnrestoredMuseumLocoTracker" ],
 	"Homepage": "$(ModHomepage)",
 	"Repository": "$(ModRepository)"
 }
@@ -163,11 +181,8 @@
 
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
 		 <!-- Copy to game mods folder -->
-        <PropertyGroup>
-            <ModOutputPath>D:\SteamLibrary\steamapps\common\Derail Valley\Mods\TwitchChat</ModOutputPath>
-        </PropertyGroup>
         <MakeDir Directories="$(ModOutputPath)" />
-        <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll;$(OutputPath)info.json" DestinationFolder="$(ModOutputPath)" />
+        <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll;$(OutputPath)info.json;$(OutputPath)TwitchChat.Api.dll" DestinationFolder="$(ModOutputPath)" />
         
         <!-- Package after Release build -->
         <Exec Condition="'$(ConfigurationName)' == 'Release' And '$(OS)' == 'Windows_NT'" Command="powershell -executionpolicy bypass -Command &quot;./package.ps1&quot;" />

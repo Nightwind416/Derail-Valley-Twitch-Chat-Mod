@@ -1,0 +1,10 @@
+<Project>
+	<!--
+		Shared by every project in the solution so the game path is written down once. Change these two
+		to match the local game install before building.
+	-->
+	<PropertyGroup>
+		<DerailValleyManagedAssets>D:\SteamLibrary\steamapps\common\Derail Valley\DerailValley_Data\Managed\</DerailValleyManagedAssets>
+		<ModOutputPath>D:\SteamLibrary\steamapps\common\Derail Valley\Mods\TwitchChat</ModOutputPath>
+	</PropertyGroup>
+</Project>

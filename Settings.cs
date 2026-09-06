@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityModManagerNet;
 
@@ -74,6 +75,13 @@ namespace TwitchChat
 
         /// <summary>Every saved display, for every locomotive type. Grouped by <see cref="CabDisplayPose.carId"/>.</summary>
         public List<CabDisplayPose> cabDisplayPoses = new();
+
+        /// <summary>
+        /// Ids of the plugin panels the player has switched off, separated by commas. Kept as one string
+        /// rather than a list so the Unity Mod Manager page and the settings file both stay readable, and
+        /// so a plugin that is not installed keeps its setting instead of being quietly dropped.
+        /// </summary>
+        public string disabledPanels = string.Empty;
         public bool wristPanelEnabled = true;
         public string wristPanel = "Main";
         public bool wristPanelOnLeftHand = true;
@@ -473,6 +481,10 @@ namespace TwitchChat
 
             GUILayout.Space(10);
 
+            DrawModPanels();
+
+            GUILayout.Space(10);
+
             // Debug Settings Section
             GUILayout.BeginVertical(GUI.skin.box);
                 GUILayout.Label("Debug Level");
@@ -505,6 +517,80 @@ namespace TwitchChat
         public void Update()
         {
             _ = this;
+        }
+
+        /// <summary>
+        /// Draws the list of panels contributed by plugins, so a player can see what was found and switch
+        /// any of it off without going in game. The same list, with the same switches, is on the in-game
+        /// Mods panel.
+        /// </summary>
+        private void DrawModPanels()
+        {
+            GUILayout.BeginVertical(GUI.skin.box);
+                GUILayout.Label("Mod Panels");
+
+                List<Plugins.PanelDescriptor> plugins = Plugins.PanelRegistry.AllPlugins.ToList();
+                if (plugins.Count == 0)
+                {
+                    GUILayout.Label("    None installed. Panels for other mods are dropped into the mod's Plugins folder.");
+                }
+
+                foreach (Plugins.PanelDescriptor plugin in plugins)
+                {
+                    bool off = IsPanelDisabled(plugin.Id);
+
+                    GUILayout.BeginHorizontal();
+                        if (GUILayout.Button(off ? "Off" : "On", GUILayout.Width(50)))
+                        {
+                            SetPanelDisabled(plugin.Id, !off);
+                        }
+                        GUILayout.Label(plugin.Title, GUILayout.Width(160));
+
+                        // The panel exists for the mod it reports on, so saying whether that mod was found
+                        // is the answer to "why is this panel not in my menu"
+                        GUILayout.Label(off
+                            ? "switched off"
+                            : plugin.IsAvailable ? "ready" : "the mod it reports on was not found");
+                    GUILayout.EndHorizontal();
+                }
+
+                if (plugins.Count > 0)
+                {
+                    GUILayout.Label("    Changes apply the next time you board a locomotive, when the displays are rebuilt.");
+                }
+            GUILayout.EndVertical();
+        }
+
+        /// <summary>Whether the player has switched a plugin panel off.</summary>
+        public bool IsPanelDisabled(string panelId) => DisabledPanelIds().Contains(panelId);
+
+        /// <summary>
+        /// Switches a plugin panel on or off. Takes effect the next time a display's panel stack is built,
+        /// which is on boarding a locomotive.
+        /// </summary>
+        public void SetPanelDisabled(string panelId, bool disabled)
+        {
+            List<string> ids = DisabledPanelIds();
+
+            if (disabled)
+            {
+                if (ids.Contains(panelId)) return;
+                ids.Add(panelId);
+            }
+            else if (!ids.Remove(panelId))
+            {
+                return;
+            }
+
+            disabledPanels = string.Join(",", ids);
+            RequestSave();
+        }
+
+        private List<string> DisabledPanelIds()
+        {
+            return string.IsNullOrWhiteSpace(disabledPanels)
+                ? new List<string>()
+                : disabledPanels.Split(',').Select(id => id.Trim()).Where(id => id.Length > 0).ToList();
         }
 
         // Deferred saving: panel sliders fire on every tick, so writes are coalesced and flushed after a short quiet period.

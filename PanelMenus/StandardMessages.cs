@@ -134,6 +134,9 @@ namespace TwitchChat.PanelMenus
         //     PanelConstructor.DisplayText.Create(newFollowerSubscriberSection.transform, "Future development", 10, 82, Color.yellow);
         // }
 
+        /// <inheritdoc/>
+        public override void Tick(float deltaTime) => UpdateStandardMessagesPanelValues();
+
         /// <summary>
         /// Updates the panel's values to reflect current settings.
         /// Should be called when settings are changed externally.

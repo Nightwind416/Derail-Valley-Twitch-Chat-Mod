@@ -12,7 +12,13 @@ $BuildDir = "$PSScriptRoot/bin/$Configuration/net48"
 # Files to include from build directory
 $FilesToInclude = @(
     "info.json",
-    "TwitchChat.dll"
+    "TwitchChat.dll",
+    "TwitchChat.Api.dll"    # The contract plugins compile against; must sit beside TwitchChat.dll
+)
+
+# Plugin assemblies, each contributing panels through TwitchChat.Api. Shipped in their own folder so a
+# player can remove one without touching the mod itself.
+$PluginsToInclude = @(
 )
 
 # Get mod info from build output
@@ -38,6 +44,21 @@ foreach ($file in $FilesToInclude) {
         Copy-Item -Force -Path $sourcePath -Destination "$ModDir"    # Changed destination
     } else {
         Write-Warning "Build file not found: $sourcePath"
+    }
+}
+
+# Copy plugin assemblies into their own folder, which is where the mod looks for them
+if ($PluginsToInclude.Count -gt 0) {
+    $PluginDir = "$ModDir/Plugins"
+    New-Item "$PluginDir" -ItemType Directory -Force | Out-Null
+
+    foreach ($plugin in $PluginsToInclude) {
+        $sourcePath = "$BuildDir/$plugin"
+        if (Test-Path $sourcePath) {
+            Copy-Item -Force -Path $sourcePath -Destination "$PluginDir"
+        } else {
+            Write-Warning "Plugin not found: $sourcePath"
+        }
     }
 }
 

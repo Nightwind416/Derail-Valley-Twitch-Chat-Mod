@@ -12,6 +12,7 @@ A mod that seamlessly integrates Twitch chat into your Derail Valley gameplay ex
 - **Automated Messages**: Schedule up to five periodic announcements, each posted in the color you pick - normal, blue, green, orange, purple, or your channel accent
 - **Displays You Size Yourself**: Up to 5 panels per locomotive, each dragged to whatever size suits it
 - **Color Customization**: Ability to customize panel, section, and button coloring
+- **Panels From Other Mods**: The displays are open to plugins, so readouts that only ever existed on the flat screen can be put where you can read them in VR. See [docs/PLUGINS.md](docs/PLUGINS.md) if you write mods
 
 ### Upcoming Features (In Development)
 
@@ -80,6 +81,7 @@ The menus and chat displays live on world-space panels. There are two kinds of p
 -- Command Messages - Enable/Disable the !info and !command ...commands
 -- Timed Messages - Enable/Disable the timed messages system
 -- Displays - List the displays in this locomotive, lock the position or size of each, and close the ones you are done with
+-- Mods - Panels contributed by other mods, with a switch to turn each one off. Empty until you install one
 -- Wrist Adjust - Move and turn the wrist panel on your hand, or grab it and put it there by hand in VR
 -- Debug - Set debug level, several 'debug and testing' related buttons
 

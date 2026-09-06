@@ -151,6 +151,9 @@ namespace TwitchChat.PanelMenus
             UpdateAuthenticationPanelValues();
         }
 
+        /// <inheritdoc/>
+        public override void Tick(float deltaTime) => UpdateAuthenticationPanelValues();
+
         /// <summary>
         /// Brings every control on the panel into line with the current authentication state.
         /// Called from the menu update loop, so it must stay cheap and allocation-free.

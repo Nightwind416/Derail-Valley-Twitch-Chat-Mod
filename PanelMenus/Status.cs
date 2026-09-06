@@ -104,6 +104,9 @@ namespace TwitchChat.PanelMenus
             lastKeepaliveTime = PanelConstructor.DisplayText.Create(wsSection.transform, WebSocketManager.lastKeepaliveTime.ToString("h:mm:ss tt"), 100, 160);
         }
 
+        /// <inheritdoc/>
+        public override void Tick(float deltaTime) => UpdateStatusPanelValues();
+
         /// <summary>
         /// Updates all status indicators and values in the panel.
         /// Should be called when any relevant status changes occur.

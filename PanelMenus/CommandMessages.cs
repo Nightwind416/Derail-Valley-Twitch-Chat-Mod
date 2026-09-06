@@ -84,6 +84,9 @@ namespace TwitchChat.PanelMenus
             infoMessage = PanelConstructor.DisplayText.Create(commandsSettingsSection.transform, "", 10, 102, Color.cyan, 7);
         }
 
+        /// <inheritdoc/>
+        public override void Tick(float deltaTime) => UpdateCommandMessagesPanelValues();
+
         /// <summary>
         /// Updates the displayed values for command messages and info messages.
         /// Should be called when settings are changed.

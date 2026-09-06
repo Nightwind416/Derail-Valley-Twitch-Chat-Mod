@@ -36,6 +36,11 @@ namespace TwitchChat
 
             try
             {
+                // Before anything else: the assemblies shipped beside this one, TwitchChat.Api among them,
+                // are not on the runtime's usual search path. Nothing above this line may touch a type from
+                // one of them, which is why this is the first statement in the method.
+                Plugins.AssemblyResolver.Install(modEntry.Path);
+
                 // Settings first, so the logger knows the configured debug level
                 Settings.Instance = UnityModManager.ModSettings.Load<Settings>(modEntry) ?? new Settings();
                 OAuthTokenManager.InitialisePhaseFromSettings();
@@ -64,6 +69,10 @@ namespace TwitchChat
                     ModEntry.Logger.Log("[Load] RemoteDispatch Mod not detected.");
                     LogEntry(methodName, "RemoteDispatch Mod not found - mod will operate in standalone mode.");
                 }
+
+                // Panels, the mod's own and any contributed by plugins, before the first display is built
+                Plugins.PluginLoader.LoadAll(modEntry.Path);
+                LogEntry(methodName, "Panel registry populated.");
 
                 // Register the mod's toggle and update methods
                 ModEntry.OnToggle = OnToggle;

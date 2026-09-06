@@ -117,6 +117,9 @@ namespace TwitchChat.PanelMenus
             return field;
         }
 
+        /// <inheritdoc/>
+        public override void Tick(float deltaTime) => UpdateValues();
+
         /// <summary>
         /// Redraws the numbers. They move on their own as well as by pressing the rows, since the panel can be
         /// carried into place by hand, so this runs while the panel is on show.
