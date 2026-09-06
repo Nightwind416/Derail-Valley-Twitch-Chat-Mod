@@ -20,7 +20,7 @@ namespace TwitchChat.Plugins.Bundled.AiTraffic
         private const float RefreshInterval = 0.4f;
 
         /// <summary>Room the header and the switches need, in canvas units, below the title row.</summary>
-        private const float HeaderHeight = 78f;
+        private const float HeaderHeight = 55f;
 
         private const int CaptionX = 10;
         private const int ValueX = 105;

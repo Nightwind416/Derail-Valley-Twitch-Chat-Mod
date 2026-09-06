@@ -19,7 +19,7 @@ A mod that seamlessly integrates Twitch chat into your Derail Valley gameplay ex
 - Subscriber/Follower alerts and notifications
 - Message throttling and combining for busy chats
 - User list management (VIP, ignore, etc.)
-- Integration with "Remote Dispatch" mod
+- More detail on the Dispatch Map panel: job list, car list, and throwing junctions from in game
 - Display panel scrolling in VR
 - Editing timed message text and intervals from the in-game panel, instead of the Unity Mod Manager menu or Settings.xml
 
@@ -213,6 +213,15 @@ Access advanced options by expanding the "Debug and Troubleshooting" section in 
 - [GitHub Repository](https://github.com/Nightwind416/Derail-Valley-Twitch-Chat-Mod)
 
 ## Version History
+
+### 3.5.0 (September 6, 2026)
+
+- The displays are open to panels from other mods. Several mods work out things worth knowing while driving and then draw them to the flat screen, where a headset never sees them; those readouts can now live on a cab display or the wrist panel instead. A new **Mods** panel, reachable from any Main panel, lists what is installed with a switch to turn each one off
+- **Metrics** panel, showing the consist figures from DSH's Loco Metrics mod: cars, axles, length, mass, braked mass and percentage, handbrakes, brake line and rear pipe pressure, with bars for throttle and the brakes. It honours that mod's own settings for which figures to show
+- **AI Traffic** panel, showing what every AI train is doing: state, speed against target, throttle and brake, where it is and where it is going, and how far to the next signal. Four switches turn that mod's own loco nametags, route lines, signal tags and HUD on and off, so the ones drawn in the world can be reached without taking the headset off
+- **Dispatch Map** panel, a live map of the railway drawn from Remote Dispatch's data: track, junctions and which way each is thrown, every car, every locomotive and every player, with zoom, panning and a Follow mode. It reads the mod in process, so there is no port to open and no need to have its web server switched on
+- Each panel appears only if the mod it reports on is installed, and each is read from that mod's own live data rather than reimplemented, so nothing has to be kept in step by hand
+- If you write mods yourself, this is a documented, public plugin API rather than three special cases: see [docs/PLUGINS.md](docs/PLUGINS.md)
 
 ### 3.4.2 (September 4, 2026)
 

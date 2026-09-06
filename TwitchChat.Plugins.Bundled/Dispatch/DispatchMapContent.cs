@@ -24,6 +24,9 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
         /// <summary>Room for the two rows of buttons, in canvas units, below the title row.</summary>
         private const float HeaderHeight = 46f;
 
+        /// <summary>Room for the one line of status under the buttons, above the map.</summary>
+        private const float StatusHeight = 22f;
+
         /// <summary>How far the map spans at each end of the zoom range, in the mod's degrees.</summary>
         private const float WidestSpan = 0.17f;
         private const float NarrowestSpan = 0.004f;
@@ -110,7 +113,9 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
             containerRect.anchorMin = Vector2.zero;
             containerRect.anchorMax = Vector2.one;
             containerRect.offsetMin = new Vector2(6, 6);
-            containerRect.offsetMax = new Vector2(-6, -(35f + HeaderHeight + 24f));
+
+            // Below the title row, the two rows of buttons, and the status line under them
+            containerRect.offsetMax = new Vector2(-6, -(35f + HeaderHeight + StatusHeight));
 
             mapArea = new GameObject("Map", typeof(RectTransform));
             mapArea.transform.SetParent(container.transform, false);
@@ -124,7 +129,7 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
             fitter.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
             fitter.aspectRatio = 1f;
 
-            status = surface.Widgets.CreateText(surface.Root, "Reading the track layout...", 10, 88, Color.gray, lines: 2);
+            status = surface.Widgets.CreateText(surface.Root, "Reading the track layout...", 10, 35 + (int)HeaderHeight + 4, Color.gray);
 
             UpdateFollowLabel();
         }
@@ -257,7 +262,8 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
             map.DrawMarkers(markers);
 
             int trains = markers.Count(marker => marker.IsLoco);
-            Say($"{tracks.Count} tracks, {markers.Count(m => !m.IsPlayer)} cars, {trains} locos.  {Mathf.RoundToInt(map.Span / WidestSpan * 100f)}% of the map");
+            // One short line: the panel can be dragged narrow, and a status that wraps eats the map
+            Say($"{markers.Count(m => !m.IsPlayer)} cars, {trains} locos, {Mathf.RoundToInt(map.Span / WidestSpan * 100f)}%");
         }
 
         /// <summary>The junctions, paired with which way each is currently set.</summary>
