@@ -165,10 +165,6 @@ namespace TwitchChat
         public string timedMessage5 = "MessageNotSet";
         public float timedMessage5Timer = 0;
 
-        // Dispatcher Messages Settings
-        public bool dispatcherMessageActive = false;
-        public string dispatcherMessage = "MessageNotSet";
-
         // Color Options for announcement messages
         public readonly string[] ColorOptions = ["Normal", "Blue", "Green", "Orange", "Purple", "Primary"];
         private int message1ColorIndex = 0;

@@ -109,6 +109,15 @@ board a locomotive.
   signal tags and its screen HUD - so the three that are drawn in the world, and are therefore worth
   having in VR, can be reached without taking the headset off
 
+- **Dispatch Map** — a live map of the railway from
+  [Remote Dispatch](https://github.com/mspielberg/dv-remote-dispatch) by mspielberg. That mod shows all
+  of this already, but as a web page in a browser, which is exactly what someone in a headset has not
+  got. The panel draws the track, the junctions and which way each is thrown, every car, every
+  locomotive and every player, with zoom, panning, and a Follow mode that keeps you in the middle. It
+  reads the mod's data directly, so there is no port to open, no password, and no need to have the web
+  server switched on. It is an overview: no job list, no car list, no locomotive control - use the web
+  page for those
+
 If you write mods yourself, the displays are open to yours as well: see [docs/PLUGINS.md](docs/PLUGINS.md).
 
 - Buttons can be interacted with in both VR and non-VR modes

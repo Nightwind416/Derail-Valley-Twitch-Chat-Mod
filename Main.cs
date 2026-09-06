@@ -17,7 +17,6 @@ namespace TwitchChat
     /// </summary>
     public static class Main
     {
-        public static bool _dispatcherModDetected;
         public static UnityModManager.ModEntry ModEntry { get; private set; } = null!;
         public static string settingsFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mods", "TwitchChat", "Settings.xml");
         public static string debugLog = string.Empty;
@@ -55,20 +54,6 @@ namespace TwitchChat
                 UnityEngine.Object.DontDestroyOnLoad(dispatcherObject);
                 ModEntry.Logger.Log("[Load] UnityMainThreadDispatcher initialized.");
                 LogEntry(methodName, "UnityMainThreadDispatcher initialized successfully.");
-
-                // Check for RemoteDispatch Mod
-                var remoteDispatchMod = UnityModManager.modEntries.FirstOrDefault(mod => mod.Info.Id == "RemoteDispatch");
-                if (remoteDispatchMod != null)
-                {
-                    ModEntry.Logger.Log("[Load] RemoteDispatch Mod detected.");
-                    LogEntry(methodName, "RemoteDispatch Mod detected and verified.");
-                    _dispatcherModDetected = true;
-                }
-                else
-                {
-                    ModEntry.Logger.Log("[Load] RemoteDispatch Mod not detected.");
-                    LogEntry(methodName, "RemoteDispatch Mod not found - mod will operate in standalone mode.");
-                }
 
                 // Panels, the mod's own and any contributed by plugins, before the first display is built
                 Plugins.PluginLoader.LoadAll(modEntry.Path);

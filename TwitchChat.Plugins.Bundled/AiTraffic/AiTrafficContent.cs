@@ -85,10 +85,10 @@ namespace TwitchChat.Plugins.Bundled.AiTraffic
             surface.Widgets.CreateLabel(surface.Root, "Trains", CaptionX, 53, Color.gray);
             counts = surface.Widgets.CreateText(surface.Root, "--", ValueX, 53, Color.white);
 
-            // Four switches across the panel. Buttons are positioned by their centre, so they are spread
-            // about the middle rather than laid out from the left edge
+            // Four switches in a row. A button is placed by its centre, measured from the panel's left
+            // edge, so the first sits half a button in
             const int buttonWidth = 52;
-            int x = -((Overlays.Length - 1) * buttonWidth) / 2;
+            int x = CaptionX + (buttonWidth / 2);
 
             foreach ((string flag, string caption) in Overlays)
             {
