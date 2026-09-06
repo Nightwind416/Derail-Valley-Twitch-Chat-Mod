@@ -57,12 +57,17 @@ namespace TwitchChat.PanelConstructor
             }
         }
 
-        /// <summary>Whether this panel is the one its display is currently showing.</summary>
-        public bool IsVisible => panelObject != null && panelObject.activeSelf;
+        /// <summary>
+        /// Whether this panel is the one its display is currently showing. Tracked rather than read back
+        /// off the object, so that hiding every panel when a display is built - which happens before any
+        /// of them has been shown - does not tell them all they have just been hidden.
+        /// </summary>
+        public bool IsVisible { get; private set; }
 
         public virtual void Show()
         {
             bool wasVisible = IsVisible;
+            IsVisible = true;
             panelObject.SetActive(true);
 
             if (!wasVisible)
@@ -74,6 +79,7 @@ namespace TwitchChat.PanelConstructor
         public virtual void Hide()
         {
             bool wasVisible = IsVisible;
+            IsVisible = false;
             panelObject.SetActive(false);
 
             if (wasVisible)
