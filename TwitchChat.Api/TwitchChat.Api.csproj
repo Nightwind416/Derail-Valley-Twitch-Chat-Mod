@@ -13,7 +13,7 @@
 			The version third-party plugins compile against. Bump the minor for additive changes and the
 			major for anything that breaks an existing plugin; TwitchChatPlugins.ApiVersion must match.
 		-->
-		<Version>1.1.0</Version>
+		<Version>1.2.0</Version>
 	</PropertyGroup>
 
 	<ItemGroup>

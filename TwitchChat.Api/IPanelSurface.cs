@@ -35,6 +35,16 @@ namespace TwitchChat.Api
         /// </summary>
         IWidgetFactory Widgets { get; }
 
+        /// <summary>
+        /// Keeps the top of the panel clear of the scrolling area, so a header placed on
+        /// <see cref="Root"/> is not sat on by whatever is in <see cref="Content"/>.
+        /// </summary>
+        /// <param name="height">
+        /// How much room the header needs below the title row, in canvas units. Zero puts the scrolling
+        /// area back where it started.
+        /// </param>
+        void ReserveHeader(float height);
+
         /// <summary>Writes a line to the mod's log, tagged with the plugin's id.</summary>
         void Log(string message);
     }

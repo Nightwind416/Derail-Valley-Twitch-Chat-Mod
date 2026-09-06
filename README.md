@@ -101,6 +101,14 @@ board a locomotive.
   bars for throttle, train brake, loco brake and dynamic brake. It honours that mod's own settings for
   which figures to show, so the panel matches its overlay
 
+- **AI Traffic** — the debug overlay from [AI Traffic](https://github.com/Killermops27/dv-ai-traffic) by
+  Killermops27, which is otherwise flat-screen only. How the traffic is set up and how many trains are
+  running, then a scrolling list of every AI train: its ID and state, speed against target speed,
+  throttle and brake, where it is and where it is going, and how far to the next signal or obstacle.
+  Four switches along the top turn that mod's own displays on and off - loco nametags, route lines,
+  signal tags and its screen HUD - so the three that are drawn in the world, and are therefore worth
+  having in VR, can be reached without taking the headset off
+
 If you write mods yourself, the displays are open to yours as well: see [docs/PLUGINS.md](docs/PLUGINS.md).
 
 - Buttons can be interacted with in both VR and non-VR modes

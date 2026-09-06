@@ -72,7 +72,23 @@ namespace TwitchChat.Plugins
 
         public IWidgetFactory Widgets => WidgetFactory.Instance;
 
+        public void ReserveHeader(float height)
+        {
+            // The scrolling area is anchored to fill the panel below the title row; moving its top edge
+            // down is all that is needed to leave a plugin's header the room it asked for
+            RectTransform? scrollRect = scrollableArea != null ? scrollableArea.GetComponent<RectTransform>() : null;
+            if (scrollRect == null)
+            {
+                return;
+            }
+
+            scrollRect.offsetMax = new Vector2(scrollRect.offsetMax.x, -(TitleRowHeight + Mathf.Max(0f, height)));
+        }
+
         public void Log(string message) => Main.LogEntry($"Plugin:{plugin.Id}", message);
+
+        /// <summary>Room the title row and its buttons take, matching what BasePanel leaves for them.</summary>
+        private const float TitleRowHeight = 35f;
 
         // ------------------------------------------------------------------
 
