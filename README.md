@@ -19,6 +19,7 @@ A mod that seamlessly integrates Twitch chat into your Derail Valley gameplay ex
 - Subscriber/Follower alerts and notifications
 - Message throttling and combining for busy chats
 - User list management (VIP, ignore, etc.)
+- Integration with "Remote Dispatch" mod
 - More detail on the Dispatch Map panel: job list, car list, and throwing junctions from in game
 - Display panel scrolling in VR
 - Editing timed message text and intervals from the in-game panel, instead of the Unity Mod Manager menu or Settings.xml
