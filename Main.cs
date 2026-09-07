@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using UnityEngine;
 using UnityModManagerNet;
 
@@ -246,28 +245,20 @@ namespace TwitchChat
                 return;
             }
 
-            int retryCount = 3;
-            int delay = 1000; // 1 second
-
-            for (int i = 0; i < retryCount; i++)
+            // No retrying, and above all no sleeping. This is called from the game loop, and a log file
+            // momentarily locked - by a text editor, or by someone reading it while playing - used to
+            // stop the game dead for up to three seconds. A missed line is the cheaper loss by far:
+            // the manager's own log still gets it.
+            try
             {
-                try
-                {
-                    using StreamWriter writer = new(selected_log, true);
-                    string logMessage = selected_log == debugLog ? $"[{source}] {message}" : message;
-                    writer.WriteLine($"{DateTime.Now:HH:mm}: {logMessage}");
-                    return;
-                }
-                catch (IOException ex) when (i < retryCount - 1)
-                {
-                    ModEntry.Logger.Log($"[{source}] Failed to write to log file: {selected_log}. Exception: {ex.Message}. Retrying in {delay}ms...");
-                    Thread.Sleep(delay);
-                }
-                catch (Exception ex)
-                {
-                    ModEntry.Logger.Log($"[{source}] Failed to write to log file: {selected_log}. Exception: {ex.Message}");
-                    return;
-                }
+                using StreamWriter writer = new(selected_log, true);
+                string logMessage = selected_log == debugLog ? $"[{source}] {message}" : message;
+                writer.WriteLine($"{DateTime.Now:HH:mm}: {logMessage}");
+            }
+            catch (Exception ex)
+            {
+                ModEntry.Logger.Log($"[{source}] {message}");
+                ModEntry.Logger.Log($"[{source}] Could not write to {selected_log}: {ex.Message}");
             }
         }
 

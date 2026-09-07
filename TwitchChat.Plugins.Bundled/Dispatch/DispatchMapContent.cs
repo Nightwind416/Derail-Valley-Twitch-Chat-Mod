@@ -27,6 +27,13 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
         /// <summary>Room for the one line of status under the buttons, above the map.</summary>
         private const float StatusHeight = 22f;
 
+        /// <summary>
+        /// How many track segments are drawn per frame. Enough that the map appears at once on a normal
+        /// railway, small enough that an unusually large one costs several quiet frames rather than one
+        /// very long stall.
+        /// </summary>
+        private const int SegmentsPerFrame = 8000;
+
         /// <summary>How far the map spans at each end of the zoom range, in the mod's degrees.</summary>
         private const float WidestSpan = 0.17f;
         private const float NarrowestSpan = 0.004f;
@@ -52,6 +59,7 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
         private bool loaded;
         private bool announced;
         private bool loggedDiagnosis;
+        private bool traced;
         private bool follow = true;
         private bool terrainDirty = true;
         private float untilRefresh;
@@ -77,6 +85,18 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
 
         public void Tick(float deltaTime)
         {
+            // A track layer part way through is finished off first, a bounded piece per frame, so the
+            // map builds up over a few frames instead of stopping the game for however long it takes
+            if (canvas != null && canvas.TerrainInProgress)
+            {
+                if (canvas.ContinueTerrain(SegmentsPerFrame))
+                {
+                    surface.Log($"Track layer drawn: {canvas.SegmentsDrawn} segments.");
+                }
+
+                return;
+            }
+
             untilRefresh -= deltaTime;
             if (untilRefresh > 0f)
             {
@@ -125,10 +145,6 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
             mapRect.anchorMin = new Vector2(0.5f, 0.5f);
             mapRect.anchorMax = new Vector2(0.5f, 0.5f);
             mapRect.pivot = new Vector2(0.5f, 0.5f);
-
-            AspectRatioFitter fitter = mapArea.AddComponent<AspectRatioFitter>();
-            fitter.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
-            fitter.aspectRatio = 1f;
 
             status = surface.Widgets.CreateText(surface.Root, "Reading the track layout...", 10, 35 + (int)HeaderHeight + 4, Color.gray);
 
@@ -231,7 +247,13 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
                 return;
             }
 
+            Trace("laying out the map area");
+            LayOutMap();
+
+            Trace("making the drawing surface");
             MapCanvas map = EnsureCanvas();
+
+            Trace("reading cars and players");
             List<MapMarker> markers = dispatch.Markers();
 
             if (follow && markers.FirstOrDefault(marker => marker.IsPlayer) is { IsPlayer: true } player)
@@ -247,6 +269,7 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
 
             // A switch thrown anywhere on the map changes the terrain layer, and a dispatcher watching
             // this panel is precisely the person who wants to see that happen
+            Trace("reading junction states");
             int[] states = dispatch.JunctionStates();
             if (!states.SequenceEqual(junctionStates))
             {
@@ -257,26 +280,79 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
             if (terrainDirty)
             {
                 terrainDirty = false;
-                map.DrawTerrain(tracks, Junctions());
+                Trace("starting the track layer");
+                map.BeginTerrain(tracks, Junctions());
             }
 
+            Trace("drawing cars and players");
             map.DrawMarkers(markers);
 
             int trains = markers.Count(marker => marker.IsLoco);
             // One short line: the panel can be dragged narrow, and a status that wraps eats the map
             Say($"{markers.Count(m => !m.IsPlayer)} cars, {trains} locos, {Mathf.RoundToInt(map.Span / WidestSpan * 100f)}%");
+
+            Trace("first refresh done");
+            traced = true;
         }
 
         /// <summary>The junctions, paired with which way each is currently set.</summary>
-        private IEnumerable<JunctionPoint> Junctions()
+        private List<JunctionPoint> Junctions()
         {
+            List<JunctionPoint> junctions = new(junctionPositions.Count);
+
             for (int i = 0; i < junctionPositions.Count; i++)
             {
-                yield return new JunctionPoint
+                junctions.Add(new JunctionPoint
                 {
                     Position = junctionPositions[i],
                     SelectedBranch = i < junctionStates.Length ? junctionStates[i] : -1
-                };
+                });
+            }
+
+            return junctions;
+        }
+
+        /// <summary>
+        /// Keeps the map square within whatever room the panel has, whatever shape the display has been
+        /// dragged into.
+        /// </summary>
+        /// <remarks>
+        /// Six lines of arithmetic in place of an AspectRatioFitter. The component does the same job, but
+        /// it does it by driving its own rect from inside the layout pass, and a component that resizes
+        /// itself in response to being resized is the wrong thing to have on a panel that is posed afresh
+        /// every frame and can be dragged to any size by hand.
+        /// </remarks>
+        private void LayOutMap()
+        {
+            if (mapArea == null || mapArea.transform.parent == null)
+            {
+                return;
+            }
+
+            RectTransform container = (RectTransform)mapArea.transform.parent;
+            RectTransform map = (RectTransform)mapArea.transform;
+
+            float side = Mathf.Max(0f, Mathf.Min(container.rect.width, container.rect.height));
+            if (!Mathf.Approximately(side, map.sizeDelta.x))
+            {
+                map.sizeDelta = new Vector2(side, side);
+            }
+        }
+
+        /// <summary>
+        /// Writes down each step of the very first refresh, and then stops.
+        /// </summary>
+        /// <remarks>
+        /// This panel does more, and more unusual, work than the others: it reads another mod, allocates
+        /// textures and rasterises into them. When that went wrong the game stopped dead with nothing in
+        /// any log, which left no way to tell which step had done it. One pass of breadcrumbs costs a
+        /// dozen lines once and means the last line written names the step that did not finish.
+        /// </remarks>
+        private void Trace(string step)
+        {
+            if (!traced)
+            {
+                surface.Log($"First refresh: {step}");
             }
         }
 

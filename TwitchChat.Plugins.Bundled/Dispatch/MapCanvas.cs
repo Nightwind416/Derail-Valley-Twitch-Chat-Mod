@@ -13,6 +13,12 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
     /// redraw of every rail on the map. Two textures rather than a marker object per car for the same
     /// reason: creating and destroying that many UI objects several times a second is the expensive way
     /// to do this, and none of them need to be clickable.
+    /// <para>
+    /// The track layer is drawn a bounded number of segments at a time, across frames. Not because the
+    /// railway is known to be too big to draw at once - at forty metres a sample it is not - but because
+    /// how much work "the whole map" is depends on another mod's data and on how far the player has
+    /// zoomed in, and no amount of that belongs in a single frame of a game being played in a headset.
+    /// </para>
     /// </remarks>
     internal sealed class MapCanvas : IDisposable
     {
@@ -36,6 +42,12 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
         private readonly Color32[] terrainPixels = new Color32[Size * Size];
         private readonly Color32[] markerPixels = new Color32[Size * Size];
         private readonly Color32[] clearedMarkers = new Color32[Size * Size];
+
+        // Where the track drawing has got to, since it is spread over several calls
+        private IReadOnlyList<TrackLine>? pendingTracks;
+        private IReadOnlyList<JunctionPoint>? pendingJunctions;
+        private int trackIndex;
+        private int pointIndex;
 
         internal MapCanvas()
         {
@@ -61,33 +73,77 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
 
         internal float Span { get; set; } = 0.16f;
 
-        /// <summary>Redraws the track and junctions for the current view.</summary>
-        internal void DrawTerrain(IEnumerable<TrackLine> tracks, IEnumerable<JunctionPoint> junctions)
+        /// <summary>How many segments have been drawn since the track layer was last started.</summary>
+        internal int SegmentsDrawn { get; private set; }
+
+        /// <summary>Whether the track layer is part drawn and wants more calls to <see cref="ContinueTerrain"/>.</summary>
+        internal bool TerrainInProgress => pendingTracks != null;
+
+        /// <summary>
+        /// Starts redrawing the track and junction layer. Nothing is drawn yet; call
+        /// <see cref="ContinueTerrain"/> until it reports itself finished.
+        /// </summary>
+        internal void BeginTerrain(IReadOnlyList<TrackLine> tracks, IReadOnlyList<JunctionPoint> junctions)
         {
             for (int i = 0; i < terrainPixels.Length; i++)
             {
                 terrainPixels[i] = Background;
             }
 
-            // Yards first, so a mainline running through one is drawn over it rather than under
-            foreach (TrackLine track in tracks)
-            {
-                Color32 colour = track.IsSiding ? Siding : Mainline;
+            pendingTracks = tracks;
+            pendingJunctions = junctions;
+            trackIndex = 0;
+            pointIndex = 1;
+            SegmentsDrawn = 0;
+        }
 
-                for (int i = 1; i < track.Points.Length; i++)
-                {
-                    Line(terrainPixels, ToPixel(track.Points[i - 1]), ToPixel(track.Points[i]), colour);
-                }
+        /// <summary>
+        /// Draws up to <paramref name="segmentBudget"/> more segments of the track layer.
+        /// </summary>
+        /// <returns>True once the whole layer is drawn.</returns>
+        internal bool ContinueTerrain(int segmentBudget)
+        {
+            if (pendingTracks == null)
+            {
+                return true;
             }
 
-            foreach (JunctionPoint junction in junctions)
+            int drawn = 0;
+
+            while (trackIndex < pendingTracks.Count)
+            {
+                TrackLine track = pendingTracks[trackIndex];
+                Color32 colour = track.IsSiding ? Siding : Mainline;
+
+                while (pointIndex < track.Points.Length)
+                {
+                    Line(terrainPixels, ToPixel(track.Points[pointIndex - 1]), ToPixel(track.Points[pointIndex]), colour);
+                    pointIndex++;
+
+                    if (++drawn >= segmentBudget)
+                    {
+                        SegmentsDrawn += drawn;
+                        Publish(Terrain, terrainPixels);
+                        return false;
+                    }
+                }
+
+                trackIndex++;
+                pointIndex = 1;
+            }
+
+            foreach (JunctionPoint junction in pendingJunctions ?? Array.Empty<JunctionPoint>())
             {
                 Dot(terrainPixels, ToPixel(junction.Position), 1,
                     junction.SelectedBranch >= 0 ? JunctionSet : JunctionUnknown);
             }
 
-            Terrain.SetPixels32(terrainPixels);
-            Terrain.Apply(updateMipmaps: false);
+            SegmentsDrawn += drawn;
+            pendingTracks = null;
+            pendingJunctions = null;
+
+            Publish(Terrain, terrainPixels);
+            return true;
         }
 
         /// <summary>Redraws the trains and players for the current view.</summary>
@@ -120,8 +176,7 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
                 }
             }
 
-            Markers.SetPixels32(markerPixels);
-            Markers.Apply(updateMipmaps: false);
+            Publish(Markers, markerPixels);
         }
 
         public void Dispose()
@@ -132,18 +187,24 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
 
         // ------------------------------------------------------------------
 
+        private static void Publish(Texture2D texture, Color32[] pixels)
+        {
+            texture.SetPixels32(pixels);
+            texture.Apply(updateMipmaps: false);
+        }
+
         /// <summary>
-        /// Map coordinates to texture pixels. Longitude runs across and latitude up, which is the way
-        /// round the mod's own map has them. A texture counts its rows up from the bottom, which for once
-        /// is what is wanted: north ends up at the top with no flip.
+        /// Map coordinates to texture pixels, as floats. Longitude runs across and latitude up, which is
+        /// the way round the mod's own map has them. A texture counts its rows up from the bottom, which
+        /// for once is what is wanted: north ends up at the top with no flip.
         /// </summary>
-        private Vector2Int ToPixel(Vector2 point)
+        private Vector2 ToPixel(Vector2 point)
         {
             float half = Span / 2f;
             float x = (point.y - (Centre.y - half)) / Span;
             float y = (point.x - (Centre.x - half)) / Span;
 
-            return new Vector2Int(Mathf.RoundToInt(x * (Size - 1)), Mathf.RoundToInt(y * (Size - 1)));
+            return new Vector2(x * (Size - 1), y * (Size - 1));
         }
 
         private static Texture2D NewTexture(string name)
@@ -158,47 +219,65 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
             };
         }
 
-        private static void Dot(Color32[] pixels, Vector2Int at, int radius, Color32 colour)
+        private static void Dot(Color32[] pixels, Vector2 at, int radius, Color32 colour)
         {
+            // A marker well off the view would otherwise cost a loop over its whole area for nothing
+            if (at.x < -radius || at.y < -radius || at.x > Size + radius || at.y > Size + radius ||
+                float.IsNaN(at.x) || float.IsNaN(at.y))
+            {
+                return;
+            }
+
+            int cx = Mathf.RoundToInt(at.x);
+            int cy = Mathf.RoundToInt(at.y);
+
             for (int dy = -radius; dy <= radius; dy++)
             {
                 for (int dx = -radius; dx <= radius; dx++)
                 {
                     if (dx * dx + dy * dy <= radius * radius)
                     {
-                        Plot(pixels, at.x + dx, at.y + dy, colour);
+                        Plot(pixels, cx + dx, cy + dy, colour);
                     }
                 }
             }
         }
 
-        /// <summary>Bresenham, so a line off the edge of the view costs a few comparisons and no memory.</summary>
-        private static void Line(Color32[] pixels, Vector2Int from, Vector2Int to, Color32 colour)
+        /// <summary>
+        /// Draws a line, clipped to the view first.
+        /// </summary>
+        /// <remarks>
+        /// Clipping rather than plotting-and-discarding is what keeps this bounded: zoomed well in, a
+        /// segment can run tens of thousands of pixels past the edge of the view, and walking all of it
+        /// to throw every pixel away is how a map turns into a frozen game.
+        /// </remarks>
+        private static void Line(Color32[] pixels, Vector2 from, Vector2 to, Color32 colour)
         {
-            // Both ends far off the same side means the whole segment is: skip it without walking it
-            if ((from.x < 0 && to.x < 0) || (from.y < 0 && to.y < 0) ||
-                (from.x >= Size && to.x >= Size) || (from.y >= Size && to.y >= Size))
+            if (!ClipToView(ref from, ref to))
             {
                 return;
             }
 
-            int dx = Mathf.Abs(to.x - from.x);
-            int dy = -Mathf.Abs(to.y - from.y);
-            int stepX = from.x < to.x ? 1 : -1;
-            int stepY = from.y < to.y ? 1 : -1;
+            int x = Mathf.RoundToInt(from.x);
+            int y = Mathf.RoundToInt(from.y);
+            int toX = Mathf.RoundToInt(to.x);
+            int toY = Mathf.RoundToInt(to.y);
+
+            int dx = Mathf.Abs(toX - x);
+            int dy = -Mathf.Abs(toY - y);
+            int stepX = x < toX ? 1 : -1;
+            int stepY = y < toY ? 1 : -1;
             int error = dx + dy;
 
-            int x = from.x;
-            int y = from.y;
-
-            // A very long segment out of view could otherwise walk a great many steps for nothing
+            // Clipped to the view, so this can never exceed twice its width. Kept as a guard anyway: a
+            // rounding disagreement between the clip and the walk should cost a wonky line, not a hang
             int guard = (dx - dy) + 2;
 
             while (guard-- > 0)
             {
                 Plot(pixels, x, y, colour);
 
-                if (x == to.x && y == to.y)
+                if (x == toX && y == toY)
                 {
                     return;
                 }
@@ -214,6 +293,62 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
                     error += dx;
                     y += stepY;
                 }
+            }
+        }
+
+        /// <summary>
+        /// Liang-Barsky: trims a segment to the visible rectangle, or reports it wholly outside.
+        /// </summary>
+        private static bool ClipToView(ref Vector2 from, ref Vector2 to)
+        {
+            if (float.IsNaN(from.x) || float.IsNaN(from.y) || float.IsNaN(to.x) || float.IsNaN(to.y))
+            {
+                return false;
+            }
+
+            const float min = 0f;
+            float max = Size - 1;
+
+            float dx = to.x - from.x;
+            float dy = to.y - from.y;
+            float enter = 0f;
+            float exit = 1f;
+
+            if (!Trim(-dx, from.x - min, ref enter, ref exit) ||
+                !Trim(dx, max - from.x, ref enter, ref exit) ||
+                !Trim(-dy, from.y - min, ref enter, ref exit) ||
+                !Trim(dy, max - from.y, ref enter, ref exit))
+            {
+                return false;
+            }
+
+            Vector2 start = from;
+            from = new Vector2(start.x + (enter * dx), start.y + (enter * dy));
+            to = new Vector2(start.x + (exit * dx), start.y + (exit * dy));
+            return true;
+
+            static bool Trim(float edge, float distance, ref float enter, ref float exit)
+            {
+                if (Mathf.Approximately(edge, 0f))
+                {
+                    // Parallel to this edge: inside if it starts inside, and no trimming to do
+                    return distance >= 0f;
+                }
+
+                float crossing = distance / edge;
+
+                if (edge < 0f)
+                {
+                    if (crossing > exit) return false;
+                    if (crossing > enter) enter = crossing;
+                }
+                else
+                {
+                    if (crossing < enter) return false;
+                    if (crossing < exit) exit = crossing;
+                }
+
+                return true;
             }
         }
 
