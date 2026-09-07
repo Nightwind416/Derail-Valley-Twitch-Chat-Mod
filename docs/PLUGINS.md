@@ -95,6 +95,34 @@ else when the player changes the colour settings.
 are all called from the game loop. If you fetch something on a background thread, marshal the result
 back yourself before touching a widget.
 
+**But do not assume the mod you are reading wants to be called from there.** A method that looks
+synchronous may hand its work to that mod's own main-thread pump and wait for the answer, because
+the callers it was written for are worker threads — an HTTP handler, say. Call such a method from
+`Tick` and the main thread waits for something only the main thread can do, which is a deadlock that
+throws nothing, logs nothing, and freezes the whole game. This is not hypothetical: it is exactly
+what the bundled Dispatch Map panel did before it was moved off the game loop.
+
+If a mod's API is built for worker threads, read it on one and collect the answer a frame or two
+later:
+
+```csharp
+private Task<Thing>? request;
+
+public void Tick(float deltaTime)
+{
+    request ??= Task.Run(() => ReadTheOtherMod());   // never on this thread
+    if (!request.IsCompleted) return;                // still out; last frame's picture still stands
+
+    Thing thing = request.Result;
+    request = null;
+    ShowIt(thing);                                   // back on the main thread, safe for widgets
+}
+```
+
+Keep only one request in flight, do no Unity work inside it, and let the result be plain data.
+A read that throws out there is only a failed read; the same read on the game loop can be the end of
+the session.
+
 **Any collider you add must be a trigger.** A solid collider on a panel parented to a locomotive gets
 folded into that locomotive's rigidbody, shifts its mass and shoves it around the track. The widget
 factory already does the right thing; this matters only if you add colliders of your own.
