@@ -1,9 +1,8 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
+using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using TwitchChat.Api;
 using UnityEngine;
@@ -54,10 +53,10 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
     /// statics and quite separate from the HTTP layer, so the same figures its web page draws can be had
     /// in process - no port, no password, no dependency on the player having the server switched on.
     /// <para>
-    /// The methods used here return the JSON its own endpoints return, so the shapes below are the shapes
-    /// its own map already consumes: a public contract rather than an internal detail. Coordinates are
-    /// the mod's own flat latitude and longitude, metres divided by the earth's circumference, which is
-    /// only a projection convention and needs no undoing here.
+    /// The methods used here return what its own endpoints return, so the shapes below are the shapes its
+    /// own map already consumes: a public contract rather than an internal detail. Coordinates are the
+    /// mod's own flat latitude and longitude, metres divided by the earth's circumference, which is only
+    /// a projection convention and needs no undoing here.
     /// </para>
     /// </remarks>
     internal sealed class DispatchBridge
@@ -73,22 +72,91 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
         private MethodInfo? playerJson;
         private bool lookedUp;
 
+        /// <summary>The track layout request, once made. See <see cref="TryReadTracks"/>.</summary>
+        private Task<string>? trackRequest;
+
+        private string diagnosis = "not looked up yet";
+
         internal bool IsInstalled => binder.IsModPresent;
 
         internal string? Error => binder.Error;
 
         /// <summary>
-        /// The whole track layout. Large, and it does not change during a session, so read it once.
+        /// What was and was not found when binding, for the log. Reading another mod by name is the part
+        /// of this most likely to break when that mod changes, and "the map stopped" on its own tells
+        /// nobody which of five lookups was the one that went missing.
         /// </summary>
-        internal List<TrackLine> Tracks()
+        internal string Diagnosis
+        {
+            get
+            {
+                Bind();
+                return diagnosis;
+            }
+        }
+
+        /// <summary>
+        /// The whole track layout, which is large and does not change during a session.
+        /// </summary>
+        /// <remarks>
+        /// This one is asynchronous on the other side: it hands the work to that mod's own main-thread
+        /// pump, because its usual caller is an HTTP worker thread. We are already on the main thread, so
+        /// waiting on the result here would stop the very loop that has to run for it to be produced, and
+        /// hang the game. Hence a request left in flight and picked up on a later frame.
+        /// </remarks>
+        /// <returns>Null while the answer is still coming, otherwise the tracks - empty if it failed.</returns>
+        internal List<TrackLine>? TryReadTracks()
         {
             Bind();
-            List<TrackLine> tracks = new();
 
-            if (Read(trackJson) is not { } json)
+            if (trackJson == null)
             {
-                return tracks;
+                return new List<TrackLine>();
             }
+
+            if (trackRequest == null)
+            {
+                object? result = binder.Invoke(trackJson, null, Arguments(trackJson));
+
+                switch (result)
+                {
+                    case null:
+                        return new List<TrackLine>();
+
+                    // Older builds answered directly; take that at once rather than making a frame of it
+                    case string immediate:
+                        return ParseTracks(immediate);
+
+                    case Task<string> pending:
+                        trackRequest = pending;
+                        break;
+
+                    default:
+                        binder.Fail($"RailTracks.GetTrackPointJSON returned {result.GetType().Name}, which this panel does not know how to read.");
+                        return new List<TrackLine>();
+                }
+            }
+
+            if (!trackRequest.IsCompleted)
+            {
+                return null;
+            }
+
+            Task<string> finished = trackRequest;
+            trackRequest = null;
+
+            if (finished.IsFaulted)
+            {
+                binder.Fail($"reading the track layout threw: {finished.Exception?.GetBaseException().Message}");
+                return new List<TrackLine>();
+            }
+
+            return ParseTracks(finished.Result);
+        }
+
+        private List<TrackLine> ParseTracks(string json)
+        {
+            List<TrackLine> tracks = new();
 
             // { "trackId": [[lat, lon], ...], ... }
             foreach (KeyValuePair<string, JToken?> entry in JObject.Parse(json))
@@ -109,13 +177,13 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
             Bind();
             List<Vector2> positions = new();
 
-            if (Read(junctionJson) is not { } json)
+            if (ReadJson(junctionJson) is not JArray entries)
             {
                 return positions;
             }
 
             // [ { "position": [lat, lon], "branches": [trackId, trackId] }, ... ]
-            foreach (JToken entry in JArray.Parse(json))
+            foreach (JToken entry in entries)
             {
                 if (Point(entry["position"]) is { } position)
                 {
@@ -134,13 +202,10 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
         {
             Bind();
 
-            if (Read(junctionStateJson) is not { } json)
-            {
-                return Array.Empty<int>();
-            }
-
             // [ selectedBranch, ... ], one per junction, in the same order as the positions
-            return JArray.Parse(json).Select(state => state.Type == JTokenType.Integer ? (int)state : -1).ToArray();
+            return ReadJson(junctionStateJson) is not JArray states
+                ? Array.Empty<int>()
+                : states.Select(state => state.Type == JTokenType.Integer ? (int)state : -1).ToArray();
         }
 
         /// <summary>Every car the mod is willing to report, plus every player.</summary>
@@ -149,10 +214,10 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
             Bind();
             List<MapMarker> markers = new();
 
-            if (Read(carJson) is { } cars)
+            if (ReadJson(carJson) is JObject cars)
             {
                 // { "carId": { "position": [lat, lon], "rotation": deg, ... }, ... }
-                foreach (KeyValuePair<string, JToken?> entry in JObject.Parse(cars))
+                foreach (KeyValuePair<string, JToken?> entry in cars)
                 {
                     if (Marker(entry.Value, isPlayer: false) is { } marker)
                     {
@@ -164,10 +229,10 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
                 }
             }
 
-            if (Read(playerJson) is { } players)
+            if (ReadJson(playerJson) is JObject players)
             {
                 // { "playerId": { "color": name, "position": [lat, lon], "rotation": deg }, ... }
-                foreach (KeyValuePair<string, JToken?> entry in JObject.Parse(players))
+                foreach (KeyValuePair<string, JToken?> entry in players)
                 {
                     if (Marker(entry.Value, isPlayer: true) is { } marker)
                     {
@@ -225,38 +290,36 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
         }
 
         /// <summary>
-        /// Calls one of the mod's JSON methods and returns what it produced, or null.
+        /// Calls one of the mod's synchronous data methods and returns what it produced as JSON.
         /// </summary>
         /// <remarks>
-        /// Some of these are iterators that yield the document in pieces rather than returning it whole,
-        /// which is sensible when the other end is a socket and irrelevant here, so both shapes are
-        /// accepted and joined.
+        /// Some of these hand back a parsed document and some the text of one, which is the sort of
+        /// difference that should cost a line here rather than a panel.
         /// </remarks>
-        private string? Read(MethodInfo? method)
+        private JToken? ReadJson(MethodInfo? method)
         {
             object? result = binder.Invoke(method, null, Arguments(method));
 
-            switch (result)
+            try
             {
-                case null:
-                    return null;
-                case string json:
-                    return json;
-                case IEnumerable pieces:
-                    StringBuilder joined = new();
-                    foreach (object? piece in pieces)
-                    {
-                        joined.Append(piece);
-                    }
-                    return joined.ToString();
-                default:
-                    return result.ToString();
+                return result switch
+                {
+                    null => null,
+                    JToken token => token,
+                    string text => JToken.Parse(text),
+                    _ => null
+                };
+            }
+            catch (Exception ex)
+            {
+                binder.Fail($"the answer from '{method?.Name}' could not be read as JSON: {ex.Message}");
+                return null;
             }
         }
 
         /// <summary>
-        /// Fills in a method's optional parameters, so a version that takes, say, a resolution still
-        /// answers rather than failing on the argument count.
+        /// Fills in a method's parameters, so a version that takes, say, a resolution still answers
+        /// rather than failing on the argument count.
         /// </summary>
         private static object?[] Arguments(MethodInfo? method)
         {
@@ -277,18 +340,33 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
 
             lookedUp = true;
 
+            List<string> found = new();
+            List<string> missing = new();
+
             trackJson = Find("DvMod.RemoteDispatch.RailTracks", "GetTrackPointJSON");
             junctionJson = Find("DvMod.RemoteDispatch.Junctions", "GetJunctionPointJSON");
             junctionStateJson = Find("DvMod.RemoteDispatch.Junctions", "GetJunctionStateJSON");
             carJson = Find("DvMod.RemoteDispatch.CarData", "GetAllCarDataJson");
             playerJson = Find("DvMod.RemoteDispatch.PlayerData", "GetPlayerDataJson");
 
+            diagnosis = $"found [{string.Join(", ", found.ToArray())}]"
+                + (missing.Count > 0 ? $", missing [{string.Join(", ", missing.ToArray())}]" : ", nothing missing");
+
             if (trackJson == null && binder.Assembly != null)
             {
-                binder.Fail("RailTracks.GetTrackPointJSON was not found; this version of the mod is not one this panel knows.");
+                binder.Fail($"the track layout could not be read from Remote Dispatch: {diagnosis}.");
+            }
+
+            MethodInfo? Find(string typeName, string method)
+            {
+                Type? owner = binder.Type(typeName);
+                MethodInfo? info = binder.Method(owner, method);
+
+                // Which half failed matters: a missing type means the mod was rearranged, a missing method
+                // on a type that is there means only that one call was renamed
+                (info != null ? found : missing).Add(owner == null ? $"{typeName} (no such type)" : $"{typeName}.{method}");
+                return info;
             }
         }
-
-        private MethodInfo? Find(string typeName, string method) => binder.Method(binder.Type(typeName), method);
     }
 }

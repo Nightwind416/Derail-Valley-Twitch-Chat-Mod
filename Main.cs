@@ -233,7 +233,7 @@ namespace TwitchChat
                 if (Settings.Instance.debugLevel == DebugLevel.Off)
                     return;
                 if (Settings.Instance.debugLevel == DebugLevel.Minimal &&
-                    !MinimalDebug.Contains(source))
+                    !MinimalDebug.Contains(source) && !IsPluginSource(source))
                     return;
                 if (Settings.Instance.debugLevel == DebugLevel.Reduced &&
                     ReducedDebug.Contains(source))
@@ -269,6 +269,26 @@ namespace TwitchChat
                     return;
                 }
             }
+        }
+
+        /// <summary>
+        /// Whether a log source belongs to the plugin machinery, which is always worth logging.
+        /// </summary>
+        /// <remarks>
+        /// A plugin reads another mod's internals, so it is the part of this mod most likely to be broken
+        /// by something outside it, and its failures are the ones a player will be reporting. Filtering
+        /// those out at the default debug level left a player looking at a panel saying it had stopped
+        /// and a log with nothing in it at all.
+        /// <para>
+        /// A prefix rather than a list because a plugin's own log lines are tagged with its id, so the
+        /// full set of sources is not known here.
+        /// </para>
+        /// </remarks>
+        private static bool IsPluginSource(string source)
+        {
+            return source.StartsWith("Plugin", StringComparison.Ordinal)
+                || source.StartsWith("PanelRegistry", StringComparison.Ordinal)
+                || source.StartsWith("PanelDescriptor", StringComparison.Ordinal);
         }
 
         /// <summary>

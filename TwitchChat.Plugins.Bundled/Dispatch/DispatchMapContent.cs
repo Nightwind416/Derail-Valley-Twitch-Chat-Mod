@@ -51,6 +51,7 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
 
         private bool loaded;
         private bool announced;
+        private bool loggedDiagnosis;
         private bool follow = true;
         private bool terrainDirty = true;
         private float untilRefresh;
@@ -283,8 +284,9 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
         /// Reads the track layout, which is the expensive part and does not change during a session.
         /// </summary>
         /// <remarks>
-        /// Deliberately not done on the first tick: the panel says what it is doing, and only reads on the
-        /// tick after that, so the message is on screen before the game stops to parse the whole railway.
+        /// The answer does not come back on the frame it is asked for: the other mod produces it on its
+        /// own main-thread pump, so it arrives a frame or two later and this is called again until it
+        /// does. Waiting for it here instead would stop the loop that has to run to produce it.
         /// </remarks>
         private bool LoadLayout()
         {
@@ -292,16 +294,32 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
             {
                 announced = true;
                 Say("Reading the track layout...");
+
+                // Written once per panel, before the read that may fail, so a report of the failure comes
+                // with the record of what this panel managed to find in the other mod. Once only: this is
+                // retried until a save is loaded, and a line a second would bury everything else
+                if (!loggedDiagnosis)
+                {
+                    loggedDiagnosis = true;
+                    surface.Log($"Binding to Remote Dispatch: {dispatch.Diagnosis}");
+                }
+            }
+
+            List<TrackLine>? read = dispatch.TryReadTracks();
+
+            if (read == null)
+            {
+                // Still coming. Say nothing new; the message from a moment ago still stands
                 return false;
             }
 
-            tracks = dispatch.Tracks();
+            tracks = read;
 
             if (tracks.Count == 0)
             {
                 Say(dispatch.Error ?? "No track layout yet. It appears once a save is loaded.");
 
-                // Not a permanent failure: the world may simply not be loaded, so try again next refresh
+                // Not a permanent failure: the world may simply not be loaded, so ask again next refresh
                 announced = false;
                 return false;
             }

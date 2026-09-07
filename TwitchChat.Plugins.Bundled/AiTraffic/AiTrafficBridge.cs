@@ -86,12 +86,13 @@ namespace TwitchChat.Plugins.Bundled.AiTraffic
         // ------------------------------------------------------------------
 
         /// <summary>
-        /// The locomotive an AI driver is aboard. Its driver is a component on the car, so this needs no
-        /// reflection at all: TrainCar is the game's own type and both mods see the same one.
+        /// The locomotive an AI driver is aboard. The mod says so itself; failing that, the driver is a
+        /// component on the car, and TrainCar is the game's own type that both mods see the same one of.
         /// </summary>
         internal TrainCar? CarOf(object engineer)
         {
-            return engineer is Component component ? component.GetComponent<TrainCar>() : null;
+            return binder.Read(engineer, "TrainCar") as TrainCar
+                ?? (engineer as Component)?.GetComponent<TrainCar>();
         }
 
         internal float SpeedKmh(object engineer) => binder.ReadFloat(engineer, "CurrentSpeedKmh");
