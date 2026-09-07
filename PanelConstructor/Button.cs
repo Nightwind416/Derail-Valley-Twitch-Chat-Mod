@@ -38,7 +38,7 @@ namespace TwitchChat.PanelConstructor
             GameObject.Destroy(tempTextObj);
 
             Image buttonImage = buttonObj.AddComponent<Image>();
-            buttonImage.color = new Color(0, 0, 0, 0.75f);
+            buttonImage.color = PanelTheme.ButtonColorFor(parent);
 
             if (VRManager.IsVREnabled())
             {
@@ -50,14 +50,16 @@ namespace TwitchChat.PanelConstructor
                 WorldUiButtonVr vrButton = buttonObj.AddComponent<WorldUiButtonVr>();
                 vrButton.SetAction(() => clicked?.Invoke());
                 
-                // Add hover handlers
+                // Hover handlers. Both work out the colour when they fire rather than remembering one from
+                // now, so a button touched after the player has changed the colours goes back to the colour
+                // they chose instead of to the one it happened to be built with
                 vrButton.Touched += () => {
-                    buttonImage.color = new Color(0.3f, 0.3f, 0.3f, 0.75f);
+                    buttonImage.color = PanelTheme.Highlight(PanelTheme.ButtonColorFor(buttonObj.transform));
                 };
                 vrButton.Untouched += () => {
-                    buttonImage.color = new Color(0, 0, 0, 0.75f);
+                    buttonImage.color = PanelTheme.ButtonColorFor(buttonObj.transform);
                 };
-                
+
                 Main.LogEntry("ButtonCreation", $"VR Button '{text}' created for parent '{parent.name}'");
             }
 

@@ -167,8 +167,8 @@ namespace TwitchChat.PanelMenus
                 return;
             }
 
-            bool showConsent = screen == Screen.Consent && !isMinimized;
-            statusSection.SetActive(!isMinimized && !showConsent);
+            bool showConsent = screen == Screen.Consent;
+            statusSection.SetActive(!showConsent);
             consentSection.SetActive(showConsent);
 
             if (showConsent)

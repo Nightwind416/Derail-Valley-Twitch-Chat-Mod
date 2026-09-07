@@ -103,13 +103,5 @@ namespace TwitchChat.PanelMenus
             // // TODO: Add dropdown for limit
         }
 
-        /// <summary>
-        /// Controls the visibility of the panel and its sections.
-        /// </summary>
-        public override void Show()
-        {
-            base.Show();
-            notificationSection?.SetActive(!isMinimized);
-        }
     }
 }

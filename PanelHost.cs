@@ -31,6 +31,20 @@ namespace TwitchChat
         /// <summary>Name of the panel currently shown on this host. Persisted in settings.</summary>
         public abstract string ActivePanel { get; set; }
 
+        /// <summary>
+        /// What this host's saved appearance is filed under. A cab display uses the id on its slot, so its
+        /// colours belong to that display on that locomotive; the wrist panel, of which there is only ever
+        /// one, uses a fixed name.
+        /// </summary>
+        public abstract string AppearanceKey { get; }
+
+        /// <summary>
+        /// Folded away to its title strip, with every panel hidden. Lives on the host rather than on a
+        /// panel so that it survives switching between panels, which is the state the whole display is in
+        /// rather than something one panel is doing.
+        /// </summary>
+        public virtual bool Minimized { get; set; }
+
         /// <summary>Every panel built for this host, in the order the registry offered them.</summary>
         public IEnumerable<BasePanel> Panels => panels.Values;
 
@@ -53,8 +67,8 @@ namespace TwitchChat
         public ChatPanel? ChatPanel => Get<ChatPanel>();
 
         /// <summary>
-        /// Puts a close button on every panel of this host. Hosts that cannot be closed, such as the wrist
-        /// panel, simply never call this and their close buttons stay hidden.
+        /// Puts a close button on every panel of this host: on a cab display it closes the display, on the
+        /// wrist panel it folds the menus away. A host that never calls this leaves its close buttons hidden.
         /// </summary>
         public void SetCloseAction(Action? action)
         {
@@ -80,6 +94,12 @@ namespace TwitchChat
         /// <summary>The grab bars framing this display, once its canvas exists.</summary>
         public PanelGrabHandles? Handles { get; set; }
 
+        /// <summary>
+        /// The strip this display folds down to, shown in place of the panels while minimized. Built with
+        /// the canvas and left inactive until it is wanted.
+        /// </summary>
+        public GameObject? MinimizedBar { get; set; }
+
         public CabDisplayHost(CabDisplayPose slot, int number) : base($"CabDisplay{number}")
         {
             Slot = slot;
@@ -89,6 +109,15 @@ namespace TwitchChat
         {
             get => string.IsNullOrEmpty(Slot.activePanel) ? "Main" : Slot.activePanel;
             set => Slot.activePanel = value;
+        }
+
+        public override string AppearanceKey => Slot.id;
+
+        /// <summary>Kept on the slot, so a display folded away stays folded away when you board again.</summary>
+        public override bool Minimized
+        {
+            get => Slot.minimized;
+            set => Slot.minimized = value;
         }
     }
 
@@ -120,5 +149,11 @@ namespace TwitchChat
             get => string.IsNullOrEmpty(Settings.Instance.wristPanel) ? "Main" : Settings.Instance.wristPanel;
             set => Settings.Instance.wristPanel = value;
         }
+
+        /// <summary>
+        /// There is only ever one wrist panel, whichever hand it is on, so it needs no id of its own. The
+        /// name is written into settings, so it must not change.
+        /// </summary>
+        public override string AppearanceKey => "Wrist";
     }
 }

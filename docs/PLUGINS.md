@@ -89,6 +89,10 @@ Build with `surface.Widgets` rather than raw uGUI. You get the same fonts and sp
 the mod, VR poke colliders on anything clickable, and your panel is recoloured along with everything
 else when the player changes the colour settings.
 
+Widgets take their colours from the panel they are built on, which the player can set per display, so
+build under `Root` or `Content` and leave them there. A widget reparented out to the canvas is no
+longer on a panel and will keep whatever colour it was born with.
+
 ## Rules worth knowing
 
 **Everything is on Unity's main thread.** `CreateContent`, `Tick`, `OnShow`, `OnHide` and `OnResize`
@@ -130,6 +134,12 @@ factory already does the right thing; this matters only if you add colliders of 
 **Panels have no size of their own.** A display is whatever size the player has dragged it to, and
 your panel gets that size whichever it is. Anchor things rather than assuming a width, and use
 `OnResize` if you draw something that has to be regenerated.
+
+**A folded-away display hides its panels.** The player can fold a display down to its title strip,
+which hides every panel on it, so your content gets `OnHide` and stops being ticked until they open
+it again. That is the contract you already have for a panel that is not the one on show; folding is
+simply another way to get there. You are never asked to lay out for the strip: its size is the mod's
+business, not yours.
 
 **You get one content object per display.** A player can have up to five displays in a locomotive
 plus the wrist panel, so `CreateContent` may be called six times and all six results are alive at

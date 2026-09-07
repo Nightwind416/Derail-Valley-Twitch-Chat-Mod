@@ -105,6 +105,15 @@ namespace TwitchChat
         private string parsedPlaceKey = string.Empty;
         private string parsedToggleKey = string.Empty;
 
+        /// <summary>The controller button that opens and closes the wrist panel.</summary>
+        private readonly VrButtonWatch wristToggle = new();
+
+        /// <summary>
+        /// Whether the player has already been told the wrist panel has not found their hand, so that
+        /// holding the button down does not fill the screen with the same message.
+        /// </summary>
+        private bool warnedWristUnanchored;
+
         /// <summary>Every host, whether or not its canvas currently exists.</summary>
         private IEnumerable<PanelHost> AllHosts
         {
@@ -274,6 +283,31 @@ namespace TwitchChat
             {
                 ToggleCabDisplay();
             }
+
+            HandleWristToggleButton();
+        }
+
+        /// <summary>
+        /// Opens and closes the wrist panel from a controller button.
+        /// </summary>
+        /// <remarks>
+        /// The button is watched on every frame the panel is switched on, whether or not it is on a hand
+        /// yet, so that a press made while the hands were still being built is not delivered late once they
+        /// turn up.
+        /// </remarks>
+        private void HandleWristToggleButton()
+        {
+            if (!Settings.Instance.wristToggleEnabled || !Settings.Instance.wristPanelEnabled || !VRManager.IsVREnabled())
+            {
+                return;
+            }
+
+            if (!wristToggle.Pressed(Settings.Instance.wristToggleOnLeftHand, Settings.Instance.WristToggleButtonName))
+            {
+                return;
+            }
+
+            ToggleWristPanel();
         }
 
         private static KeyCode ParseKey(string name, ref string cachedName, KeyCode cached)
@@ -522,6 +556,9 @@ namespace TwitchChat
             }
 
             Settings.Instance.cabDisplayPoses.Remove(display.Slot);
+
+            // Its colours were filed against this display, and this display is gone
+            Settings.Instance.ForgetAppearances(display.Slot.id);
             Settings.Instance.RequestSave();
 
             if (display.MenuCanvas != null)
@@ -532,6 +569,89 @@ namespace TwitchChat
             Main.LogEntry("CabDisplay", $"Display closed; {cabDisplays.Count} left in {display.Slot.carId}.");
             NotificationManager.SetVariable("alertMessage", $"Display closed. {cabDisplays.Count} of {Settings.MaxDisplaysPerCar} left in this locomotive.");
             RefreshDisplaysPanels();
+        }
+
+        /// <summary>
+        /// Folds a display away to its title strip, or opens it back up.
+        /// </summary>
+        public void SetDisplayMinimized(CabDisplayHost display, bool minimized)
+        {
+            if (display.Minimized == minimized)
+            {
+                return;
+            }
+
+            display.Minimized = minimized;
+            Settings.Instance.RequestSave();
+            ApplyMinimized(display);
+
+            Main.LogEntry("CabDisplay", minimized
+                ? $"Display folded away to its title strip in {display.Slot.carId}."
+                : $"Display opened back up in {display.Slot.carId}.");
+        }
+
+        /// <summary>
+        /// Puts a display into whichever of its two states it is in: the strip, or the panel it was showing.
+        /// </summary>
+        /// <remarks>
+        /// Folding hides every panel rather than shrinking one. A panel made small is still a panel, and in
+        /// VR its buttons are still colliders a finger can find, while any panel that rebuilds its own rows
+        /// - several do, and a plugin may at any moment - would simply put them back a moment later. The
+        /// size it sets is deliberately not written to the slot: the size the player dragged is the one that
+        /// comes back when they open it again.
+        /// </remarks>
+        private static void ApplyMinimized(CabDisplayHost display)
+        {
+            if (display.MenuCanvas == null)
+            {
+                return;
+            }
+
+            // Whichever way this is going, exactly one of the two things is on show afterwards
+            HideAllPanels(display);
+
+            if (display.MinimizedBar != null)
+            {
+                display.MinimizedBar.SetActive(display.Minimized);
+                if (display.Minimized)
+                {
+                    PanelConstructor.MinimizedBar.SetTitle(display.MinimizedBar, display.ActivePanel);
+                }
+            }
+
+            Vector2 full = display.Slot.panelSize;
+            if (full.x < MinPanelSize.x || full.y < MinPanelSize.y)
+            {
+                full = DefaultPanelSize;
+                display.Slot.panelSize = full;
+            }
+
+            Vector2 size = display.Minimized
+                ? new Vector2(full.x, PanelConstructor.MinimizedBar.Height)
+                : full;
+
+            // The top edge is the one held still, so the title strip appears exactly where the title was
+            if (display.Handles != null)
+            {
+                display.Handles.SetSizeKeepingTop(size);
+            }
+            else
+            {
+                // No bars means no canvas to shift against; the display simply resizes about its centre
+                display.MenuCanvas.GetComponent<RectTransform>().sizeDelta = size;
+                Transform? menuPanel = display.MenuCanvas.transform.Find("MenuPanel");
+                if (menuPanel != null)
+                {
+                    menuPanel.GetComponent<RectTransform>().sizeDelta = size;
+                }
+            }
+
+            if (!display.Minimized)
+            {
+                PanelConstructor.BasePanel? panel = display.GetPanel(ResolvePanelId(display.ActivePanel, display));
+                panel?.ApplyAppearance();
+                panel?.Show();
+            }
         }
 
         /// <summary>
@@ -677,7 +797,11 @@ namespace TwitchChat
                 return;
             }
 
-            bool showButton = attached && (!wristPanel.Expanded || placingButton);
+            // The button on the hand is the old way in, kept for anyone whose controller has no press to
+            // spare. It comes back on its own when the controller button is switched off, so that turning
+            // both of them off cannot leave the panel with no way to open it at all.
+            bool wantButton = Settings.Instance.wristHandButton || !Settings.Instance.wristToggleEnabled;
+            bool showButton = attached && ((wantButton && !wristPanel.Expanded) || placingButton);
             if (wristPanel.ButtonCanvas.activeSelf != showButton)
             {
                 wristPanel.ButtonCanvas.SetActive(showButton);
@@ -692,6 +816,10 @@ namespace TwitchChat
                 if (host.MenuCanvas == null || !host.MenuCanvas.activeSelf || host.ActivePanel != "Wrist Adjust")
                 {
                     continue;
+                }
+                if (host.Minimized)
+                {
+                    continue; // folded away, so the panel that places the wrist panel is not on show either
                 }
                 if (host is WristPanelHost wrist && !wrist.Expanded)
                 {
@@ -709,8 +837,39 @@ namespace TwitchChat
         /// <summary>Switches the adjust panel between placing the open menus and placing the button.</summary>
         public void SetPlacingWristButton(bool button)
         {
+            if (PlacingWristButton == button)
+            {
+                return;
+            }
+
             PlacingWristButton = button;
             Main.LogEntry("WristPanel", button ? "Now placing the hand button." : "Now placing the floating menus.");
+        }
+
+        /// <summary>
+        /// Opens the wrist panel if it is closed and closes it if it is open, which is what the controller
+        /// button does.
+        /// </summary>
+        /// <remarks>
+        /// Does nothing until the panel has found a hand to sit on. Opening it before then would leave it
+        /// counted as open while there was still nothing to see, so the next press would appear to do
+        /// nothing at all.
+        /// </remarks>
+        public void ToggleWristPanel()
+        {
+            if (wristPanel.MenuCanvas == null || wristAnchor == null)
+            {
+                if (!warnedWristUnanchored)
+                {
+                    warnedWristUnanchored = true;
+                    Main.LogEntry("WristPanel", "Toggle pressed before the panel had found a hand to sit on.");
+                    NotificationManager.SetVariable("alertMessage", "The wrist panel has not found your hand yet.");
+                }
+                return;
+            }
+
+            warnedWristUnanchored = false;
+            SetWristExpanded(!wristPanel.Expanded);
         }
 
         /// <summary>
@@ -719,8 +878,16 @@ namespace TwitchChat
         private void SetWristExpanded(bool expanded)
         {
             wristPanel.Expanded = expanded;
+
+            if (!expanded)
+            {
+                // Placing the hand button with the menus shut would leave the button on show with nothing
+                // to place it against
+                SetPlacingWristButton(false);
+            }
+
             ApplyWristExpansion();
-            Main.LogEntry("WristPanel", expanded ? "Wrist panel opened." : "Wrist panel collapsed back to its button.");
+            Main.LogEntry("WristPanel", expanded ? "Wrist panel opened." : "Wrist panel closed.");
         }
 
         /// <summary>
@@ -804,7 +971,7 @@ namespace TwitchChat
             wristButtonGrab.WornOnLeft = host.AttachedToLeftHand;
 
             host.ButtonCanvas = buttonCanvas;
-            buttonCanvas.SetActive(!host.Expanded);
+            buttonCanvas.SetActive(false); // UpdateWristPlacing decides from the next frame on
         }
 
         /// <summary>
@@ -1125,7 +1292,12 @@ namespace TwitchChat
 
                 host.AddPanel(descriptor.Id, panel);
 
-                if (descriptor.Id != "Main")
+                // Before anything is shown: this is how a panel learns which display's colours to wear and
+                // which display its minimize button folds away
+                panel.Bind(host, descriptor.Id);
+
+                // The appearance panel goes back to whichever panel sent it there, so it wires its own
+                if (descriptor.Id != "Main" && descriptor.Id != "Appearance")
                 {
                     panel.OnBackButtonClicked += () => ShowPanel("Main", host);
                 }
@@ -1140,12 +1312,20 @@ namespace TwitchChat
                 display.Handles = host.MenuCanvas.AddComponent<PanelGrabHandles>();
                 display.Handles.Initialize(menuPanel, display, () => OnCabDisplayChanged(display));
                 host.SetCloseAction(() => CloseCabDisplay(display));
+
+                display.MinimizedBar = PanelConstructor.MinimizedBar.Create(
+                    menuPanel,
+                    () => SetDisplayMinimized(display, false),
+                    () => CloseCabDisplay(display));
             }
 
             // The wrist panel rests as a button: going back from its main menu folds the menus away again
             if (host is WristPanelHost wrist)
             {
                 CreateWristButton(wrist);
+
+                // The x closes the wrist panel from wherever the player is, rather than only from Main
+                host.SetCloseAction(() => SetWristExpanded(false));
 
                 PanelConstructor.BasePanel? mainPanel = host.GetPanel("Main");
                 if (mainPanel != null)
@@ -1191,6 +1371,15 @@ namespace TwitchChat
 
             string panelId = ResolvePanelId(panelName, host);
 
+            // A folded display shows its strip, not a panel. Remembering the choice anyway means unfolding
+            // it comes back to whatever it was last on, and nothing here resizes it back to full size
+            if (host is CabDisplayHost folded && folded.Minimized)
+            {
+                RememberActivePanel(host, panelId);
+                ApplyMinimized(folded);
+                return;
+            }
+
             // Panels have no size of their own: a display keeps whatever size it has been dragged to, whichever
             // panel it shows. A display that has never been sized starts at the default.
             if (host is CabDisplayHost sizedDisplay)
@@ -1220,10 +1409,32 @@ namespace TwitchChat
                 host.Get<ModsPanel>()?.Rebuild();
             }
 
-            host.GetPanel(panelId)?.Show();
+            PanelConstructor.BasePanel? shown = host.GetPanel(panelId);
 
-            // Remember the active panel for this host, under the id it resolved to, so a name that has
-            // since been renamed or removed is not written straight back out again
+            // Rebuilt rows are built in the panel's own colours, but a panel whose colours were changed from
+            // a different display has not heard about it, so this is where it catches up
+            shown?.ApplyAppearance();
+            shown?.Show();
+
+            RememberActivePanel(host, panelId);
+        }
+
+        /// <summary>
+        /// Writes down which panel a display is on, under the id the name resolved to, so a name that has
+        /// since been renamed or removed is not written straight back out again.
+        /// </summary>
+        /// <remarks>
+        /// A panel marked transient is not remembered: the appearance panel is only ever reached from
+        /// another panel's gear, so coming back to a display that had been left on it would leave the player
+        /// looking at an editor with nothing to edit.
+        /// </remarks>
+        private static void RememberActivePanel(PanelHost host, string panelId)
+        {
+            if (Plugins.PanelRegistry.Find(panelId)?.Transient == true)
+            {
+                return;
+            }
+
             host.ActivePanel = panelId;
             Settings.Instance.RequestSave();
         }
@@ -1349,90 +1560,58 @@ namespace TwitchChat
             }
         }
 
-        public void UpdateAllPanelBackgrounds()
+        // ------------------------------------------------------------------
+        // Colours
+        // ------------------------------------------------------------------
+
+        /// <summary>
+        /// Opens the colours of one panel on one display, and remembers where to go back to.
+        /// </summary>
+        public void OpenAppearance(PanelHost host, string panelId)
+        {
+            host.Get<AppearancePanel>()?.Edit(host, panelId);
+            ShowPanel("Appearance", host);
+        }
+
+        /// <summary>
+        /// Repaints every panel on every display from the settings. Panels the player has given colours of
+        /// their own keep those; the rest follow the shared defaults, which is what the Config panels change.
+        /// </summary>
+        public void RefreshAppearance()
         {
             foreach (PanelHost host in AllHosts)
             {
-                if (host.MenuCanvas == null)
+                foreach (PanelConstructor.BasePanel panel in host.Panels)
                 {
-                    continue;
+                    panel.ApplyAppearance();
                 }
 
-                Transform menuPanel = host.MenuCanvas.transform.Find("MenuPanel");
-                if (menuPanel == null)
+                // The strip a display folds down to is not a panel, so it follows the defaults
+                if (host is CabDisplayHost display && display.MinimizedBar != null)
                 {
-                    continue;
-                }
-
-                Image panelImage = menuPanel.GetComponent<Image>();
-                if (panelImage != null)
-                {
-                    panelImage.color = Settings.Instance.panelColor;
-                }
-
-                // Direct children of MenuPanel whose name contains "Panel" are the panel backgrounds
-                foreach (Transform child in menuPanel)
-                {
-                    if (child.name.Contains("Panel"))
+                    Image? stripImage = display.MinimizedBar.GetComponent<Image>();
+                    if (stripImage != null)
                     {
-                        Image childImage = child.GetComponent<Image>();
-                        if (childImage != null)
+                        stripImage.color = Settings.Instance.panelColor;
+                    }
+
+                    foreach (Image image in display.MinimizedBar.GetComponentsInChildren<Image>(true))
+                    {
+                        if (image.GetComponent<Button>() != null)
                         {
-                            childImage.color = Settings.Instance.panelColor;
+                            image.color = Settings.Instance.buttonColor;
                         }
                     }
                 }
             }
         }
 
-        public void UpdateAllSectionBackgrounds()
-        {
-            foreach (PanelHost host in AllHosts)
-            {
-                if (host.MenuCanvas == null)
-                {
-                    continue;
-                }
+        // The Config panels change one of the three defaults each. They all come back to the same sweep,
+        // since a panel wearing its own colours has to keep them whichever default was edited.
+        public void UpdateAllPanelBackgrounds() => RefreshAppearance();
 
-                Transform menuPanel = host.MenuCanvas.transform.Find("MenuPanel");
-                if (menuPanel == null)
-                {
-                    continue;
-                }
+        public void UpdateAllSectionBackgrounds() => RefreshAppearance();
 
-                foreach (Image image in menuPanel.GetComponentsInChildren<Image>(true))
-                {
-                    if (image.gameObject.name.EndsWith("Section"))
-                    {
-                        image.color = Settings.Instance.sectionColor;
-                    }
-                }
-            }
-        }
-
-        public void UpdateAllButtonColors()
-        {
-            foreach (PanelHost host in AllHosts)
-            {
-                if (host.MenuCanvas == null)
-                {
-                    continue;
-                }
-
-                Transform menuPanel = host.MenuCanvas.transform.Find("MenuPanel");
-                if (menuPanel == null)
-                {
-                    continue;
-                }
-
-                foreach (Image image in menuPanel.GetComponentsInChildren<Image>(true))
-                {
-                    if (image.GetComponent<Button>() != null)
-                    {
-                        image.color = Settings.Instance.buttonColor;
-                    }
-                }
-            }
-        }
+        public void UpdateAllButtonColors() => RefreshAppearance();
     }
 }

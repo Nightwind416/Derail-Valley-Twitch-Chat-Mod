@@ -88,25 +88,25 @@ namespace TwitchChat.PanelMenus
         private void ResetColorsSection()
         {
             // Reset Colors Section
-            GameObject resetSection = PanelConstructor.Section.Create(panelObject.transform, "Reset Colors", 160, 130);
-            
+            GameObject resetSection = PanelConstructor.Section.Create(panelObject.transform, "Reset Colors", 160, 155);
+
             // Reset Panel Color button
             PanelConstructor.Button.Create(resetSection.transform, "Reset Panel Color", 80, 35, clicked: () => {
-                Settings.Instance.panelColor = new Color(0, 0, 0, 0.3f);
+                Settings.Instance.panelColor = Settings.DefaultPanelColor;
                 Settings.Instance.RequestSave();
                 MenuManager.Instance.UpdateAllPanelBackgrounds();
             });
-            
+
             // Reset Section Color button
             PanelConstructor.Button.Create(resetSection.transform, "Reset Section Color", 80, 60, clicked: () => {
-                Settings.Instance.sectionColor = new Color(0, 0, 0, 0.1f);
+                Settings.Instance.sectionColor = Settings.DefaultSectionColor;
                 Settings.Instance.RequestSave();
                 MenuManager.Instance.UpdateAllSectionBackgrounds();
             });
-            
+
             // Reset Button Color button
             PanelConstructor.Button.Create(resetSection.transform, "Reset Button Color", 80, 85, clicked: () => {
-                Settings.Instance.buttonColor = new Color(0, 0, 0, 0.5f);
+                Settings.Instance.buttonColor = Settings.DefaultButtonColor;
                 Settings.Instance.RequestSave();
                 MenuManager.Instance.UpdateAllButtonColors();
                 
@@ -120,21 +120,31 @@ namespace TwitchChat.PanelMenus
             // Reset All Colors button
             PanelConstructor.Button.Create(resetSection.transform, "Reset All Colors", 80, 110, clicked: () => {
                 // Reset all colors
-                Settings.Instance.panelColor = new Color(0, 0, 0, 0.3f);
-                Settings.Instance.sectionColor = new Color(0, 0, 0, 0.1f);
-                Settings.Instance.buttonColor = new Color(0, 0, 0, 0.5f);
-                
+                Settings.Instance.panelColor = Settings.DefaultPanelColor;
+                Settings.Instance.sectionColor = Settings.DefaultSectionColor;
+                Settings.Instance.buttonColor = Settings.DefaultButtonColor;
+
                 // Update all UI elements with new colors
                 Settings.Instance.RequestSave();
                 MenuManager.Instance.UpdateAllPanelBackgrounds();
                 MenuManager.Instance.UpdateAllSectionBackgrounds();
                 MenuManager.Instance.UpdateAllButtonColors();
-                
+
                 // Update sliders to reflect new values
                 if (redSlider != null) redSlider.value = Settings.Instance.buttonColor.r * 100f;
                 if (greenSlider != null) greenSlider.value = Settings.Instance.buttonColor.g * 100f;
                 if (blueSlider != null) blueSlider.value = Settings.Instance.buttonColor.b * 100f;
                 if (alphaSlider != null) alphaSlider.value = Settings.Instance.buttonColor.a * 100f;
+            });
+
+            // The three above are the shared colours, which a panel given colours of its own no longer
+            // follows. This is the way back for all of them at once, rather than visiting each panel's gear.
+            PanelConstructor.Button.Create(resetSection.transform, "Clear per-panel colours", 80, 135, clicked: () => {
+                int cleared = Settings.Instance.panelAppearances.Count;
+                Settings.Instance.panelAppearances.Clear();
+                Settings.Instance.RequestSave();
+                MenuManager.Instance.RefreshAppearance();
+                Main.LogEntry("Appearance", $"Cleared the colours of {cleared} panel(s); everything follows the shared colours again.");
             });
         }
     }
