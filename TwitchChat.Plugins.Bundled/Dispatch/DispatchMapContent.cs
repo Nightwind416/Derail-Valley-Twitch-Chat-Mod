@@ -60,6 +60,7 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
         private bool announced;
         private bool loggedDiagnosis;
         private bool traced;
+        private readonly HashSet<string> tracedSteps = new();
         private bool follow = true;
         private bool terrainDirty = true;
         private float untilRefresh;
@@ -247,16 +248,28 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
                 return;
             }
 
+            Trace("collecting cars and players");
+            DispatchLive? live = dispatch.PollLive();
+
+            if (live == null)
+            {
+                // The reading is still out with the worker. Everything on screen is a moment old rather
+                // than wrong, so leave it be and look again next time
+                if (dispatch.Error is { } problem)
+                {
+                    Say(problem);
+                }
+
+                return;
+            }
+
             Trace("laying out the map area");
             LayOutMap();
 
             Trace("making the drawing surface");
             MapCanvas map = EnsureCanvas();
 
-            Trace("reading cars and players");
-            List<MapMarker> markers = dispatch.Markers();
-
-            if (follow && markers.FirstOrDefault(marker => marker.IsPlayer) is { IsPlayer: true } player)
+            if (follow && live.Markers.FirstOrDefault(marker => marker.IsPlayer) is { IsPlayer: true } player)
             {
                 // Recentre only once the player has drifted well away from the middle, so that walking
                 // about does not redraw every rail on the map twice a second
@@ -269,11 +282,9 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
 
             // A switch thrown anywhere on the map changes the terrain layer, and a dispatcher watching
             // this panel is precisely the person who wants to see that happen
-            Trace("reading junction states");
-            int[] states = dispatch.JunctionStates();
-            if (!states.SequenceEqual(junctionStates))
+            if (!live.JunctionStates.SequenceEqual(junctionStates))
             {
-                junctionStates = states;
+                junctionStates = live.JunctionStates;
                 terrainDirty = true;
             }
 
@@ -285,11 +296,11 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
             }
 
             Trace("drawing cars and players");
-            map.DrawMarkers(markers);
+            map.DrawMarkers(live.Markers);
 
-            int trains = markers.Count(marker => marker.IsLoco);
+            int trains = live.Markers.Count(marker => marker.IsLoco);
             // One short line: the panel can be dragged narrow, and a status that wraps eats the map
-            Say($"{markers.Count(m => !m.IsPlayer)} cars, {trains} locos, {Mathf.RoundToInt(map.Span / WidestSpan * 100f)}%");
+            Say($"{live.Markers.Count(m => !m.IsPlayer)} cars, {trains} locos, {Mathf.RoundToInt(map.Span / WidestSpan * 100f)}%");
 
             Trace("first refresh done");
             traced = true;
@@ -350,7 +361,10 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
         /// </remarks>
         private void Trace(string step)
         {
-            if (!traced)
+            // Each step once, not once per refresh: the early steps run again on every cycle while the
+            // first reading is still out with the worker, and a breadcrumb trail that repeats is no
+            // longer a trail
+            if (!traced && tracedSteps.Add(step))
             {
                 surface.Log($"First refresh: {step}");
             }
@@ -360,9 +374,8 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
         /// Reads the track layout, which is the expensive part and does not change during a session.
         /// </summary>
         /// <remarks>
-        /// The answer does not come back on the frame it is asked for: the other mod produces it on its
-        /// own main-thread pump, so it arrives a frame or two later and this is called again until it
-        /// does. Waiting for it here instead would stop the loop that has to run to produce it.
+        /// The answer does not come back on the frame it is asked for. It is read on a worker thread,
+        /// which is the only safe place to read that mod from, and collected here a frame or two later.
         /// </remarks>
         private bool LoadLayout()
         {
@@ -381,7 +394,7 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
                 }
             }
 
-            List<TrackLine>? read = dispatch.TryReadTracks();
+            DispatchLayout? read = dispatch.PollLayout();
 
             if (read == null)
             {
@@ -389,7 +402,8 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
                 return false;
             }
 
-            tracks = read;
+            tracks = read.Tracks;
+            junctionPositions = read.Junctions;
 
             if (tracks.Count == 0)
             {
@@ -400,7 +414,6 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
                 return false;
             }
 
-            junctionPositions = dispatch.JunctionPositions();
             loaded = true;
 
             // Start looking at the whole railway, centred on it

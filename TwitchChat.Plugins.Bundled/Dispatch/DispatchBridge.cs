@@ -44,19 +44,39 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
         internal bool IsLoco;
     }
 
+    /// <summary>The parts of the map that do not change during a session.</summary>
+    internal sealed class DispatchLayout
+    {
+        internal List<TrackLine> Tracks = new();
+        internal List<Vector2> Junctions = new();
+    }
+
+    /// <summary>The parts that do.</summary>
+    internal sealed class DispatchLive
+    {
+        internal List<MapMarker> Markers = new();
+        internal int[] JunctionStates = Array.Empty<int>();
+    }
+
     /// <summary>
     /// Reads mspielberg's Remote Dispatch mod: the track layout, the junctions, and where everything is.
     /// </summary>
     /// <remarks>
     /// That mod renders nothing in the game at all. Its map is a Leaflet page served over HTTP to a
-    /// browser, which is no use in a headset. What it does have is a data layer that is entirely public
-    /// statics and quite separate from the HTTP layer, so the same figures its web page draws can be had
-    /// in process - no port, no password, no dependency on the player having the server switched on.
+    /// browser, which is no use in a headset. It does have a data layer of public statics, quite separate
+    /// from the HTTP layer, which is what this reads.
     /// <para>
-    /// The methods used here return what its own endpoints return, so the shapes below are the shapes its
-    /// own map already consumes: a public contract rather than an internal detail. Coordinates are the
-    /// mod's own flat latitude and longitude, metres divided by the earth's circumference, which is only
-    /// a projection convention and needs no undoing here.
+    /// <b>Every one of those calls is made from a background thread, and none from the game loop.</b>
+    /// They look synchronous and are not: they hand their work to that mod's own main-thread pump and
+    /// wait for the answer, because the callers they were written for are HTTP worker threads. Called
+    /// from the main thread, such a method waits for the main thread to do something the main thread
+    /// cannot do while waiting, and the game stops dead with no exception and nothing in any log. That is
+    /// not a fault in either mod; it is what those methods are for, used wrongly.
+    /// </para>
+    /// <para>
+    /// So requests are started on a worker and collected a frame or two later. The shapes below are the
+    /// ones its own map already consumes, and coordinates are its own flat latitude and longitude, metres
+    /// divided by the earth's circumference, which is only a projection convention.
     /// </para>
     /// </remarks>
     internal sealed class DispatchBridge
@@ -72,14 +92,15 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
         private MethodInfo? playerJson;
         private bool lookedUp;
 
-        /// <summary>The track layout request, once made. See <see cref="TryReadTracks"/>.</summary>
-        private Task<string>? trackRequest;
+        private BackgroundRead<DispatchLayout>? layoutRead;
+        private BackgroundRead<DispatchLive>? liveRead;
 
         private string diagnosis = "not looked up yet";
 
         internal bool IsInstalled => binder.IsModPresent;
 
-        internal string? Error => binder.Error;
+        /// <summary>Whatever last went wrong, in a sentence, or null.</summary>
+        internal string? Error { get; private set; }
 
         /// <summary>
         /// What was and was not found when binding, for the log. Reading another mod by name is the part
@@ -96,125 +117,96 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
         }
 
         /// <summary>
-        /// The whole track layout, which is large and does not change during a session.
+        /// The track and junction layout. Asks for it the first time, and returns null on every call
+        /// until the answer arrives.
         /// </summary>
-        /// <remarks>
-        /// This one is asynchronous on the other side: it hands the work to that mod's own main-thread
-        /// pump, because its usual caller is an HTTP worker thread. We are already on the main thread, so
-        /// waiting on the result here would stop the very loop that has to run for it to be produced, and
-        /// hang the game. Hence a request left in flight and picked up on a later frame.
-        /// </remarks>
-        /// <returns>Null while the answer is still coming, otherwise the tracks - empty if it failed.</returns>
-        internal List<TrackLine>? TryReadTracks()
+        internal DispatchLayout? PollLayout()
         {
             Bind();
 
             if (trackJson == null)
             {
-                return new List<TrackLine>();
+                return new DispatchLayout();
             }
 
-            if (trackRequest == null)
-            {
-                object? result = binder.Invoke(trackJson, null, Arguments(trackJson));
+            return Poll(ref layoutRead, ReadLayout);
+        }
 
-                switch (result)
-                {
-                    case null:
-                        return new List<TrackLine>();
+        /// <summary>
+        /// Where everything is now. Asks again each time the previous answer has been collected, so there
+        /// is never more than one request in flight.
+        /// </summary>
+        internal DispatchLive? PollLive()
+        {
+            Bind();
+            return Poll(ref liveRead, ReadLive);
+        }
 
-                    // Older builds answered directly; take that at once rather than making a frame of it
-                    case string immediate:
-                        return ParseTracks(immediate);
+        private T? Poll<T>(ref BackgroundRead<T>? slot, Func<T> work) where T : class
+        {
+            slot ??= new BackgroundRead<T>(work);
 
-                    case Task<string> pending:
-                        trackRequest = pending;
-                        break;
-
-                    default:
-                        binder.Fail($"RailTracks.GetTrackPointJSON returned {result.GetType().Name}, which this panel does not know how to read.");
-                        return new List<TrackLine>();
-                }
-            }
-
-            if (!trackRequest.IsCompleted)
+            if (!slot.Done)
             {
                 return null;
             }
 
-            Task<string> finished = trackRequest;
-            trackRequest = null;
+            BackgroundRead<T> finished = slot;
+            slot = null;
 
-            if (finished.IsFaulted)
+            if (finished.Failure is { } failure)
             {
-                binder.Fail($"reading the track layout threw: {finished.Exception?.GetBaseException().Message}");
-                return new List<TrackLine>();
+                Error = failure;
+                return null;
             }
 
-            return ParseTracks(finished.Result);
+            return finished.Result;
         }
 
-        private List<TrackLine> ParseTracks(string json)
-        {
-            List<TrackLine> tracks = new();
+        // ------------------------------------------------------------------
+        // Everything below this line runs on a worker thread
+        // ------------------------------------------------------------------
 
-            // { "trackId": [[lat, lon], ...], ... }
-            foreach (KeyValuePair<string, JToken?> entry in JObject.Parse(json))
+        private DispatchLayout ReadLayout()
+        {
+            DispatchLayout layout = new();
+
+            // This one is declared as returning a Task because that mod produces it on its own pump.
+            // Waiting on it here is fine and is the point: this is a worker, and the main thread is free
+            // to run the pump that completes it
+            if (Text(binder.Invoke(trackJson, null, Arguments(trackJson))) is { } trackText)
             {
-                Vector2[] points = PointList(entry.Value);
-                if (points.Length > 1)
+                // { "trackId": [[lat, lon], ...], ... }
+                foreach (KeyValuePair<string, JToken?> entry in JObject.Parse(trackText))
                 {
-                    tracks.Add(new TrackLine(entry.Key, points));
+                    Vector2[] points = PointList(entry.Value);
+                    if (points.Length > 1)
+                    {
+                        layout.Tracks.Add(new TrackLine(entry.Key, points));
+                    }
                 }
-            }
-
-            return tracks;
-        }
-
-        /// <summary>Junction positions, which are fixed for the session.</summary>
-        internal List<Vector2> JunctionPositions()
-        {
-            Bind();
-            List<Vector2> positions = new();
-
-            if (ReadJson(junctionJson) is not JArray entries)
-            {
-                return positions;
             }
 
             // [ { "position": [lat, lon], "branches": [trackId, trackId] }, ... ]
-            foreach (JToken entry in entries)
+            if (Json(junctionJson) is JArray junctions)
             {
-                if (Point(entry["position"]) is { } position)
+                foreach (JToken entry in junctions)
                 {
-                    positions.Add(position);
+                    if (Point(entry["position"]) is { } position)
+                    {
+                        layout.Junctions.Add(position);
+                    }
                 }
             }
 
-            return positions;
+            return layout;
         }
 
-        /// <summary>
-        /// Which way each junction is set, in the same order as the positions. Changes as switches are
-        /// thrown, so unlike the positions this is worth re-reading.
-        /// </summary>
-        internal int[] JunctionStates()
+        private DispatchLive ReadLive()
         {
-            Bind();
+            DispatchLive live = new();
 
-            // [ selectedBranch, ... ], one per junction, in the same order as the positions
-            return ReadJson(junctionStateJson) is not JArray states
-                ? Array.Empty<int>()
-                : states.Select(state => state.Type == JTokenType.Integer ? (int)state : -1).ToArray();
-        }
-
-        /// <summary>Every car the mod is willing to report, plus every player.</summary>
-        internal List<MapMarker> Markers()
-        {
-            Bind();
-            List<MapMarker> markers = new();
-
-            if (ReadJson(carJson) is JObject cars)
+            if (Json(carJson) is JObject cars)
             {
                 // { "carId": { "position": [lat, lon], "rotation": deg, ... }, ... }
                 foreach (KeyValuePair<string, JToken?> entry in cars)
@@ -224,27 +216,59 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
                         // Locomotive ids start with L-, and picking them out is what makes the map
                         // readable: a train is a lot of dots and only one of them is being driven
                         marker.IsLoco = entry.Key.StartsWith("L-", StringComparison.Ordinal);
-                        markers.Add(marker);
+                        live.Markers.Add(marker);
                     }
                 }
             }
 
-            if (ReadJson(playerJson) is JObject players)
+            if (Json(playerJson) is JObject players)
             {
                 // { "playerId": { "color": name, "position": [lat, lon], "rotation": deg }, ... }
                 foreach (KeyValuePair<string, JToken?> entry in players)
                 {
                     if (Marker(entry.Value, isPlayer: true) is { } marker)
                     {
-                        markers.Add(marker);
+                        live.Markers.Add(marker);
                     }
                 }
             }
 
-            return markers;
+            // [ selectedBranch, ... ], one per junction, in the same order as the positions
+            if (Json(junctionStateJson) is JArray states)
+            {
+                live.JunctionStates = states
+                    .Select(state => state.Type == JTokenType.Integer ? (int)state : -1)
+                    .ToArray();
+            }
+
+            return live;
         }
 
-        // ------------------------------------------------------------------
+        /// <summary>Calls one of the mod's data methods and reads the answer as JSON.</summary>
+        private JToken? Json(MethodInfo? method)
+        {
+            object? result = binder.Invoke(method, null, Arguments(method));
+
+            return result switch
+            {
+                JToken token => token,
+                _ => Text(result) is { } text ? JToken.Parse(text) : null
+            };
+        }
+
+        /// <summary>
+        /// The text of an answer, waiting for it if the method handed back a promise of one.
+        /// </summary>
+        private static string? Text(object? result)
+        {
+            return result switch
+            {
+                null => null,
+                string text => text,
+                Task<string> pending => pending.GetAwaiter().GetResult(),
+                _ => result.ToString()
+            };
+        }
 
         private static MapMarker? Marker(JToken? token, bool isPlayer)
         {
@@ -290,34 +314,6 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
         }
 
         /// <summary>
-        /// Calls one of the mod's synchronous data methods and returns what it produced as JSON.
-        /// </summary>
-        /// <remarks>
-        /// Some of these hand back a parsed document and some the text of one, which is the sort of
-        /// difference that should cost a line here rather than a panel.
-        /// </remarks>
-        private JToken? ReadJson(MethodInfo? method)
-        {
-            object? result = binder.Invoke(method, null, Arguments(method));
-
-            try
-            {
-                return result switch
-                {
-                    null => null,
-                    JToken token => token,
-                    string text => JToken.Parse(text),
-                    _ => null
-                };
-            }
-            catch (Exception ex)
-            {
-                binder.Fail($"the answer from '{method?.Name}' could not be read as JSON: {ex.Message}");
-                return null;
-            }
-        }
-
-        /// <summary>
         /// Fills in a method's parameters, so a version that takes, say, a resolution still answers
         /// rather than failing on the argument count.
         /// </summary>
@@ -354,7 +350,7 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
 
             if (trackJson == null && binder.Assembly != null)
             {
-                binder.Fail($"the track layout could not be read from Remote Dispatch: {diagnosis}.");
+                Error = $"the track layout could not be read from Remote Dispatch: {diagnosis}.";
             }
 
             MethodInfo? Find(string typeName, string method)
@@ -367,6 +363,27 @@ namespace TwitchChat.Plugins.Bundled.Dispatch
                 (info != null ? found : missing).Add(owner == null ? $"{typeName} (no such type)" : $"{typeName}.{method}");
                 return info;
             }
+        }
+
+        /// <summary>
+        /// One reading of another mod, in flight on a worker thread.
+        /// </summary>
+        private sealed class BackgroundRead<T> where T : class
+        {
+            private readonly Task<T> task;
+
+            internal BackgroundRead(Func<T> work)
+            {
+                task = Task.Run(work);
+            }
+
+            internal bool Done => task.IsCompleted;
+
+            internal T? Result => task.Status == TaskStatus.RanToCompletion ? task.Result : null;
+
+            internal string? Failure => task.IsFaulted
+                ? task.Exception?.GetBaseException().Message ?? "the read failed"
+                : task.IsCanceled ? "the read was cancelled" : null;
         }
     }
 }
