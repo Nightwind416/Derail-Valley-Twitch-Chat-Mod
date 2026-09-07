@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<AssemblyName>TwitchChat.Api</AssemblyName>
+		<RootNamespace>TwitchChat.Api</RootNamespace>
+		<TargetFramework>net48</TargetFramework>
+		<LangVersion>latest</LangVersion>
+		<Nullable>enable</Nullable>
+		<WarningsAsErrors>CS8600;CS8602;CS8603</WarningsAsErrors>
+		<OutputType>Library</OutputType>
+		<CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+		<DebugType>none</DebugType>
+		<!--
+			The version third-party plugins compile against. Bump the minor for additive changes and the
+			major for anything that breaks an existing plugin; TwitchChatPlugins.ApiVersion must match.
+		-->
+		<Version>1.2.0</Version>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Reference Include="UnityEngine">
+			<HintPath>$(DerailValleyManagedAssets)UnityEngine.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="UnityEngine.CoreModule">
+			<HintPath>$(DerailValleyManagedAssets)UnityEngine.CoreModule.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="UnityEngine.UIModule">
+			<HintPath>$(DerailValleyManagedAssets)UnityEngine.UIModule.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="UnityEngine.UI">
+			<HintPath>$(DerailValleyManagedAssets)UnityEngine.UI.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="UnityEngine.TextRenderingModule">
+			<HintPath>$(DerailValleyManagedAssets)UnityEngine.TextRenderingModule.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="UnityModManager">
+			<HintPath>$(DerailValleyManagedAssets)UnityModManager\UnityModManager.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+	</ItemGroup>
+
+	<Target Name="CopyApiToMods" AfterTargets="PostBuildEvent">
+		<MakeDir Directories="$(ModOutputPath)" />
+		<Copy SourceFiles="$(OutputPath)$(AssemblyName).dll" DestinationFolder="$(ModOutputPath)" />
+	</Target>
+</Project>

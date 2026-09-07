@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using UnityEngine;
 using UnityModManagerNet;
 
@@ -17,7 +16,6 @@ namespace TwitchChat
     /// </summary>
     public static class Main
     {
-        public static bool _dispatcherModDetected;
         public static UnityModManager.ModEntry ModEntry { get; private set; } = null!;
         public static string settingsFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Mods", "TwitchChat", "Settings.xml");
         public static string debugLog = string.Empty;
@@ -36,6 +34,11 @@ namespace TwitchChat
 
             try
             {
+                // Before anything else: the assemblies shipped beside this one, TwitchChat.Api among them,
+                // are not on the runtime's usual search path. Nothing above this line may touch a type from
+                // one of them, which is why this is the first statement in the method.
+                Plugins.AssemblyResolver.Install(modEntry.Path);
+
                 // Settings first, so the logger knows the configured debug level
                 Settings.Instance = UnityModManager.ModSettings.Load<Settings>(modEntry) ?? new Settings();
                 OAuthTokenManager.InitialisePhaseFromSettings();
@@ -51,19 +54,9 @@ namespace TwitchChat
                 ModEntry.Logger.Log("[Load] UnityMainThreadDispatcher initialized.");
                 LogEntry(methodName, "UnityMainThreadDispatcher initialized successfully.");
 
-                // Check for RemoteDispatch Mod
-                var remoteDispatchMod = UnityModManager.modEntries.FirstOrDefault(mod => mod.Info.Id == "RemoteDispatch");
-                if (remoteDispatchMod != null)
-                {
-                    ModEntry.Logger.Log("[Load] RemoteDispatch Mod detected.");
-                    LogEntry(methodName, "RemoteDispatch Mod detected and verified.");
-                    _dispatcherModDetected = true;
-                }
-                else
-                {
-                    ModEntry.Logger.Log("[Load] RemoteDispatch Mod not detected.");
-                    LogEntry(methodName, "RemoteDispatch Mod not found - mod will operate in standalone mode.");
-                }
+                // Panels, the mod's own and any contributed by plugins, before the first display is built
+                Plugins.PluginLoader.LoadAll(modEntry.Path);
+                LogEntry(methodName, "Panel registry populated.");
 
                 // Register the mod's toggle and update methods
                 ModEntry.OnToggle = OnToggle;
@@ -239,7 +232,7 @@ namespace TwitchChat
                 if (Settings.Instance.debugLevel == DebugLevel.Off)
                     return;
                 if (Settings.Instance.debugLevel == DebugLevel.Minimal &&
-                    !MinimalDebug.Contains(source))
+                    !MinimalDebug.Contains(source) && !IsPluginSource(source))
                     return;
                 if (Settings.Instance.debugLevel == DebugLevel.Reduced &&
                     ReducedDebug.Contains(source))
@@ -252,29 +245,41 @@ namespace TwitchChat
                 return;
             }
 
-            int retryCount = 3;
-            int delay = 1000; // 1 second
-
-            for (int i = 0; i < retryCount; i++)
+            // No retrying, and above all no sleeping. This is called from the game loop, and a log file
+            // momentarily locked - by a text editor, or by someone reading it while playing - used to
+            // stop the game dead for up to three seconds. A missed line is the cheaper loss by far:
+            // the manager's own log still gets it.
+            try
             {
-                try
-                {
-                    using StreamWriter writer = new(selected_log, true);
-                    string logMessage = selected_log == debugLog ? $"[{source}] {message}" : message;
-                    writer.WriteLine($"{DateTime.Now:HH:mm}: {logMessage}");
-                    return;
-                }
-                catch (IOException ex) when (i < retryCount - 1)
-                {
-                    ModEntry.Logger.Log($"[{source}] Failed to write to log file: {selected_log}. Exception: {ex.Message}. Retrying in {delay}ms...");
-                    Thread.Sleep(delay);
-                }
-                catch (Exception ex)
-                {
-                    ModEntry.Logger.Log($"[{source}] Failed to write to log file: {selected_log}. Exception: {ex.Message}");
-                    return;
-                }
+                using StreamWriter writer = new(selected_log, true);
+                string logMessage = selected_log == debugLog ? $"[{source}] {message}" : message;
+                writer.WriteLine($"{DateTime.Now:HH:mm}: {logMessage}");
             }
+            catch (Exception ex)
+            {
+                ModEntry.Logger.Log($"[{source}] {message}");
+                ModEntry.Logger.Log($"[{source}] Could not write to {selected_log}: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Whether a log source belongs to the plugin machinery, which is always worth logging.
+        /// </summary>
+        /// <remarks>
+        /// A plugin reads another mod's internals, so it is the part of this mod most likely to be broken
+        /// by something outside it, and its failures are the ones a player will be reporting. Filtering
+        /// those out at the default debug level left a player looking at a panel saying it had stopped
+        /// and a log with nothing in it at all.
+        /// <para>
+        /// A prefix rather than a list because a plugin's own log lines are tagged with its id, so the
+        /// full set of sources is not known here.
+        /// </para>
+        /// </remarks>
+        private static bool IsPluginSource(string source)
+        {
+            return source.StartsWith("Plugin", StringComparison.Ordinal)
+                || source.StartsWith("PanelRegistry", StringComparison.Ordinal)
+                || source.StartsWith("PanelDescriptor", StringComparison.Ordinal);
         }
 
         /// <summary>

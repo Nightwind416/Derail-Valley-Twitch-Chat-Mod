@@ -31,6 +31,13 @@ namespace TwitchChat.PanelConstructor
         protected bool showMinimizeButton = true;
 
         /// <summary>
+        /// What the title row reads. Panels that are a class of their own leave this null and are named
+        /// after their type; panels built for someone else's content, where one class serves many names,
+        /// pass their own.
+        /// </summary>
+        private readonly string? titleOverride;
+
+        /// <summary>
         /// Closes the display this panel is on. Created hidden and only revealed for hosts that can be
         /// closed, which is the cab displays; the wrist panel never shows one.
         /// </summary>
@@ -50,11 +57,61 @@ namespace TwitchChat.PanelConstructor
             }
         }
 
-        public virtual void Show() => panelObject.SetActive(true);
-        public virtual void Hide() => panelObject.SetActive(false);
+        /// <summary>
+        /// Whether this panel is the one its display is currently showing. Tracked rather than read back
+        /// off the object, so that hiding every panel when a display is built - which happens before any
+        /// of them has been shown - does not tell them all they have just been hidden.
+        /// </summary>
+        public bool IsVisible { get; private set; }
 
-        protected BasePanel(Transform parent)
+        public virtual void Show()
         {
+            bool wasVisible = IsVisible;
+            IsVisible = true;
+            panelObject.SetActive(true);
+
+            if (!wasVisible)
+            {
+                OnShown();
+            }
+        }
+
+        public virtual void Hide()
+        {
+            bool wasVisible = IsVisible;
+            IsVisible = false;
+            panelObject.SetActive(false);
+
+            if (wasVisible)
+            {
+                OnHidden();
+            }
+        }
+
+        /// <summary>Called when the panel becomes the one on show, but not again while it stays there.</summary>
+        protected virtual void OnShown() { }
+
+        /// <summary>Called when the panel stops being the one on show.</summary>
+        protected virtual void OnHidden() { }
+
+        /// <summary>
+        /// Called once a frame while the panel is the one on show, to refresh whatever it is displaying.
+        /// </summary>
+        /// <param name="deltaTime">Seconds since the last call.</param>
+        public virtual void Tick(float deltaTime) { }
+
+        /// <summary>
+        /// Called when the display this panel is on has been dragged to a new size, in canvas units.
+        /// Panels anchored to their display need do nothing; those that lay themselves out by hand, or
+        /// draw into a texture, want to know.
+        /// </summary>
+        public virtual void OnResize(Vector2 size) { }
+
+        /// <param name="parent">Parent transform to attach the panel to.</param>
+        /// <param name="title">Title row text, or null to name the panel after its type.</param>
+        protected BasePanel(Transform parent, string? title = null)
+        {
+            titleOverride = title;
             CreateBasePanel(parent);
             // Get references from the scrollable area when created
             if (scrollableArea != null)
@@ -75,7 +132,7 @@ namespace TwitchChat.PanelConstructor
         /// <param name="parent">Parent transform to attach the panel to</param>
         protected virtual void CreateBasePanel(Transform parent)
         {
-            panelObject = new GameObject(GetType().Name);
+            panelObject = new GameObject(titleOverride == null ? GetType().Name : $"{titleOverride}Panel");
             panelObject.transform.SetParent(parent, false);
             
             Image panelImage = panelObject.AddComponent<Image>();
@@ -90,7 +147,7 @@ namespace TwitchChat.PanelConstructor
             rectTransform.anchoredPosition = Vector2.zero;
 
             // Create title using Title factory
-            Title.Create(panelObject.transform, GetType().Name.Replace("Panel", ""), 18);
+            Title.Create(panelObject.transform, titleOverride ?? GetType().Name.Replace("Panel", ""), 18);
 
             // Create close button, in the top right corner with the back button beside it
             closeButton = Button.Create(panelObject.transform, " x ", 0, 0, Color.white, () => closeAction?.Invoke());

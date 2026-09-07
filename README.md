@@ -12,6 +12,7 @@ A mod that seamlessly integrates Twitch chat into your Derail Valley gameplay ex
 - **Automated Messages**: Schedule up to five periodic announcements, each posted in the color you pick - normal, blue, green, orange, purple, or your channel accent
 - **Displays You Size Yourself**: Up to 5 panels per locomotive, each dragged to whatever size suits it
 - **Color Customization**: Ability to customize panel, section, and button coloring
+- **Panels From Other Mods**: The displays are open to plugins, so readouts that only ever existed on the flat screen can be put where you can read them in VR. See [docs/PLUGINS.md](docs/PLUGINS.md) if you write mods
 
 ### Upcoming Features (In Development)
 
@@ -19,6 +20,7 @@ A mod that seamlessly integrates Twitch chat into your Derail Valley gameplay ex
 - Message throttling and combining for busy chats
 - User list management (VIP, ignore, etc.)
 - Integration with "Remote Dispatch" mod
+- More detail on the Dispatch Map panel: job list, car list, and throwing junctions from in game
 - Display panel scrolling in VR
 - Editing timed message text and intervals from the in-game panel, instead of the Unity Mod Manager menu or Settings.xml
 
@@ -80,8 +82,44 @@ The menus and chat displays live on world-space panels. There are two kinds of p
 -- Command Messages - Enable/Disable the !info and !command ...commands
 -- Timed Messages - Enable/Disable the timed messages system
 -- Displays - List the displays in this locomotive, lock the position or size of each, and close the ones you are done with
+-- Mods - Panels contributed by other mods, with a switch to turn each one off. Empty until you install one
 -- Wrist Adjust - Move and turn the wrist panel on your hand, or grab it and put it there by hand in VR
 -- Debug - Set debug level, several 'debug and testing' related buttons
+
+### Panels From Other Mods
+
+Several mods show things worth reading while driving, but all of them draw to the flat screen, where
+a headset never sees them. The **Mods** panel, reachable from any Main panel, lists panels that put
+that information on a display instead. Each is drawn from the other mod's own live data, so there is
+nothing to keep in step by hand, and each appears only if the mod it reports on is installed. Switch
+any of them off from the Mods panel or the Unity Mod Manager menu; changes apply the next time you
+board a locomotive.
+
+- **Metrics** — the consist figures from
+  [Unrestored Museum Loco Tracker And Loco Metrics](https://github.com/DmytroShulha/DerailValley_mod_MuseumAndMetrics)
+  by DSH: cars, axles, length, total, tare and cargo mass, braked mass and percentage, handbrakes set,
+  whether the brake line is continuous, rear pipe pressure, locomotives running, and hazmat cars, with
+  bars for throttle, train brake, loco brake and dynamic brake. It honours that mod's own settings for
+  which figures to show, so the panel matches its overlay
+
+- **AI Traffic** — the debug overlay from [AI Traffic](https://github.com/Killermops27/dv-ai-traffic) by
+  Killermops27, which is otherwise flat-screen only. How the traffic is set up and how many trains are
+  running, then a scrolling list of every AI train: its ID and state, speed against target speed,
+  throttle and brake, where it is and where it is going, and how far to the next signal or obstacle.
+  Four switches along the top turn that mod's own displays on and off - loco nametags, route lines,
+  signal tags and its screen HUD - so the three that are drawn in the world, and are therefore worth
+  having in VR, can be reached without taking the headset off
+
+- **Dispatch Map** — a live map of the railway from
+  [Remote Dispatch](https://github.com/mspielberg/dv-remote-dispatch) by mspielberg. That mod shows all
+  of this already, but as a web page in a browser, which is exactly what someone in a headset has not
+  got. The panel draws the track, the junctions and which way each is thrown, every car, every
+  locomotive and every player, with zoom, panning, and a Follow mode that keeps you in the middle. It
+  reads the mod's data directly, so there is no port to open, no password, and no need to have the web
+  server switched on. It is an overview: no job list, no car list, no locomotive control - use the web
+  page for those
+
+If you write mods yourself, the displays are open to yours as well: see [docs/PLUGINS.md](docs/PLUGINS.md).
 
 - Buttons can be interacted with in both VR and non-VR modes
 - Top left panel buttons will 'minimize' the displayed panel
@@ -176,6 +214,15 @@ Access advanced options by expanding the "Debug and Troubleshooting" section in 
 - [GitHub Repository](https://github.com/Nightwind416/Derail-Valley-Twitch-Chat-Mod)
 
 ## Version History
+
+### 3.5.0 (September 6, 2026)
+
+- The displays are open to panels from other mods. Several mods work out things worth knowing while driving and then draw them to the flat screen, where a headset never sees them; those readouts can now live on a cab display or the wrist panel instead. A new **Mods** panel, reachable from any Main panel, lists what is installed with a switch to turn each one off
+- **Metrics** panel, showing the consist figures from DSH's Loco Metrics mod: cars, axles, length, mass, braked mass and percentage, handbrakes, brake line and rear pipe pressure, with bars for throttle and the brakes. It honours that mod's own settings for which figures to show
+- **AI Traffic** panel, showing what every AI train is doing: state, speed against target, throttle and brake, where it is and where it is going, and how far to the next signal. Four switches turn that mod's own loco nametags, route lines, signal tags and HUD on and off, so the ones drawn in the world can be reached without taking the headset off
+- **Dispatch Map** panel, a live map of the railway drawn from Remote Dispatch's data: track, junctions and which way each is thrown, every car, every locomotive and every player, with zoom, panning and a Follow mode. It reads the mod in process, so there is no port to open and no need to have its web server switched on
+- Each panel appears only if the mod it reports on is installed, and each is read from that mod's own live data rather than reimplemented, so nothing has to be kept in step by hand
+- If you write mods yourself, this is a documented, public plugin API rather than three special cases: see [docs/PLUGINS.md](docs/PLUGINS.md)
 
 ### 3.4.2 (September 4, 2026)
 

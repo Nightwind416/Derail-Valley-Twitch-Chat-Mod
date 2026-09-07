@@ -1,36 +1,27 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using TwitchChat.PanelConstructor;
 using TwitchChat.PanelDisplays;
-using TwitchChat.PanelMenus;
 using UnityEngine;
 
 namespace TwitchChat
 {
     /// <summary>
     /// A surface that carries the mod's full panel stack: one world-space canvas plus an instance of
-    /// every menu and display panel. Concrete hosts decide where the canvas lives (the locomotive cab
+    /// every panel the registry offers. Concrete hosts decide where the canvas lives (the locomotive cab
     /// or the player's wrist) and where the active panel choice is persisted.
     /// </summary>
+    /// <remarks>
+    /// A host holds its panels by id rather than as a property each, so a panel contributed by a plugin
+    /// rides along with the mod's own without anything here knowing about it.
+    /// </remarks>
     public abstract class PanelHost
     {
+        private readonly Dictionary<string, BasePanel> panels = new();
+
         public string Name { get; }
         public GameObject? MenuCanvas { get; set; }
-
-        // Panel Menus
-        public MainPanel? MainPanel { get; set; }
-        public AuthenticationPanel? AuthenticationPanel { get; set; }
-        public StatusPanel? StatusPanel { get; set; }
-        public NotificationsPanel? NotificationsPanel { get; set; }
-        public StandardMessagesPanel? StandardMessagesPanel { get; set; }
-        public CommandMessagesPanel? CommandMessagesPanel { get; set; }
-        public TimedMessagesPanel? TimedMessagesPanel { get; set; }
-        public Config1Panel? Config1Panel { get; set; }
-        public Config2Panel? Config2Panel { get; set; }
-        public DisplaysPanel? DisplaysPanel { get; set; }
-        public WristAdjustPanel? WristAdjustPanel { get; set; }
-        public DebugPanel? DebugPanel { get; set; }
-
-        // Panel Displays
-        public ChatPanel? ChatPanel { get; set; }
 
         protected PanelHost(string name)
         {
@@ -40,25 +31,37 @@ namespace TwitchChat
         /// <summary>Name of the panel currently shown on this host. Persisted in settings.</summary>
         public abstract string ActivePanel { get; set; }
 
+        /// <summary>Every panel built for this host, in the order the registry offered them.</summary>
+        public IEnumerable<BasePanel> Panels => panels.Values;
+
+        /// <summary>Adds a panel under the id displays remember it by.</summary>
+        public void AddPanel(string id, BasePanel panel) => panels[id] = panel;
+
+        /// <summary>Forgets every panel, for when the canvas carrying them has gone.</summary>
+        public void ClearPanels() => panels.Clear();
+
+        /// <summary>The panel with this id, or null if this host has not got one.</summary>
+        public BasePanel? GetPanel(string id) => panels.TryGetValue(id, out BasePanel? panel) ? panel : null;
+
+        /// <summary>
+        /// The panel of a given type. Used by the few places that need to say something specific to one
+        /// panel, such as handing a chat message to the chat panel.
+        /// </summary>
+        public T? Get<T>() where T : BasePanel => panels.Values.OfType<T>().FirstOrDefault();
+
+        /// <summary>The panel that shows incoming chat, if this host has one.</summary>
+        public ChatPanel? ChatPanel => Get<ChatPanel>();
+
         /// <summary>
         /// Puts a close button on every panel of this host. Hosts that cannot be closed, such as the wrist
         /// panel, simply never call this and their close buttons stay hidden.
         /// </summary>
         public void SetCloseAction(Action? action)
         {
-            MainPanel?.SetCloseAction(action);
-            AuthenticationPanel?.SetCloseAction(action);
-            StatusPanel?.SetCloseAction(action);
-            NotificationsPanel?.SetCloseAction(action);
-            StandardMessagesPanel?.SetCloseAction(action);
-            CommandMessagesPanel?.SetCloseAction(action);
-            TimedMessagesPanel?.SetCloseAction(action);
-            Config1Panel?.SetCloseAction(action);
-            Config2Panel?.SetCloseAction(action);
-            DisplaysPanel?.SetCloseAction(action);
-            WristAdjustPanel?.SetCloseAction(action);
-            DebugPanel?.SetCloseAction(action);
-            ChatPanel?.SetCloseAction(action);
+            foreach (BasePanel panel in panels.Values)
+            {
+                panel.SetCloseAction(action);
+            }
         }
     }
 

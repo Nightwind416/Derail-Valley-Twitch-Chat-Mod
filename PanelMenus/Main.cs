@@ -43,8 +43,11 @@ namespace TwitchChat.PanelMenus
             CreateMenuButton("Config1", 210, -35); // Offset to the left
             CreateMenuButton("Config2", 210, 35);  // Offset to the right
 
-            // Chat, sized by dragging the display it is on rather than by picking a preset
-            CreateMenuButton("Chat", 235);
+            // Chat, sized by dragging the display it is on rather than by picking a preset, beside the way
+            // in to whatever panels other mods have contributed. This menu has no room to grow, so plugin
+            // panels are listed on the Mods panel rather than added here one by one
+            CreateMenuButton("Chat", 235, -35);
+            CreateMenuButton("Mods", 235, 35);
 
             // Cab display controls side by side
             CreateActionButton("Place Display", 260, -42, () => MenuManager.Instance.PlaceCabDisplay());
