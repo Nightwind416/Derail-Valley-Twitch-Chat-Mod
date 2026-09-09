@@ -92,7 +92,6 @@ else when the player changes the colour settings.
 Widgets take their colours from the panel they are built on, which the player can set per display, so
 build under `Root` or `Content` and leave them there. A widget reparented out to the canvas is no
 longer on a panel and will keep whatever colour it was born with.
-
 ## Rules worth knowing
 
 **Everything is on Unity's main thread.** `CreateContent`, `Tick`, `OnShow`, `OnHide` and `OnResize`
@@ -140,7 +139,6 @@ which hides every panel on it, so your content gets `OnHide` and stops being tic
 it again. That is the contract you already have for a panel that is not the one on show; folding is
 simply another way to get there. You are never asked to lay out for the strip: its size is the mod's
 business, not yours.
-
 **You get one content object per display.** A player can have up to five displays in a locomotive
 plus the wrist panel, so `CreateContent` may be called six times and all six results are alive at
 once. Keep per-panel state in the content object, not in the plugin.

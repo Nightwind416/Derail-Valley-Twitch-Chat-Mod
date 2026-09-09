@@ -54,7 +54,6 @@ namespace TwitchChat.Plugins
         /// arriving at an editor with nothing to edit.
         /// </summary>
         public bool Transient { get; }
-
         /// <summary>
         /// Whether a display should carry this panel. Plugin panels the player has switched off in the
         /// Mods menu, and those whose mod is not installed, are left out entirely rather than shown empty.
@@ -175,7 +174,6 @@ namespace TwitchChat.Plugins
                 isPlugin: false,
                 (parent, _) => new PanelMenus.AppearancePanel(parent),
                 transient: true));
-
             static void Add(string id, Func<Transform, PanelHost?, BasePanel> create)
             {
                 Register(new PanelDescriptor(id, id, isPlugin: false, create));

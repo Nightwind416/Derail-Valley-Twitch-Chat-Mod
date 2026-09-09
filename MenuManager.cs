@@ -1326,7 +1326,6 @@ namespace TwitchChat
 
                 // The x closes the wrist panel from wherever the player is, rather than only from Main
                 host.SetCloseAction(() => SetWristExpanded(false));
-
                 PanelConstructor.BasePanel? mainPanel = host.GetPanel("Main");
                 if (mainPanel != null)
                 {

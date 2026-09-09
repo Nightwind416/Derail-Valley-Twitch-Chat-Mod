@@ -760,7 +760,6 @@ namespace TwitchChat
                 Main.LogEntry("Load", "Settings file brought up to date: display ids filled in.");
             }
         }
-
         private List<string> DisabledPanelIds()
         {
             return string.IsNullOrWhiteSpace(disabledPanels)

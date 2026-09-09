@@ -31,20 +31,6 @@ namespace TwitchChat
         /// <summary>Name of the panel currently shown on this host. Persisted in settings.</summary>
         public abstract string ActivePanel { get; set; }
 
-        /// <summary>
-        /// What this host's saved appearance is filed under. A cab display uses the id on its slot, so its
-        /// colours belong to that display on that locomotive; the wrist panel, of which there is only ever
-        /// one, uses a fixed name.
-        /// </summary>
-        public abstract string AppearanceKey { get; }
-
-        /// <summary>
-        /// Folded away to its title strip, with every panel hidden. Lives on the host rather than on a
-        /// panel so that it survives switching between panels, which is the state the whole display is in
-        /// rather than something one panel is doing.
-        /// </summary>
-        public virtual bool Minimized { get; set; }
-
         /// <summary>Every panel built for this host, in the order the registry offered them.</summary>
         public IEnumerable<BasePanel> Panels => panels.Values;
 
@@ -65,6 +51,20 @@ namespace TwitchChat
 
         /// <summary>The panel that shows incoming chat, if this host has one.</summary>
         public ChatPanel? ChatPanel => Get<ChatPanel>();
+
+        /// <summary>
+        /// What this host's saved appearance is filed under. A cab display uses the id on its slot, so its
+        /// colours belong to that display on that locomotive; the wrist panel, of which there is only ever
+        /// one, uses a fixed name.
+        /// </summary>
+        public abstract string AppearanceKey { get; }
+
+        /// <summary>
+        /// Folded away to its title strip, with every panel hidden. Lives on the host rather than on a
+        /// panel so that it survives switching between panels, which is the state the whole display is in
+        /// rather than something one panel is doing.
+        /// </summary>
+        public virtual bool Minimized { get; set; }
 
         /// <summary>
         /// Puts a close button on every panel of this host: on a cab display it closes the display, on the

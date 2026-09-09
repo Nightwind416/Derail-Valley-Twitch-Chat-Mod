@@ -19,6 +19,7 @@ A mod that seamlessly integrates Twitch chat into your Derail Valley gameplay ex
 - Subscriber/Follower alerts and notifications
 - Message throttling and combining for busy chats
 - User list management (VIP, ignore, etc.)
+- Integration with "Remote Dispatch" mod
 - More detail on the Dispatch Map panel: job list, car list, and throwing junctions from in game
 - Display panel scrolling in VR
 - Editing timed message text and intervals from the in-game panel, instead of the Unity Mod Manager menu or Settings.xml
@@ -226,7 +227,6 @@ Access advanced options by expanding the "Debug and Troubleshooting" section in 
 - Panels no longer come apart when they are folded and unfolded: the close button on the wrist panel stays hidden, and panels that were deliberately hiding part of themselves keep hiding it
 - **Colours can now be set for one panel on one display.** The **≡** button on any title row opens the colours of that panel on that display, so the chat readout can be more transparent on your hand than the menus are in the cab. Anything you have not changed follows the shared colours on the Config panels, as it always did, and there is a button to put a panel back on them
 - Colours stick where they used to be lost: touching a button in VR no longer throws away the colour you chose, toggles are coloured at all now, and rows rebuilt by the Displays, Mods and mod panels come up in the right colours instead of the defaults
-
 ### 3.5.0 (September 6, 2026)
 
 - The displays are open to panels from other mods. Several mods work out things worth knowing while driving and then draw them to the flat screen, where a headset never sees them; those readouts can now live on a cab display or the wrist panel instead. A new **Mods** panel, reachable from any Main panel, lists what is installed with a switch to turn each one off
