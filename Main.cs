@@ -41,6 +41,7 @@ namespace TwitchChat
 
                 // Settings first, so the logger knows the configured debug level
                 Settings.Instance = UnityModManager.ModSettings.Load<Settings>(modEntry) ?? new Settings();
+                Settings.Instance.UpgradeAfterLoad(modEntry);
                 OAuthTokenManager.InitialisePhaseFromSettings();
 
                 // Log files next, so every LogEntry from here on has somewhere to go

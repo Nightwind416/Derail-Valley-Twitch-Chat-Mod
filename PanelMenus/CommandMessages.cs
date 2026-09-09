@@ -97,14 +97,5 @@ namespace TwitchChat.PanelMenus
             if (infoMessage != null) infoMessage.text = Settings.Instance.infoMessage;
         }
 
-        /// <summary>
-        /// Controls the visibility of the panel and its sections.
-        /// </summary>
-        public override void Show()
-        {
-            base.Show();
-            commandsSettingsSection?.SetActive(!isMinimized);
-            // customCommandsSection?.SetActive(!isMinimized);
-        }
     }
 }

@@ -162,14 +162,5 @@ namespace TwitchChat.PanelMenus
                 disconnectMessage.text = Settings.Instance.disconnectMessage;
         }
 
-        /// <summary>
-        /// Controls the visibility of the panel and its sections.
-        /// </summary>
-        public override void Show()
-        {
-            base.Show();
-            connectDisconnectSection?.SetActive(!isMinimized);
-            // newFollowerSubscriberSection?.SetActive(!isMinimized);
-        }
     }
 }

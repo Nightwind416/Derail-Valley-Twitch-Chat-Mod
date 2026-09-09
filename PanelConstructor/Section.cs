@@ -23,7 +23,7 @@ namespace TwitchChat.PanelConstructor
             section.transform.SetParent(parent, false);
 
             Image sectionImage = section.AddComponent<Image>();
-            sectionImage.color = new Color(0, 0, 0, 0.5f);
+            sectionImage.color = PanelTheme.SectionColorFor(parent);
 
             RectTransform rect = section.GetComponent<RectTransform>();
             rect.anchorMin = new Vector2(0, 1);

@@ -18,17 +18,60 @@ namespace TwitchChat.PanelConstructor
         protected RectTransform contentRectTransform;
         protected ScrollRect scrollRect;
 
-        // Add fields for minimize functionality
-        protected bool isMinimized = false;
-        protected Vector2 originalSize;
+        /// <summary>Folds the whole display away to its title strip. Only cab displays can be folded.</summary>
         protected UnityEngine.UI.Button minimizeButton;
+
+        /// <summary>Opens the colours of this panel on this display. Hidden on the template copy.</summary>
+        protected UnityEngine.UI.Button? gearButton;
 
         // Add delegate and event for back button
         public delegate void OnBackButtonClickedHandler();
         public event OnBackButtonClickedHandler OnBackButtonClicked;
 
-        protected bool showBackButton = true;
-        protected bool showMinimizeButton = true;
+        /// <summary>The display this panel belongs to, or null for the hidden template copy.</summary>
+        public PanelHost? Host { get; private set; }
+
+        /// <summary>The id the registry knows this panel by, which its saved colours are filed under.</summary>
+        public string PanelId { get; private set; } = string.Empty;
+
+        /// <summary>
+        /// Tells a panel which display it is on and what it is called. Everything that has to know one panel
+        /// from another - which display's colours to wear, which display to fold away - waits on this, so it
+        /// happens as soon as the display has taken the panel and before anything is shown.
+        /// </summary>
+        public virtual void Bind(PanelHost host, string id)
+        {
+            Host = host;
+            PanelId = id;
+
+            // Only a cab display has anything to fold away to; the wrist panel already folds to its button
+            minimizeButton.gameObject.SetActive(host is CabDisplayHost);
+            gearButton?.gameObject.SetActive(true);
+
+            ApplyAppearance();
+        }
+
+        /// <summary>
+        /// Paints this panel in the colours saved for it on this display, or the shared defaults if it has
+        /// none of its own.
+        /// </summary>
+        public void ApplyAppearance()
+        {
+            PanelTheme? theme = panelObject.GetComponent<PanelTheme>();
+            if (theme == null)
+            {
+                return;
+            }
+
+            PanelAppearance appearance = Host == null
+                ? Settings.Instance.EffectiveAppearance(string.Empty, PanelId)
+                : Settings.Instance.EffectiveAppearance(Host.AppearanceKey, PanelId);
+
+            theme.PanelColor = appearance.panelColor;
+            theme.SectionColor = appearance.sectionColor;
+            theme.ButtonColor = appearance.buttonColor;
+            theme.Repaint(panelObject);
+        }
 
         /// <summary>
         /// What the title row reads. Panels that are a class of their own leave this null and are named
@@ -134,10 +177,17 @@ namespace TwitchChat.PanelConstructor
         {
             panelObject = new GameObject(titleOverride == null ? GetType().Name : $"{titleOverride}Panel");
             panelObject.transform.SetParent(parent, false);
-            
+
+            // Before anything is built on it: the widget factories walk up to this to find out what colour
+            // to be, so a panel without one would build itself in the defaults and stay that way
+            PanelTheme theme = panelObject.AddComponent<PanelTheme>();
+            theme.PanelColor = Settings.Instance.panelColor;
+            theme.SectionColor = Settings.Instance.sectionColor;
+            theme.ButtonColor = Settings.Instance.buttonColor;
+
             Image panelImage = panelObject.AddComponent<Image>();
-            panelImage.color = Settings.Instance.panelColor;
-            
+            panelImage.color = theme.PanelColor;
+
             rectTransform = panelObject.GetComponent<RectTransform>();
             rectTransform.anchorMin = new Vector2(0, 0);
             rectTransform.anchorMax = new Vector2(1, 1);
@@ -164,12 +214,22 @@ namespace TwitchChat.PanelConstructor
             backRect.anchorMax = new Vector2(1, 1);
             backRect.pivot = new Vector2(1, 1);
 
-            // Create minimize button
+            // Create minimize button, shown by Bind only on the hosts that can be folded away
             minimizeButton = Button.Create(panelObject.transform, " − ", 0, 0, Color.white, OnMinimizeClick);
             RectTransform minimizeRect = minimizeButton.GetComponent<RectTransform>();
             minimizeRect.anchorMin = new Vector2(0, 1);
             minimizeRect.anchorMax = new Vector2(0, 1);
             minimizeRect.pivot = new Vector2(0, 1);
+            minimizeButton.gameObject.SetActive(false);
+
+            // Colours for this panel on this display, beside the minimize button. Three bars rather than a
+            // cogwheel because the built-in font has no cogwheel and would draw nothing at all
+            gearButton = Button.Create(panelObject.transform, " ≡ ", 26, 0, Color.white, OnGearClick, 18);
+            RectTransform gearRect = gearButton.GetComponent<RectTransform>();
+            gearRect.anchorMin = new Vector2(0, 1);
+            gearRect.anchorMax = new Vector2(0, 1);
+            gearRect.pivot = new Vector2(0, 1);
+            gearButton.gameObject.SetActive(false); // shown by Bind; the template copy has no display to edit
         }
 
         /// <summary>
@@ -368,53 +428,28 @@ namespace TwitchChat.PanelConstructor
         }
 
         /// <summary>
-        /// Handles the minimize/maximize button click event.
-        /// Toggles between collapsed and expanded panel states.
+        /// Folds the whole display away to its title strip.
         /// </summary>
+        /// <remarks>
+        /// The panel does not fold itself. Minimizing is something the display does - its size, its grab
+        /// bars and every panel on it are all involved - so the panel only asks, and the one place that
+        /// knows what a folded display looks like does the rest.
+        /// </remarks>
         protected virtual void OnMinimizeClick()
         {
-            if (!isMinimized)
+            if (Host is CabDisplayHost display)
             {
-                // Store original size and anchors before minimizing
-                originalSize = rectTransform.sizeDelta;
+                MenuManager.Instance.SetDisplayMinimized(display, true);
+            }
+        }
 
-                // Collapse the panel, but keep title and buttons visible
-                foreach (Transform child in panelObject.transform)
-                {
-                    // Skip the minimize button, title, and back button
-                    if (child.gameObject != minimizeButton.gameObject && 
-                        !child.name.Equals("Title") && 
-                        !child.name.Equals(" < Button"))
-                    {
-                        child.gameObject.SetActive(false);
-                    }
-                }
-                
-                // Set the height to exactly 30 pixels from the top
-                rectTransform.anchorMin = new Vector2(0, 1);
-                rectTransform.anchorMax = new Vector2(1, 1);
-                rectTransform.offsetMin = new Vector2(rectTransform.offsetMin.x, -30);
-                rectTransform.offsetMax = new Vector2(rectTransform.offsetMax.x, 0);
-                
-                minimizeButton.GetComponentInChildren<Text>().text = " + ";
-            }
-            else
+        /// <summary>Opens the colours of this panel on this display.</summary>
+        protected virtual void OnGearClick()
+        {
+            if (Host != null)
             {
-                foreach (Transform child in panelObject.transform)
-                {
-                    child.gameObject.SetActive(true);
-                }
-                
-                // Restore original anchors and position
-                rectTransform.anchorMin = new Vector2(0, 0);
-                rectTransform.anchorMax = new Vector2(1, 1);
-                rectTransform.offsetMin = Vector2.zero;
-                rectTransform.offsetMax = Vector2.zero;
-                
-                minimizeButton.GetComponentInChildren<Text>().text = " − ";
+                MenuManager.Instance.OpenAppearance(Host, PanelId);
             }
-            
-            isMinimized = !isMinimized;
         }
     }
 }

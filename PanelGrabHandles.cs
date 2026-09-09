@@ -153,7 +153,10 @@ namespace TwitchChat
                 return;
             }
 
-            if (!Settings.Instance.cabDisplayGrabHandles)
+            // A folded display has nothing worth framing, and bars around a title strip would be something
+            // to bump into for no reason. The check belongs here rather than outside, because the bars are
+            // put back on show below on every frame the setting allows them.
+            if (!Settings.Instance.cabDisplayGrabHandles || host.Minimized)
             {
                 Finish();
                 SetBarsVisible(false);
@@ -348,16 +351,35 @@ namespace TwitchChat
         /// </summary>
         private void ApplySize(Vector2 size)
         {
-            int fixedEdge = OppositeBar(activeBar);
+            SetSize(size, OppositeBar(activeBar));
+            host!.Slot.panelSize = size;
+        }
+
+        /// <summary>
+        /// Resizes the canvas and its panel with one named edge left where it is. Shared with folding a
+        /// display away, which keeps the top edge so the title stays put; that does not go through
+        /// <see cref="ApplySize"/> because the size it sets is not a size the player chose and must not be
+        /// saved over the one they did.
+        /// </summary>
+        /// <param name="size">The new size in canvas units.</param>
+        internal void SetSizeKeepingTop(Vector2 size) => SetSize(size, Top);
+
+        /// <param name="size">The new size in canvas units.</param>
+        /// <param name="fixedEdge">The edge to hold still.</param>
+        private void SetSize(Vector2 size, int fixedEdge)
+        {
+            if (canvasRect == null || panelRect == null)
+            {
+                return;
+            }
+
             Vector3 before = EdgeWorldPoint(fixedEdge);
 
-            canvasRect!.sizeDelta = size;
-            panelRect!.sizeDelta = size;
+            canvasRect.sizeDelta = size;
+            panelRect.sizeDelta = size;
 
             Vector3 after = EdgeWorldPoint(fixedEdge);
             transform.position += before - after;
-
-            host!.Slot.panelSize = size;
         }
 
         // ------------------------------------------------------------------

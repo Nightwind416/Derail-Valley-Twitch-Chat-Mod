@@ -24,16 +24,22 @@ namespace TwitchChat.Plugins
         /// <param name="isPlugin">True for panels contributed from outside the mod.</param>
         /// <param name="create">Builds an instance of the panel under the given parent.</param>
         /// <param name="available">Whether the panel should exist at all; defaults to always.</param>
+        /// <param name="transient">
+        /// True for a panel that is only ever reached from somewhere else and should not be remembered as
+        /// the panel a display was last showing.
+        /// </param>
         public PanelDescriptor(
             string id,
             string title,
             bool isPlugin,
             Func<Transform, PanelHost?, BasePanel> create,
-            Func<bool>? available = null)
+            Func<bool>? available = null,
+            bool transient = false)
         {
             Id = id;
             Title = title;
             IsPlugin = isPlugin;
+            Transient = transient;
             this.create = create;
             this.available = available ?? (() => true);
         }
@@ -42,6 +48,12 @@ namespace TwitchChat.Plugins
         public string Title { get; }
         public bool IsPlugin { get; }
 
+        /// <summary>
+        /// Not worth remembering as a display's active panel. The colours panel is one: it is opened from
+        /// another panel's gear and belongs to that panel, so coming back to a display left on it would mean
+        /// arriving at an editor with nothing to edit.
+        /// </summary>
+        public bool Transient { get; }
         /// <summary>
         /// Whether a display should carry this panel. Plugin panels the player has switched off in the
         /// Mods menu, and those whose mod is not installed, are left out entirely rather than shown empty.
@@ -155,6 +167,13 @@ namespace TwitchChat.Plugins
             Add("Wrist Adjust", (parent, _) => new PanelMenus.WristAdjustPanel(parent));
             Add("Debug", (parent, _) => new PanelMenus.DebugPanel(parent));
 
+            // Reached only from the gear on another panel's title row, so it has no button in the main menu
+            Register(new PanelDescriptor(
+                "Appearance",
+                "Appearance",
+                isPlugin: false,
+                (parent, _) => new PanelMenus.AppearancePanel(parent),
+                transient: true));
             static void Add(string id, Func<Transform, PanelHost?, BasePanel> create)
             {
                 Register(new PanelDescriptor(id, id, isPlugin: false, create));

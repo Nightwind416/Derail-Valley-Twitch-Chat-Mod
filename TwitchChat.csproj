@@ -9,7 +9,7 @@
 		<!-- DerailValleyManagedAssets and ModOutputPath come from Directory.Build.props, shared with the API project -->
 		<CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
 		<DebugType>none</DebugType>
-		<ModVersion>3.5.0</ModVersion>
+		<ModVersion>3.6.0</ModVersion>
 		<ModAuthor>Nightwind416</ModAuthor>
 		<GameVersion>build 99</GameVersion>
 		<EntryMethod>TwitchChat.Main.Load</EntryMethod>

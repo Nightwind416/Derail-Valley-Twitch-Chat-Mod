@@ -60,10 +60,22 @@ namespace TwitchChat
         public bool processOwn = true;
         public bool processDuplicates = false;
         
-        // Panel UI Settings
+        // Panel UI Settings. These are the defaults every panel starts from; a panel the player has given
+        // colours of its own has an entry in panelAppearances instead.
         public Color panelColor = new(0, 0, 0, 0.3f);
         public Color sectionColor = new(0, 0, 0, 0.1f);
         public Color buttonColor = new(0, 0, 0, 0.5f);
+
+        /// <summary>Default panel colour, shared by the reset buttons and by a panel that has no entry.</summary>
+        public static readonly Color DefaultPanelColor = new(0, 0, 0, 0.3f);
+        public static readonly Color DefaultSectionColor = new(0, 0, 0, 0.1f);
+        public static readonly Color DefaultButtonColor = new(0, 0, 0, 0.5f);
+
+        /// <summary>
+        /// Colours the player has set for one panel on one display. Only the pairs they have actually
+        /// changed are in here; everything else falls back to the three colours above.
+        /// </summary>
+        public List<PanelAppearance> panelAppearances = new();
 
         // Cab Display and Wrist Panel Settings
         public bool cabDisplayVisible = true;
@@ -86,6 +98,25 @@ namespace TwitchChat
         public string wristPanel = "Main";
         public bool wristPanelOnLeftHand = true;
         public float wristPanelScale = 0.6f;
+
+        /// <summary>
+        /// Open and close the wrist panel with a controller button rather than by pressing a button on the
+        /// hand. This is the way in now; the button on the hand is kept for anyone whose controller or
+        /// bindings do not give them a spare press.
+        /// </summary>
+        public bool wristToggleEnabled = true;
+
+        /// <summary>Which hand's button opens the panel. The left one by default, whichever hand wears it.</summary>
+        public bool wristToggleOnLeftHand = true;
+
+        /// <summary>
+        /// Which button that is, by name rather than as an enum, so a value this version does not know
+        /// falls back to the thumbstick instead of refusing to load the settings file at all.
+        /// </summary>
+        public string wristToggleButton = "Thumbstick";
+
+        /// <summary>The button on the back of the hand, which the controller button has replaced.</summary>
+        public bool wristHandButton = false;
 
         /// <summary>
         /// Where the open menus sit, measured from where the mod puts them on the back of the hand, in metres:
@@ -175,6 +206,22 @@ namespace TwitchChat
 
         private void CycleColor(ref int colorIndex) {
             colorIndex = (colorIndex + 1) % ColorOptions.Length;
+        }
+
+        /// <summary>
+        /// The controller buttons the wrist panel can be opened with, in the order the settings button
+        /// cycles through them. Menu is last because on most systems that is the headset's own button.
+        /// </summary>
+        public static readonly string[] WristToggleButtons = ["Thumbstick", "A", "B", "Menu"];
+
+        /// <summary>The configured button, or the thumbstick if the settings file names one we do not know.</summary>
+        public string WristToggleButtonName =>
+            Array.IndexOf(WristToggleButtons, wristToggleButton) >= 0 ? wristToggleButton : WristToggleButtons[0];
+
+        private void CycleWristToggleButton()
+        {
+            int index = Array.IndexOf(WristToggleButtons, WristToggleButtonName);
+            wristToggleButton = WristToggleButtons[(index + 1) % WristToggleButtons.Length];
         }
 
         public Color GetAnnouncementColor(int colorIndex) {
@@ -463,6 +510,27 @@ namespace TwitchChat
                     }
                 GUILayout.EndHorizontal();
                 wristPanelScale = SliderRow("Wrist panel scale", wristPanelScale, 0.2f, 1.5f, "0.00");
+                wristToggleEnabled = GUILayout.Toggle(wristToggleEnabled, " Open and close the wrist panel with a controller button");
+                GUI.enabled = wristToggleEnabled;
+                GUILayout.BeginHorizontal();
+                    GUILayout.Label("    Button hand:", GUILayout.Width(160));
+                    if (GUILayout.Button(wristToggleOnLeftHand ? "Left" : "Right", GUILayout.Width(80)))
+                    {
+                        wristToggleOnLeftHand = !wristToggleOnLeftHand;
+                    }
+                    GUILayout.Label("Button:", GUILayout.Width(60));
+                    if (GUILayout.Button(WristToggleButtonName, GUILayout.Width(100)))
+                    {
+                        CycleWristToggleButton();
+                    }
+                GUILayout.EndHorizontal();
+                GUI.enabled = true;
+                GUILayout.Label("    The game may use that button for something of its own, in which case both things happen at once.");
+                GUILayout.Label("    If that is a nuisance, pick A or B, or the other hand. Menu is the headset's own button on most systems.");
+                wristHandButton = GUILayout.Toggle(wristHandButton, " Also show the button on the back of the hand");
+                GUILayout.Label("    The button comes back on its own if the controller button above is switched off, so there is");
+                GUILayout.Label("    always some way to open the panel.");
+                GUILayout.Space(5);
                 GUILayout.Label("    The panel sits on the back of the hand by itself. To move it, use the in-game Wrist Adjust panel,");
                 GUILayout.Label("    which places the button and the open menus separately and can be reached from any Main panel.");
                 if (GUILayout.Button("Reset wrist panel to defaults", GUILayout.Width(200)))
@@ -582,6 +650,116 @@ namespace TwitchChat
             RequestSave();
         }
 
+        // ------------------------------------------------------------------
+        // Per-display, per-panel colours
+        // ------------------------------------------------------------------
+
+        /// <summary>
+        /// The colours saved for one panel on one display, or null if the player has never changed them
+        /// and it should follow the defaults.
+        /// </summary>
+        public PanelAppearance? FindAppearance(string displayId, string panelId)
+        {
+            return panelAppearances.FirstOrDefault(a => a.displayId == displayId && a.panelId == panelId);
+        }
+
+        /// <summary>
+        /// The colours to paint one panel with: its own if it has any, the shared defaults if not. The
+        /// result is a copy, so painting with it can never write back into the saved entry by accident.
+        /// </summary>
+        public PanelAppearance EffectiveAppearance(string displayId, string panelId)
+        {
+            PanelAppearance? saved = FindAppearance(displayId, panelId);
+
+            return new PanelAppearance
+            {
+                displayId = displayId,
+                panelId = panelId,
+                panelColor = saved?.panelColor ?? panelColor,
+                sectionColor = saved?.sectionColor ?? sectionColor,
+                buttonColor = saved?.buttonColor ?? buttonColor
+            };
+        }
+
+        /// <summary>
+        /// The entry for one panel on one display, creating it from the current defaults if this is the
+        /// first change. Having an entry at all is what makes a panel stop following the defaults.
+        /// </summary>
+        public PanelAppearance GetOrAddAppearance(string displayId, string panelId)
+        {
+            PanelAppearance? existing = FindAppearance(displayId, panelId);
+            if (existing != null)
+            {
+                return existing;
+            }
+
+            PanelAppearance created = new()
+            {
+                displayId = displayId,
+                panelId = panelId,
+                panelColor = panelColor,
+                sectionColor = sectionColor,
+                buttonColor = buttonColor
+            };
+
+            panelAppearances.Add(created);
+            RequestSave();
+            return created;
+        }
+
+        /// <summary>Puts one panel back on the shared defaults by forgetting its own colours.</summary>
+        public void ResetAppearance(string displayId, string panelId)
+        {
+            if (panelAppearances.RemoveAll(a => a.displayId == displayId && a.panelId == panelId) > 0)
+            {
+                RequestSave();
+            }
+        }
+
+        /// <summary>Forgets every colour saved for one display, for when that display is closed.</summary>
+        public void ForgetAppearances(string displayId)
+        {
+            if (panelAppearances.RemoveAll(a => a.displayId == displayId) > 0)
+            {
+                RequestSave();
+            }
+        }
+
+        /// <summary>
+        /// Brings a settings file written by an earlier version up to date, and tidies away anything left
+        /// over. Called once, immediately after the file is read.
+        /// </summary>
+        /// <remarks>
+        /// The display ids are the important part: they are what a panel's colours are filed under, so they
+        /// have to exist and have to stay the same. A pose read from a file that predates them keeps the id
+        /// its field initializer minted, and this writes that out at once rather than letting it be minted
+        /// afresh on every launch.
+        /// </remarks>
+        public void UpgradeAfterLoad(UnityModManager.ModEntry modEntry)
+        {
+            bool changed = false;
+
+            foreach (CabDisplayPose pose in cabDisplayPoses)
+            {
+                if (string.IsNullOrEmpty(pose.id))
+                {
+                    pose.id = Guid.NewGuid().ToString("N");
+                    changed = true;
+                }
+            }
+
+            // Colours for displays that have since been closed would otherwise pile up for ever
+            HashSet<string> live = new(cabDisplayPoses.Select(p => p.id)) { "Wrist" };
+            changed |= panelAppearances.RemoveAll(a => !live.Contains(a.displayId)) > 0;
+
+            if (changed)
+            {
+                // Not RequestSave: that is flushed from the game loop, and these ids must be on disk before
+                // anything can be filed under them
+                Save(modEntry);
+                Main.LogEntry("Load", "Settings file brought up to date: display ids filled in.");
+            }
+        }
         private List<string> DisabledPanelIds()
         {
             return string.IsNullOrWhiteSpace(disabledPanels)
@@ -659,6 +837,14 @@ namespace TwitchChat
     /// </remarks>
     public class CabDisplayPose
     {
+        /// <summary>
+        /// What this display is known by for as long as it exists, so its colours can be filed against it.
+        /// Minted here rather than where displays are placed, which also gives one to a pose read from a
+        /// settings file written before this field existed, since that file simply has nothing to overwrite
+        /// it with. Closing a display and placing a new one gives a new id, and so the default colours.
+        /// </summary>
+        public string id = Guid.NewGuid().ToString("N");
+
         public string carId = string.Empty;
         public Vector3 localPosition;
         public Vector3 localEuler;
@@ -674,6 +860,28 @@ namespace TwitchChat
 
         /// <summary>Pinned at its size: the trigger no longer resizes it.</summary>
         public bool lockSize;
+
+        /// <summary>Folded away to its title strip. Saved, so a display tidied away stays tidied away.</summary>
+        public bool minimized;
+    }
+
+    /// <summary>
+    /// The colours one panel has been given on one display. A pair with no entry here follows the shared
+    /// defaults on <see cref="Settings"/>, so the presence of an entry is what marks a panel as customised
+    /// and removing it is what puts the panel back on the defaults.
+    /// </summary>
+    [Serializable]
+    public class PanelAppearance
+    {
+        /// <summary>The display: a <see cref="CabDisplayPose.id"/>, or "Wrist" for the wrist panel.</summary>
+        public string displayId = string.Empty;
+
+        /// <summary>The panel, by the id the registry knows it as.</summary>
+        public string panelId = string.Empty;
+
+        public Color panelColor;
+        public Color sectionColor;
+        public Color buttonColor;
     }
 
     /// <summary>

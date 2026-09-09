@@ -156,15 +156,5 @@ namespace TwitchChat.PanelMenus
                 lastKeepaliveTime.color = Color.cyan;
             }
         }
-
-        /// <summary>
-        /// Controls the visibility of the panel and its sections.
-        /// </summary>
-        public override void Show()
-        {
-            base.Show();
-            authSection?.SetActive(!isMinimized);
-            wsSection?.SetActive(!isMinimized);
-        }
     }
 }

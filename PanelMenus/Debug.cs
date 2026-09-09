@@ -147,12 +147,5 @@ namespace TwitchChat.PanelMenus
             PanelConstructor.Button.Create(testSendSection.transform, "Send Test Message", 90, 35, Color.white, async () => await TwitchEventHandler.SendMessage("Test message sent from debug page. If you see this mesage on your channel (and in game), your Twitch Authentication Token is valid and working!"));
         }
 
-        public override void Show()
-        {
-            base.Show();
-            debugLevelSection?.SetActive(!isMinimized);
-            notificationTestsSection?.SetActive(!isMinimized);
-            testSendSection?.SetActive(!isMinimized);
-        }
     }
 }

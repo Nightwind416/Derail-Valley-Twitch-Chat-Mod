@@ -46,7 +46,7 @@ namespace TwitchChat.PanelConstructor
             GameObject.Destroy(tempTextObj);
 
             Image toggleImage = toggleObj.AddComponent<Image>();
-            toggleImage.color = new Color(0, 0, 0, 0.75f);
+            toggleImage.color = PanelTheme.ButtonColorFor(parent);
 
             UnityEngine.UI.Toggle toggle = toggleObj.AddComponent<UnityEngine.UI.Toggle>();
             toggle.isOn = initialState;
@@ -73,12 +73,13 @@ namespace TwitchChat.PanelConstructor
                 tooltipText.alignment = TMPro.TextAlignmentOptions.Center;
                 vrButton.tooltipLabel = tooltipText;
                 
-                // Add hover handlers
+                // Worked out when they fire, so a toggle touched after the colours have changed goes back to
+                // the colour the player chose rather than the one it happened to be built with
                 vrButton.Touched += () => {
-                    toggleImage.color = new Color(0.3f, 0.3f, 0.3f, 0.75f);
+                    toggleImage.color = PanelTheme.Highlight(PanelTheme.ButtonColorFor(toggleObj.transform));
                 };
                 vrButton.Untouched += () => {
-                    toggleImage.color = new Color(0, 0, 0, 0.75f);
+                    toggleImage.color = PanelTheme.ButtonColorFor(toggleObj.transform);
                 };
                 
                 Main.LogEntry("ToggleCreation", $"VR Toggle '{textOn}/{textOff}' created for parent '{parent.name}'");

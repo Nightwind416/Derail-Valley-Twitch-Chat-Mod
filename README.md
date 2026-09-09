@@ -11,7 +11,7 @@ A mod that seamlessly integrates Twitch chat into your Derail Valley gameplay ex
 - **Message Logging**: Detailed chat logs for post-stream review
 - **Automated Messages**: Schedule up to five periodic announcements, each posted in the color you pick - normal, blue, green, orange, purple, or your channel accent
 - **Displays You Size Yourself**: Up to 5 panels per locomotive, each dragged to whatever size suits it
-- **Color Customization**: Ability to customize panel, section, and button coloring
+- **Color Customization**: Panel, section and button coloring, set for everything at once or for one panel on one display at a time
 - **Panels From Other Mods**: The displays are open to plugins, so readouts that only ever existed on the flat screen can be put where you can read them in VR. See [docs/PLUGINS.md](docs/PLUGINS.md) if you write mods
 
 ### Upcoming Features (In Development)
@@ -56,11 +56,12 @@ The menus and chat displays live on world-space panels. There are two kinds of p
 -- The **Displays** panel lists every display in the current locomotive, with a Move and a Size lock for each, and a Close button
 -- The **x** button in the top right corner of any display closes that display and forgets its saved slot
 -- Keys, placement distance and scale are set in the Unity Mod Manager menu, where the grab bars can also be turned off
-- **Wrist panel** (VR only) - a small button on the back of your hand that opens into the full menus, glance at it like a watch
+- **Wrist panel** (VR only) - the full menus on the back of your hand, opened with a click of your thumbstick, glance at them like a watch
+-- Click the left thumbstick to open them and click it again to close them. The **x** in the top right corner closes them too, from whichever panel you are on, and back on the Main panel still does
+-- The hand and the button are both yours to choose in the Unity Mod Manager menu: thumbstick, A, B or the headset's menu button, on either hand. The game may use that button for something of its own, in which case both things happen at once - pick another button or the other hand if that is a nuisance
+-- The old button on the back of the hand is still there for anyone whose controller has no press to spare, switched off by default. It comes back on its own if you switch the controller button off, so there is always some way in
 -- It rides the same sticky pad the game uses for anything you carry, so it lies flat against the back of the hand whichever controllers you have
--- It rests as a compact button, so it stays out of the way until you press it
 -- Opened, the menus unfold back down your forearm instead of sitting on top of your hand
--- Press the back button on its Main panel to fold the menus back down to the button
 -- **Wrist Adjust** on any Main panel places it without leaving VR: three rows move it across the hand, along the arm and out from it, three more turn it, and each row has a fine and a coarse step either side of the number
 -- The button and the open menus are placed separately, and each remembers its own spot: press "Placing:" to switch between them. While you are placing the button it stays on show next to the menus so you can see where it is going
 -- In VR you can also just take hold of it: with the Wrist Adjust panel open, squeeze the grip on your free hand next to the panel to carry it, and let go where you want it. Where it lands is saved straight away
@@ -72,8 +73,9 @@ The menus and chat displays live on world-space panels. There are two kinds of p
 - Chat Panel
 -- Shows the incoming Twitch chat. How much of it you can read is decided by how big you have dragged the display, so there are no fixed Wide/Large/Medium/Small variants to pick between any more
 - Config Panels
--- Config1 - Customize background panel and section coloring
--- Config2 - Customize button coloring and reset color customizations
+-- Config1 - The shared background panel and section coloring, which every panel follows unless it has been given colours of its own
+-- Config2 - The shared button coloring, buttons to put the shared colours back to their defaults, and one to clear every panel's own colours at once
+-- **≡** on any panel's title row - the colours of that one panel on that one display, so the chat readout can be more transparent on your hand than the menus are in the cab. There is a button there to give the whole display the same colours, and one to put the panel back on the shared colours
 - Menu Panels
 -- Main - Access all other panels from here, plus the Place Display and Toggle Display buttons
 -- Authentication - Connect or disconnect your Twitch account, and see exactly what is being authorized
@@ -122,8 +124,9 @@ board a locomotive.
 If you write mods yourself, the displays are open to yours as well: see [docs/PLUGINS.md](docs/PLUGINS.md).
 
 - Buttons can be interacted with in both VR and non-VR modes
-- Top left panel buttons will 'minimize' the displayed panel
-- Top right panel buttons return to the 'Main' panel, and close the display on cab displays. From the Main panel, back does nothing on a cab display and folds the wrist panel away to its button
+- Top left of a cab display: **−** folds the whole display down to its title strip, grab bars and all, and **+** on the strip opens it back up. A display left folded away stays folded away when you board that locomotive again
+- Beside it, **≡** opens the colours of that panel on that display
+- Top right panel buttons return to the 'Main' panel, and close the display on cab displays. On the wrist panel the **x** closes it, and back on the Main panel does the same
 - Each 'click' of the Notification duration slider in VR mode will advance approx 10%, then reset after max
 
 ### Twitch Authentication
@@ -215,6 +218,15 @@ Access advanced options by expanding the "Debug and Troubleshooting" section in 
 
 ## Version History
 
+### 3.6.0 (September 6, 2026)
+
+- The wrist panel opens with a click of your thumbstick. No more reaching over to press a button on the back of your own hand, and no need to have the hand in view at all. Click again to close it, or press the **x** in the corner, which the wrist panel now has on every panel rather than only having back on its Main panel
+- Which button, and which hand, are set in the Unity Mod Manager menu: thumbstick, A, B or the menu button, on either hand. The game may already use the one you pick, in which case both things happen at once, so there is a choice to move to
+- The button on the back of the hand is switched off by default now that it is no longer the way in. Turn it back on there if your controller has no press to spare; it also comes back on its own if you switch the controller button off, so the panel can never be left with no way to open it
+- **Minimize works properly.** It used to hide a panel's contents while leaving the display and its grab bars at full size, and on some panels the contents came straight back a moment later and floated over the top of an empty coloured strip. A display now folds down to its title strip and the grab bars fold away with it, and **+** on the strip opens it back up at exactly the size and place it was. A display left folded away stays folded away when you board that locomotive again
+- Panels no longer come apart when they are folded and unfolded: the close button on the wrist panel stays hidden, and panels that were deliberately hiding part of themselves keep hiding it
+- **Colours can now be set for one panel on one display.** The **≡** button on any title row opens the colours of that panel on that display, so the chat readout can be more transparent on your hand than the menus are in the cab. Anything you have not changed follows the shared colours on the Config panels, as it always did, and there is a button to put a panel back on them
+- Colours stick where they used to be lost: touching a button in VR no longer throws away the colour you chose, toggles are coloured at all now, and rows rebuilt by the Displays, Mods and mod panels come up in the right colours instead of the defaults
 ### 3.5.0 (September 6, 2026)
 
 - The displays are open to panels from other mods. Several mods work out things worth knowing while driving and then draw them to the flat screen, where a headset never sees them; those readouts can now live on a cab display or the wrist panel instead. A new **Mods** panel, reachable from any Main panel, lists what is installed with a switch to turn each one off
